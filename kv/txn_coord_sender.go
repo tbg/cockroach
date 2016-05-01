@@ -829,7 +829,8 @@ func (tc *TxnCoordSender) updateState(
 	default:
 		if pErr.GetTxn() != nil {
 			if pErr.CanRetry() {
-				panic("Retryable internal error must not happen at this level")
+				panic(fmt.Sprintf(
+					"retryable internal error must not happen at this level: %s", pErr))
 			} else {
 				// Do not clean up the transaction here since the client might still
 				// want to continue the transaction. For example, a client might
