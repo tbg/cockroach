@@ -303,11 +303,10 @@ func stopperContext(stopper *stop.Stopper) context.Context {
 // quitCmd command shuts down the node server.
 var quitCmd = &cobra.Command{
 	Use:   "quit",
-	Short: "drain and shutdown node\n",
+	Short: "drain and/or shutdown node\n",
 	Long: `
-Shutdown the server. The first stage is drain, where any new requests
-will be ignored by the server. When all extant requests have been
-completed, the server exits.
+Drains and (by default) shuts down the server. During draining, existing SQL
+sessions continue, but no new connections will be accepted.
 `,
 	SilenceUsage: true,
 	RunE:         runQuit,
@@ -315,9 +314,13 @@ completed, the server exits.
 
 // runQuit accesses the quit shutdown path.
 func runQuit(_ *cobra.Command, _ []string) error {
+	var offModes []int32
 	onModes := make([]int32, len(server.GracefulDrainModes))
 	for i, m := range server.GracefulDrainModes {
 		onModes[i] = int32(m)
+	}
+	if resumeOnly {
+		offModes, onModes = onModes, offModes
 	}
 
 	c, stopper, err := getAdminClient()
@@ -328,7 +331,8 @@ func runQuit(_ *cobra.Command, _ []string) error {
 	if _, err := c.Drain(stopperContext(stopper),
 		&server.DrainRequest{
 			On:       onModes,
-			Shutdown: true,
+			Off:      offModes,
+			Shutdown: !drainOnly && !resumeOnly,
 		}); err != nil {
 		return err
 	}

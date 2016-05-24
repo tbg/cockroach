@@ -41,6 +41,7 @@ var connURL string
 var connUser, connHost, connPort, httpPort, connDBName string
 var startBackground bool
 var undoFreezeCluster bool
+var drainOnly, resumeOnly bool
 
 // cliContext is the CLI Context used for the command-line client.
 var cliContext = NewContext()
@@ -230,6 +231,12 @@ defined in terms of multiples of this value.`),
 
 	cliflags.UndoFreezeClusterName: wrapText(`
 Attempt to undo an earlier attempt to freeze the cluster.`),
+
+	cliflags.DrainOnlyName: wrapText(`
+Drain the server, but do not terminate the process.`),
+
+	cliflags.ResumeOnlyName: wrapText(`
+Undo any earlier drain operation.`),
 }
 
 const usageIndentation = 8
@@ -411,6 +418,11 @@ func initFlags(ctx *Context) {
 	}
 
 	setUserCmd.Flags().StringVar(&password, cliflags.PasswordName, envutil.EnvOrDefaultString(cliflags.PasswordName, ""), usageEnv(cliflags.PasswordName))
+	{
+		f := quitCmd.Flags()
+		f.BoolVar(&drainOnly, cliflags.DrainOnlyName, false, usageNoEnv(cliflags.DrainOnlyName))
+		f.BoolVar(&resumeOnly, cliflags.ResumeOnlyName, false, usageNoEnv(cliflags.ResumeOnlyName))
+	}
 
 	clientCmds := []*cobra.Command{
 		sqlShellCmd, quitCmd, freezeClusterCmd, /* startCmd is covered above */
