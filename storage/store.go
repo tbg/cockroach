@@ -689,10 +689,10 @@ func (s *Store) logContext(ctx context.Context) context.Context {
 }
 
 // DrainLeases (when called with 'true') prevents all of the Store's
-// Replicas from acquiring or extending range leases and waits until all of
-// them have expired. If an error is returned, the draining state is still
-// active, but there may be active leases held by some of the Store's Replicas.
-// When called with 'false', returns to the normal mode of operation.
+// non-singleton Replicas from acquiring or extending range leases and waits
+// until all of them have expired. If an error is returned, the draining state
+// is still active, but there may be active leases held by some of the Store's
+// Replicas. When called with 'false', returns to the normal mode of operation.
 func (s *Store) DrainLeases(drain bool) error {
 	s.drainLeases.Store(drain)
 	if !drain {
@@ -703,6 +703,11 @@ func (s *Store) DrainLeases(drain bool) error {
 		var err error
 		now := s.Clock().Now()
 		newStoreRangeSet(s).Visit(func(r *Replica) bool {
+			if len(r.Desc().Replicas) < 2 {
+				// If we're the only Replica (we know of), there's no point in
+				// waiting for the leader lease to go away.
+				return true
+			}
 			lease, nextLease := r.getLease()
 			// If we own an active lease or we're trying to obtain a lease
 			// (and that request is fresh enough), wait.
