@@ -2760,6 +2760,14 @@ func (r *Replica) mergeTrigger(
 		return nil, errors.Errorf("RHS range ID must be provided: %d", rightRangeID)
 	}
 
+	{
+		subsumedRng, err := r.store.GetReplica(rightRangeID)
+		if err != nil {
+			panic(err)
+		}
+		defer subsumedRng.raftUnlock(subsumedRng.raftLock())
+	}
+
 	// Compute stats for premerged range, including current transaction.
 	var mergedMS = r.GetMVCCStats()
 	mergedMS.Add(*ms)
