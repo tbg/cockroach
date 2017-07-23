@@ -2,20 +2,66 @@ extern crate libc;
 extern crate rocksdb;
 
 use std::ffi::CStr;
-use rocksdb::{DB, Options};
 
 static STORAGEPATH: &'static str = "dummy-storage-location";
 
-fn with_db<F, T>(f: F) -> T where F : Fn(DB) -> T {
-    let db = DB::open_default(STORAGEPATH).unwrap();
-    f(db)
+#[repr(C)]
+pub struct DBEngine {
+    db: rocksdb::DB,
+}
+
+impl DBEngine {
+    fn new(dir: &std::path::Path) -> Result<DBEngine, rocksdb::Error> {
+        rocksdb::DB::open_default(dir).and_then(|db| Ok(DBEngine{db}))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn dbengine_open(dir: *const libc::c_char) -> *mut DBEngine {
+    unsafe {
+        // FIXME(tschottdorf): this is horrible, need decent error reporting.
+        // Should probably pass a result struct back.
+        //
+        // See https://github.com/shepmaster/rust-ffi-omnibus/blob/master/examples/objects/src/lib.rs
+        // for some inspiration.
+        Box::into_raw(Box::new(DBEngine::new(std::path::Path::new(CStr::from_ptr(dir).to_str().unwrap())).unwrap()))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn dbengine_put(dbe: *mut DBEngine, k: *const libc::c_char, v: *const libc::c_char) {
+    let k = unsafe { CStr::from_ptr(k).to_bytes() };
+    let v = unsafe { CStr::from_ptr(v).to_bytes() };
+    unsafe {
+        assert!((*dbe).db.put(k,v).is_ok())
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn dbengine_get(dbe: *mut DBEngine, k: *const libc::c_char) -> *const libc::c_char {
+    let k = unsafe { CStr::from_ptr(k).to_bytes() };
+    unsafe {
+        // This part is even more horrible than all of the other stuff and I
+        // would be so surprised if it were actually kosher.
+        match (*dbe).db.get(k) {
+            Ok(Some(v)) => {
+                std::mem::transmute(v.as_ptr())
+            }
+        _ => std::ptr::null(),
+        }
+    }
+}
+
+fn with_db<F, T>(f: F) -> T where F : Fn(rocksdb::DB) -> T {
+    let db = DBEngine::new(std::path::Path::new(STORAGEPATH)).unwrap();
+    f(db.db)
 }
 
 
 #[no_mangle]
 pub extern "C" fn destroy() {
-    let opts = Options::default();
-    assert!(DB::destroy(&opts, STORAGEPATH).is_ok());
+    let opts = rocksdb::Options::default();
+    assert!(rocksdb::DB::destroy(&opts, STORAGEPATH).is_ok());
 }
 
 #[no_mangle]
