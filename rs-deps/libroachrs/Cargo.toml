@@ -1,0 +1,11 @@
+[package]
+name = "ruststorage"
+version = "0.1.0"
+authors = ["Tobias Schottdorf <tobias.schottdorf@gmail.com>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+libc = "*"
+rocksdb = "*"
