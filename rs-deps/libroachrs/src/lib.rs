@@ -3,7 +3,25 @@ extern crate rocksdb;
 
 use std::ffi::CStr;
 
+// See https://github.com/shepmaster/rust-ffi-omnibus/blob/master/examples/objects/src/lib.rs
+// for some inspiration on calling into Rust.
+
 static STORAGEPATH: &'static str = "dummy-storage-location";
+
+#[repr(C)]
+pub struct DBStatus {
+    data: *const libc::c_char,
+    len: libc::c_int,
+}
+
+impl DBStatus {
+    fn success() -> DBStatus {
+        DBStatus {
+            data: std::ptr::null(),
+            len: 0,
+        }
+    }
+}
 
 #[repr(C)]
 pub struct DBEngine {
@@ -17,15 +35,12 @@ impl DBEngine {
 }
 
 #[no_mangle]
-pub extern "C" fn dbengine_open(dir: *const libc::c_char) -> *mut DBEngine {
+pub extern "C" fn dbengine_open(ptr: *mut *mut DBEngine, dir: *const libc::c_char) -> DBStatus {
     unsafe {
-        // FIXME(tschottdorf): this is horrible, need decent error reporting.
-        // Should probably pass a result struct back.
-        //
-        // See https://github.com/shepmaster/rust-ffi-omnibus/blob/master/examples/objects/src/lib.rs
-        // for some inspiration.
-        Box::into_raw(Box::new(DBEngine::new(std::path::Path::new(CStr::from_ptr(dir).to_str().unwrap())).unwrap()))
+        let db = DBEngine::new(std::path::Path::new(CStr::from_ptr(dir).to_str().unwrap())).unwrap();
+        *ptr = Box::into_raw(Box::new(db));
     }
+    DBStatus::success()
 }
 
 #[no_mangle]

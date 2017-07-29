@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"unsafe"
 )
 
 /*
@@ -15,9 +16,15 @@ func main() {
 		key = "foo"
 		val = "bar"
 	)
-	db := C.dbengine_open(C.CString("./foo"))
+	var rdb *C.DBEngine
+	dir := C.CString("./foo")
+	status := C.dbengine_open(&rdb, dir)
+	C.free(unsafe.Pointer(dir))
+	if status.len != 0 {
+		panic(status.len)
+	}
 
 	k, v := C.CString(key), C.CString(val)
-	C.dbengine_put(db, k, v)
-	fmt.Println(C.GoString(C.dbengine_get(db, k)))
+	C.dbengine_put(rdb, k, v)
+	fmt.Println(C.GoString(C.dbengine_get(rdb, k)))
 }
