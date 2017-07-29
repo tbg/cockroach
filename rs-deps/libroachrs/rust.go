@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"unsafe"
+
+	_ "github.com/cockroachdb/cockroach/pkg/storage/engine" // just because we can
 )
 
 /*
@@ -11,7 +13,7 @@ import (
 */
 import "C"
 
-func main() {
+func Run() {
 	const (
 		key = "foo"
 		val = "bar"
