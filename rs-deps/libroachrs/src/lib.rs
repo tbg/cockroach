@@ -44,6 +44,12 @@ pub extern "C" fn dbengine_open(ptr: *mut *mut DBEngine, dir: *const libc::c_cha
 }
 
 #[no_mangle]
+pub extern "C" fn dbengine_close(ptr: *mut DBEngine) -> DBStatus {
+    unsafe { Box::from_raw(ptr); } // frees when it goes out of scope
+    DBStatus::success()
+}
+
+#[no_mangle]
 pub extern "C" fn dbengine_put(dbe: *mut DBEngine, k: *const libc::c_char, v: *const libc::c_char) {
     let k = unsafe { CStr::from_ptr(k).to_bytes() };
     let v = unsafe { CStr::from_ptr(v).to_bytes() };

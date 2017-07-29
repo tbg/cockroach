@@ -26,11 +26,7 @@ typedef struct {
 
 typedef struct DBEngine DBEngine;
 
-
-int put(char *k, char *v);
-int has(char *name);
-void destroy();
-
 DBStatus dbengine_open(DBEngine **ptr, char *dir);
+DBStatus dbengine_close(DBEngine *dbe);
 void dbengine_put(DBEngine *dbe, char *k, char *v);
 char* dbengine_get(DBEngine *dbe, char *k);

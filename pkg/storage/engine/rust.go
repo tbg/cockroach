@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"io/ioutil"
 	"unsafe"
 )
 
@@ -17,7 +18,11 @@ func Run() {
 		val = "bar"
 	)
 	var rdb *C.DBEngine
-	dir := C.CString("./foo")
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		panic(err)
+	}
 	status := C.dbengine_open(&rdb, dir)
 	C.free(unsafe.Pointer(dir))
 	if status.len != 0 {
@@ -27,4 +32,5 @@ func Run() {
 	k, v := C.CString(key), C.CString(val)
 	C.dbengine_put(rdb, k, v)
 	fmt.Println(C.GoString(C.dbengine_get(rdb, k)))
+	C.dbengine_close(rdb)
 }
