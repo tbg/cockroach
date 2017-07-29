@@ -45,7 +45,7 @@ pub extern "C" fn dbengine_open(ptr: *mut *mut DBEngine, dir: *const libc::c_cha
 
 #[no_mangle]
 pub extern "C" fn dbengine_close(ptr: *mut DBEngine) -> DBStatus {
-    unsafe { Box::from_raw(ptr); } // frees when it goes out of scope
+    unsafe { Box::from_raw(ptr); } // frees when the Box goes out of scope
     DBStatus::success()
 }
 

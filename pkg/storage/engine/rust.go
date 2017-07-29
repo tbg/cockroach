@@ -7,8 +7,11 @@ import (
 )
 
 /*
-#cgo LDFLAGS: -L../../../rs-deps/libroachrs/target/release -lruststorage
-#include "./ruststorage.h"
+#cgo LDFLAGS: -L../../../rs-deps/libroachrs/target/release -lroachrs
+#cgo CPPFLAGS: -I../../../rs-deps/libroachrs/include
+#include <stdlib.h>
+#include <libroach.h>
+#include <libroachrs.h>
 */
 import "C"
 
@@ -23,8 +26,9 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
-	status := C.dbengine_open(&rdb, dir)
-	C.free(unsafe.Pointer(dir))
+	cDir := C.CString(dir)
+	status := C.dbengine_open(&rdb, cDir)
+	C.free(unsafe.Pointer(cDir))
 	if status.len != 0 {
 		panic(status.len)
 	}

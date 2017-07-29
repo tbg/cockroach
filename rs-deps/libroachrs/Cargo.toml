@@ -1,5 +1,5 @@
 [package]
-name = "ruststorage"
+name = "roachrs"
 version = "0.1.0"
 authors = ["Tobias Schottdorf <tobias.schottdorf@gmail.com>"]
 
