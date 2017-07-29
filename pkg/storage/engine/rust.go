@@ -1,14 +1,12 @@
-package main
+package engine
 
 import (
 	"fmt"
 	"unsafe"
-
-	_ "github.com/cockroachdb/cockroach/pkg/storage/engine" // just because we can
 )
 
 /*
-#cgo LDFLAGS: -L./target/release -lruststorage
+#cgo LDFLAGS: -L../../../rs-deps/libroachrs/target/release -lruststorage
 #include "./ruststorage.h"
 */
 import "C"
