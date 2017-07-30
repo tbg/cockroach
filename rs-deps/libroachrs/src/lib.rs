@@ -1,29 +1,19 @@
 extern crate libc;
 extern crate rocksdb;
 
+mod encoding;
+mod data;
+
 use std::ffi::CStr;
 
-mod encoding;
+use data::*;
 
 // See https://github.com/shepmaster/rust-ffi-omnibus/blob/master/examples/objects/src/lib.rs
 // for some inspiration on calling into Rust.
 
 static STORAGEPATH: &'static str = "dummy-storage-location";
 
-#[repr(C)]
-pub struct DBStatus {
-    data: *const libc::c_char,
-    len: libc::c_int,
-}
 
-impl DBStatus {
-    fn success() -> DBStatus {
-        DBStatus {
-            data: std::ptr::null(),
-            len: 0,
-        }
-    }
-}
 
 #[repr(C)]
 pub struct DBEngine {
