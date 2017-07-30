@@ -8,6 +8,8 @@ use std::ffi::CStr;
 
 use data::*;
 
+pub use data::from_go;
+
 // See https://github.com/shepmaster/rust-ffi-omnibus/blob/master/examples/objects/src/lib.rs
 // for some inspiration on calling into Rust.
 
@@ -51,16 +53,34 @@ pub extern "C" fn dbengine_put(dbe: *mut DBEngine, k: *const libc::c_char, v: *c
 }
 
 #[no_mangle]
-pub extern "C" fn dbengine_get(dbe: *mut DBEngine, k: DBKey) -> *const libc::c_char {
+pub extern "C" fn dbengine_get(dbe: *mut DBEngine, k: DBKey, v: *mut DBString) -> DBStatus {
     let k = unsafe { std::slice::from_raw_parts(k.key.data as *const u8, k.key.len as usize) };
-    unsafe {
-        // This part is even more horrible than all of the other stuff and I
-        // would be so surprised if it were actually kosher.
-        match (*dbe).db.get(k) {
-            Ok(Some(v)) => {
-                std::mem::transmute(v.as_ptr())
-            }
-        _ => std::ptr::null(),
+    let res = unsafe { (*dbe).db.get(k) };
+    match res {
+        Err(err) => DBStatus::from_str(err.to_string()),
+        Ok(None) => {
+            unsafe {
+                *v = DBString {
+                    data: std::ptr::null(),
+                    len: 0,
+                }
+            };
+            DBStatus::success()
+        }
+        Ok(Some(value)) => {
+            let sl: &[u8] = &value;
+            // TODO(tschottdorf): this copy can likely be avoided by using
+            // db.raw_iterator() instead, but for now let's play it safe.
+            // The C++ code also eats a similar copy.
+            let s = Vec::<u8>::from(sl);
+            let (data, len) = unsafe { data::for_go(s) };
+            unsafe {
+                *v = DBString {
+                    data: data,
+                    len: len,
+                }
+            };
+            DBStatus::success()
         }
     }
 }

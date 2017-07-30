@@ -32,14 +32,20 @@ func Run() {
 		panic(status.len)
 	}
 
-	const val = "bar"
+	const val = "💖bar💖"
 	k, v := C.CString(string(key.Key)), C.CString(val)
 	defer C.free(unsafe.Pointer(k))
 	defer C.free(unsafe.Pointer(v))
 
 	C.dbengine_put(rdb, k, v)
 
-	if s := C.GoString(C.dbengine_get(rdb, goToCKey(key))); s != val {
+	var dbStr C.DBString
+	if status := C.dbengine_get(rdb, goToCKey(key), &dbStr); status.data != nil {
+		C.from_go(status.data, status.len)
+		panic("get failed")
+	}
+	actualVal := cStringToGoBytes(dbStr)
+	if s := string(actualVal); s != val {
 		panic(s)
 	}
 	C.dbengine_close(rdb)

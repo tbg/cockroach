@@ -1828,6 +1828,9 @@ func cStringToGoBytes(s C.DBString) []byte {
 		return nil
 	}
 	result := C.GoBytes(unsafe.Pointer(s.data), s.len)
+	// This should use C.from_go(s.data, s.len) because who knows whether C.free calls
+	// the right thing for Rust's allocator? Something to think of once things start
+	// crashing.
 	C.free(unsafe.Pointer(s.data))
 	return result
 }
