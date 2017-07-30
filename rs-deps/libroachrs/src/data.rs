@@ -3,8 +3,8 @@ extern crate libc;
 
 #[repr(C)]
 pub struct DBStatus {
-    data: *const libc::c_char,
-    len: libc::c_int,
+    pub data: *const libc::c_char,
+    pub len: libc::c_int,
 }
 
 impl DBStatus {
