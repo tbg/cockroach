@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"io/ioutil"
 	"unsafe"
 )
@@ -16,11 +15,11 @@ import (
 import "C"
 
 func Run() {
-	const (
-		key = "foo"
-		val = "bar"
-	)
 	var rdb *C.DBEngine
+
+	key := MVCCKey{
+		Key: []byte("foo"),
+	}
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -33,8 +32,15 @@ func Run() {
 		panic(status.len)
 	}
 
-	k, v := C.CString(key), C.CString(val)
+	const val = "bar"
+	k, v := C.CString(string(key.Key)), C.CString(val)
+	defer C.free(unsafe.Pointer(k))
+	defer C.free(unsafe.Pointer(v))
+
 	C.dbengine_put(rdb, k, v)
-	fmt.Println(C.GoString(C.dbengine_get(rdb, k)))
+
+	if s := C.GoString(C.dbengine_get(rdb, goToCKey(key))); s != val {
+		panic(s)
+	}
 	C.dbengine_close(rdb)
 }

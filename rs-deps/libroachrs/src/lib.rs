@@ -51,8 +51,8 @@ pub extern "C" fn dbengine_put(dbe: *mut DBEngine, k: *const libc::c_char, v: *c
 }
 
 #[no_mangle]
-pub extern "C" fn dbengine_get(dbe: *mut DBEngine, k: *const libc::c_char) -> *const libc::c_char {
-    let k = unsafe { CStr::from_ptr(k).to_bytes() };
+pub extern "C" fn dbengine_get(dbe: *mut DBEngine, k: DBKey) -> *const libc::c_char {
+    let k = unsafe { std::slice::from_raw_parts(k.key.data as *const u8, k.key.len as usize) };
     unsafe {
         // This part is even more horrible than all of the other stuff and I
         // would be so surprised if it were actually kosher.

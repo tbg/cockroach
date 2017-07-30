@@ -24,7 +24,7 @@ pub struct DBSlice {
 
 #[repr(C)]
 pub struct DBKey {
-    key: DBSlice,
-    wall_time: libc::int64_t,
-    logical: libc::int32_t,
+    pub key: DBSlice,
+    pub wall_time: libc::int64_t,
+    pub logical: libc::int32_t,
 }
