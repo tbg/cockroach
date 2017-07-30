@@ -3,6 +3,8 @@ extern crate rocksdb;
 
 use std::ffi::CStr;
 
+mod encoding;
+
 // See https://github.com/shepmaster/rust-ffi-omnibus/blob/master/examples/objects/src/lib.rs
 // for some inspiration on calling into Rust.
 
