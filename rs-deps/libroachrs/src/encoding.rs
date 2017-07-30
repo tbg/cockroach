@@ -4,6 +4,13 @@ const K_MVCC_VERSION_TIMESTAMP_SIZE: usize = 12;
 
 use std::vec::Vec;
 
+pub struct MVCCKey<'a> {
+    key: &'a [u8],
+    wall_time: i64,
+    logical: i32,
+}
+
+
 fn encode_uint32(b: &mut Vec<u8>, v: u32) {
     b.extend(&[
         (v>>24) as u8,
@@ -92,13 +99,7 @@ fn split_key<'a>(b: &'a [u8]) -> Option<(&'a [u8], &'a [u8])> {
     Some(b.split_at(l - b[l-1] as usize - 1))
 }
 
-pub struct DBKey<'a> {
-    key: &'a [u8],
-    wall_time: i64,
-    logical: i32,
-}
-
-fn decode_key<'a>(b: &'a [u8]) -> Option<DBKey<'a>> {
+fn decode_key<'a>(b: &'a [u8]) -> Option<MVCCKey<'a>> {
     split_key(b).and_then(|tuple|{
         let mut wall_time = 0 as i64;
         let mut logical = 0 as i32;
@@ -107,7 +108,7 @@ fn decode_key<'a>(b: &'a [u8]) -> Option<DBKey<'a>> {
                 return None
             }
         }
-        Some(DBKey{
+        Some(MVCCKey{
             key: tuple.0,
             wall_time: wall_time,
             logical: logical,

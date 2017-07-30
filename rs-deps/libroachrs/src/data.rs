@@ -15,3 +15,16 @@ impl DBStatus {
         }
     }
 }
+
+#[repr(C)]
+pub struct DBSlice {
+    pub data: *const libc::c_char,
+    pub len: libc::c_int,
+}
+
+#[repr(C)]
+pub struct DBKey {
+    key: DBSlice,
+    wall_time: libc::int64_t,
+    logical: libc::int32_t,
+}
