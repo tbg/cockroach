@@ -3,6 +3,7 @@ extern crate rocksdb;
 
 mod encoding;
 mod data;
+mod tscache;
 
 use std::ffi::CStr;
 
