@@ -6,7 +6,7 @@ import (
 )
 
 /*
-#cgo LDFLAGS: -L../../../rs-deps/libroachrs/target/release -lroachrs
+#cgo LDFLAGS: -L../../../rs-deps/libroachrs/target/release -lroachrs -lresolv
 #cgo CPPFLAGS: -I../../../rs-deps/libroachrs/include
 #include <stdlib.h>
 #include <libroach.h>
