@@ -86,17 +86,17 @@ func main() {
 	kv := c.Nodes[0].Client()
 
 	const (
-		key          = "a"
 		spansPerTxn  = 100
 		txnsPerBatch = 1000
 	)
 
 	letters := "abcdefghijklmnopqrstuvwxyz"
 
-	tablePrefix := keys.MakeTablePrefix(9999)
+	key := keys.NodeLivenessKey(1)
+
 	randKey := func() roachpb.Key {
 		l := rand.Intn(len(letters))
-		key := make(roachpb.Key, l+len(tablePrefix))
+		key := make(roachpb.Key, l+len(key))
 		for i, charIdx := range rand.Perm(len(letters))[:l] {
 			key[i] = letters[charIdx]
 		}
@@ -115,23 +115,28 @@ func main() {
 	for {
 		var b client.Batch
 		for i := 0; i < txnsPerBatch; i++ {
+			intents := make([]roachpb.Span, spansPerTxn)
+			for s := range intents {
+				intents[s] = roachpb.Span{
+					Key: randKey(),
+				}
+				intents[s].EndKey = append(roachpb.Key(nil), intents[s].Key...)
+				intents[s].EndKey = append(intents[s].EndKey, randKey()...)
+			}
 			txn := roachpb.MakeTransaction(
 				"test",
-				roachpb.Key(key),
+				key,
 				roachpb.NormalUserPriority,
 				enginepb.SERIALIZABLE,
 				hlc.Timestamp{WallTime: pastTS},
 				500*time.Millisecond.Nanoseconds(),
 			)
-			txn.Intents = make([]roachpb.Span, spansPerTxn)
-			for s := range txn.Intents {
-				txn.Intents[s] = roachpb.Span{
-					Key: randKey(),
-				}
-				txn.Intents[s].EndKey = append(roachpb.Key(nil), txn.Intents[s].Key...)
-				txn.Intents[s].EndKey = append(txn.Intents[s].EndKey, randKey()...)
+			txn.Intents = intents
+			if i%2 == 0 {
+				txn.Status = roachpb.ABORTED
 			}
-			b.Put(keys.TransactionKey(roachpb.Key(key), uuid.MakeV4()), &txn)
+
+			b.PutInline(keys.TransactionKey(key, uuid.MakeV4()), &txn)
 		}
 
 		if err := kv.Run(ctx, &b); err != nil {
