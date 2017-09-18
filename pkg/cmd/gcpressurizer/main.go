@@ -16,9 +16,12 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
@@ -32,10 +35,21 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
-	"github.com/cockroachdb/cockroach/pkg/util/uuid"
 )
 
+var flagNumTxns = flag.Int("txns", 100, "number of transactions to write")
+var flagNumIntentsPerTxn = flag.Int("intents", 0, "number of (fictional) intents per transactions")
+
 func main() {
+	flag.Parse()
+
+	targetStatus := [3]roachpb.TransactionStatus{
+		roachpb.COMMITTED,
+		roachpb.COMMITTED,
+		roachpb.COMMITTED,
+	}
+	var _ = targetStatus
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cockroachBin := func() string {
@@ -62,11 +76,22 @@ func main() {
 		PerNodeCfg:  perNodeCfg,
 	}
 
-	c := localcluster.New(cfg)
-	defer c.Close()
+	c := localcluster.LocalCluster{
+		Cluster: localcluster.New(cfg),
+	}
+
+	cleanupOnce := func() func() {
+		var once sync.Once
+		return func() {
+			once.Do(func() {
+				c.Close()
+			})
+		}
+	}()
+	defer cleanupOnce()
 
 	log.SetExitFunc(func(code int) {
-		c.Close()
+		cleanupOnce()
 		os.Exit(code)
 	})
 
@@ -77,45 +102,69 @@ func main() {
 		s := <-signalCh
 		log.Infof(context.Background(), "signal received: %v", s)
 		cancel()
-		c.Close()
+		cleanupOnce()
 		os.Exit(1)
 	}()
 
 	c.Start(context.Background())
 
+	if _, err := c.Nodes[0].DB().Exec("SET CLUSTER SETTING trace.debug.enable = true"); err != nil {
+		log.Fatal(ctx, err)
+	}
+
+	{
+		tmp := filepath.Join(cfg.DataDir, "zone")
+		if err := ioutil.WriteFile(tmp, []byte("num_replicas: 1\ngc:\n  ttlseconds: 0\n"), 0755); err != nil {
+			log.Fatal(ctx, err)
+		}
+		if _, _, err := c.ExecCLI(ctx, 0, []string{"zone", "set", ".default", "--file", tmp}); err != nil {
+			log.Fatal(ctx, err)
+		}
+		_ = os.Remove(tmp)
+	}
+
 	kv := c.Nodes[0].Client()
 
 	const (
-		spansPerTxn  = 100
 		txnsPerBatch = 1000
 	)
 
 	letters := "abcdefghijklmnopqrstuvwxyz"
 
-	key := keys.NodeLivenessKey(1)
+	// Base everything off of the liveness key for the nonexistent node zero. This makes sure
+	// nothing we write gets in the way of the "real" node liveness span.
+	key := keys.NodeLivenessKey(0)
 
 	randKey := func() roachpb.Key {
 		l := rand.Intn(len(letters))
-		key := make(roachpb.Key, l+len(key))
+		k := make(roachpb.Key, l+len(key))
+		copy(k, key)
 		for i, charIdx := range rand.Perm(len(letters))[:l] {
-			key[i] = letters[charIdx]
+			k[len(key)+i] = letters[charIdx]
 		}
-		return key
+		return k
 	}
 
-	// A month ago.
-	pastTS := timeutil.Now().Add(-24 * time.Hour * 30).UnixNano()
+	pastTS := timeutil.Now().Add(-2 * time.Hour).UnixNano()
 
 	t := timeutil.NewTimer()
 	t.Reset(time.Second)
 
 	var cTotalIntents int
 	var cTotalTxns int
+	logStatus := func() {
+		log.Infof(ctx, "txns: %d (total intents %d)", cTotalTxns, cTotalIntents)
+	}
 
-	for {
+	var wg sync.WaitGroup
+	for cTotalTxns < *flagNumTxns {
 		var b client.Batch
-		for i := 0; i < txnsPerBatch; i++ {
-			intents := make([]roachpb.Span, spansPerTxn)
+		numTxnsInBatch := *flagNumTxns
+		if numTxnsInBatch > txnsPerBatch {
+			numTxnsInBatch = txnsPerBatch
+		}
+		for i := 0; i < numTxnsInBatch; i++ {
+			intents := make([]roachpb.Span, *flagNumIntentsPerTxn)
 			for s := range intents {
 				intents[s] = roachpb.Span{
 					Key: randKey(),
@@ -123,6 +172,7 @@ func main() {
 				intents[s].EndKey = append(roachpb.Key(nil), intents[s].Key...)
 				intents[s].EndKey = append(intents[s].EndKey, randKey()...)
 			}
+			txnCtx, txnCancel := context.WithCancel(ctx)
 			txn := roachpb.MakeTransaction(
 				"test",
 				key,
@@ -131,28 +181,42 @@ func main() {
 				hlc.Timestamp{WallTime: pastTS},
 				500*time.Millisecond.Nanoseconds(),
 			)
-			txn.Intents = intents
-			if i%2 == 0 {
-				txn.Status = roachpb.ABORTED
+			kvTxn := client.NewTxnWithProto(kv, txn)
+			var bTxn client.Batch
+			for _, intent := range intents {
+				bTxn.Put(intent.Key, intent.EndKey /* abuse as value */)
 			}
+			wg.Add(1)
+			go func() {
+				defer txnCancel()
+				defer wg.Done()
+				if err := kvTxn.Run(txnCtx, &bTxn); err != nil {
+					log.Fatal(ctx, err)
+				}
+			}()
 
-			b.PutInline(keys.TransactionKey(key, uuid.MakeV4()), &txn)
+			//txn.Intents = intents
+			_ = pastTS
+			//txn.Status = targetStatus[i%len(targetStatus)]
+			//b.PutInline(keys.TransactionKey(key, txn.ID), &txn)
 		}
 
 		if err := kv.Run(ctx, &b); err != nil {
-			log.Warning(ctx, err)
-			continue
+			log.Fatal(ctx, err)
 		}
-		cTotalTxns += txnsPerBatch
-		cTotalIntents += txnsPerBatch * spansPerTxn
+		cTotalTxns += numTxnsInBatch
+		cTotalIntents += numTxnsInBatch * (*flagNumIntentsPerTxn)
 
 		select {
 		case <-t.C:
 			t.Read = true
 			t.Reset(time.Second)
-
-			log.Infof(ctx, "txns: %d (total intents %d)", cTotalTxns, cTotalIntents)
+			logStatus()
 		default:
 		}
 	}
+	log.Info(ctx, "waiting for intents to be written...")
+	wg.Wait()
+	logStatus()
+	close(signalCh)
 }

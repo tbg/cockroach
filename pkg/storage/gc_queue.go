@@ -598,7 +598,9 @@ func (gcq *gcQueue) processImpl(
 	}
 
 	log.Eventf(ctx, "MVCC stats: %+v", repl.GetMVCCStats())
-	log.Eventf(ctx, "assembled GC keys, now proceeding to GC; stats so far %+v", info)
+	if repl.RangeID == 3 {
+		log.Warningf(ctx, "assembled GC keys, now proceeding to GC; stats so far %+v", info)
+	}
 	defer func() {
 		info.updateMetrics(gcq.store.metrics)
 	}()
@@ -610,7 +612,9 @@ func (gcq *gcQueue) processImpl(
 
 		// Technically not needed since we're talking directly to the Range.
 		ba.RangeID = desc.RangeID
-		ba.Timestamp = now
+		// Small but important detail: use a new timestamp. Otherwise, as an extreme case, if the
+		// TTL is zero, `now` itself is not above the GCThreshold.
+		ba.Timestamp = repl.store.Clock().Now()
 
 		// TODO(tschottdorf): This is one of these instances in which we want
 		// to be more careful that the request ends up on the correct Replica,
@@ -842,13 +846,16 @@ func RunGC(
 	log.Eventf(ctx, "pushing up to %d transactions (concurrency %d)", len(txnMap), gcTaskLimit)
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, gcTaskLimit)
+	var actuallyPushed int
 	for _, txn := range txnMap {
 		if txn.Status != roachpb.PENDING {
 			continue
 		}
+		actuallyPushed++
 		wg.Add(1)
 		sem <- struct{}{}
-		// Avoid passing loop variable into closure.
+		// Avoid passing loop variable into closure. Note that pushTxnFn still mutates the original
+		// proto intentionally.
 		txnCopy := txn
 		go func() {
 			defer func() {
@@ -859,17 +866,20 @@ func RunGC(
 		}()
 	}
 	wg.Wait()
+	log.Eventf(ctx, "pushed %d pending transactions", actuallyPushed)
 
 	// Resolve all intents.
-	log.Eventf(ctx, "resolving up to %d intents", len(txnMap))
 	var intents []roachpb.Intent
+	var numNonPendingTxns int
 	for txnID, txn := range txnMap {
 		if txn.Status != roachpb.PENDING {
-			for _, intent := range intentSpanMap[txnID] {
+			numNonPendingTxns++
+			for _, intent := range append(intentSpanMap[txnID], txn.Intents...) {
 				intents = append(intents, roachpb.Intent{Span: intent, Status: txn.Status, Txn: txn.TxnMeta})
 			}
 		}
 	}
+	log.Eventf(ctx, "resolving %d intents from %d transactions", len(intents), numNonPendingTxns)
 
 	if err := resolveIntentsFn(intents, ResolveOptions{Wait: true, Poison: false}); err != nil {
 		return nil, GCInfo{}, err
@@ -921,4 +931,7 @@ func pushTxn(
 	br := b.RawResponse()
 	// Update the supplied txn on successful push.
 	*txn = br.Responses[0].GetInner().(*roachpb.PushTxnResponse).PusheeTxn
+	if txn.Status != roachpb.ABORTED {
+		log.Warning(ctx, txn)
+	}
 }

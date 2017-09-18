@@ -683,7 +683,7 @@ func (tc *TxnCoordSender) tryAsyncAbort(txnID uuid.UUID) {
 	tc.txnMu.Lock()
 	txnMeta := tc.txnMu.txns[txnID]
 	// Clone the intents and the txn to avoid data races.
-	intentSpans, _ := roachpb.MergeSpans(append([]roachpb.Span(nil), txnMeta.keys...))
+	intentSpans := []roachpb.Span(nil) // HACK roachpb.MergeSpans(append([]roachpb.Span(nil), txnMeta.keys...))
 	txnMeta.keys = nil
 	txn := txnMeta.txn.Clone()
 	tc.txnMu.Unlock()
