@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -1894,11 +1895,19 @@ func mvccResolveWriteIntent(
 			} else if !v.IsPresent() {
 				// NB: This shouldn't happen as mvccGetMetadata returned ok=true above,
 				// but best to check.
-				log.Warningf(ctx, "unable to find value for %s @ %s",
-					intent.Key, intent.Txn.Timestamp)
+				log.Warningf(ctx, "unable to find value for %s @ %s\nmeta: %+v",
+					intent.Key, intent.Txn.Timestamp, meta)
 			} else if v.Timestamp != intent.Txn.Timestamp {
-				log.Warningf(ctx, "unable to find value for %s @ %s: %s",
-					intent.Key, intent.Txn.Timestamp, v.Timestamp)
+				log.Warningf(ctx, `unable to find value on commit
+key:         %s
+resolve ts:  %s
+found ts:    %s
+
+resolve txn: %+v
+value:       %+v
+meta:        %+v`,
+					intent.Key, intent.Txn.Timestamp, v.Timestamp, intent.Txn, v, meta)
+				debug.PrintStack()
 			}
 		}
 		return nil
@@ -2001,6 +2010,14 @@ func mvccResolveWriteIntent(
 	// epoch and the state is still PENDING.
 	if intent.Status == roachpb.PENDING && meta.Txn.Epoch >= intent.Txn.Epoch {
 		return nil
+	}
+
+	//epochsMatch := meta.Txn.Epoch == intent.Txn.Epoch
+	//timestampsValid := !intent.Txn.Timestamp.Less(hlc.Timestamp(meta.Timestamp))
+	if intent.Status == roachpb.COMMITTED {
+		log.Infof(ctx, "removing intent: %+v\nmeta: %+v\nepochs: %d %d\ntimestamps: %s %s",
+			intent, meta, intent.Txn.Epoch, meta.Txn.Epoch, intent.Txn.Timestamp, meta.Txn.Timestamp,
+		)
 	}
 
 	// Otherwise, we're deleting the intent. We must find the next

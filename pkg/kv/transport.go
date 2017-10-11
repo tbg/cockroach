@@ -197,56 +197,56 @@ func (gt *grpcTransport) SendNext(ctx context.Context, done chan<- BatchCall) {
 	// kosher because we make the caller wait for all activity to subside when
 	// they close the context, so there is no danger of use-after-finish.
 	gt.closeWG.Add(1)
-	go func() {
-		defer gt.closeWG.Done()
-		gt.opts.metrics.SentCount.Inc(1)
-		reply, err := func() (*roachpb.BatchResponse, error) {
-			if localServer := gt.rpcContext.GetLocalInternalServerForAddr(client.remoteAddr); localServer != nil {
-				log.VEvent(ctx, 2, "sending request to local server")
+	//go func() {
+	defer gt.closeWG.Done()
+	gt.opts.metrics.SentCount.Inc(1)
+	reply, err := func() (*roachpb.BatchResponse, error) {
+		if localServer := gt.rpcContext.GetLocalInternalServerForAddr(client.remoteAddr); localServer != nil {
+			log.VEvent(ctx, 2, "sending request to local server")
 
-				// Clone the request. At the time of writing, Replica may mutate it
-				// during command execution which can lead to data races.
-				//
-				// TODO(tamird): we should clone all of client.args.Header, but the
-				// assertions in protoutil.Clone fire and there seems to be no
-				// reasonable workaround.
-				origTxn := client.args.Txn
-				if origTxn != nil {
-					clonedTxn := origTxn.Clone()
-					client.args.Txn = &clonedTxn
-				}
-
-				// Create a new context from the existing one with the "local request" field set.
-				// This tells the handler that this is an in-procress request, bypassing ctx.Peer checks.
-				localCtx := grpcutil.NewLocalRequestContext(ctx)
-
-				gt.opts.metrics.LocalSentCount.Inc(1)
-				return localServer.Batch(localCtx, &client.args)
+			// Clone the request. At the time of writing, Replica may mutate it
+			// during command execution which can lead to data races.
+			//
+			// TODO(tamird): we should clone all of client.args.Header, but the
+			// assertions in protoutil.Clone fire and there seems to be no
+			// reasonable workaround.
+			origTxn := client.args.Txn
+			if origTxn != nil {
+				clonedTxn := origTxn.Clone()
+				client.args.Txn = &clonedTxn
 			}
 
-			log.VEventf(ctx, 2, "sending request to %s", client.remoteAddr)
-			reply, err := client.client.Batch(ctx, &client.args)
-			if reply != nil {
-				for i := range reply.Responses {
-					if err := reply.Responses[i].GetInner().Verify(client.args.Requests[i].GetInner()); err != nil {
-						log.Error(ctx, err)
-					}
+			// Create a new context from the existing one with the "local request" field set.
+			// This tells the handler that this is an in-procress request, bypassing ctx.Peer checks.
+			localCtx := grpcutil.NewLocalRequestContext(ctx)
+
+			gt.opts.metrics.LocalSentCount.Inc(1)
+			return localServer.Batch(localCtx, &client.args)
+		}
+
+		log.VEventf(ctx, 2, "sending request to %s", client.remoteAddr)
+		reply, err := client.client.Batch(ctx, &client.args)
+		if reply != nil {
+			for i := range reply.Responses {
+				if err := reply.Responses[i].GetInner().Verify(client.args.Requests[i].GetInner()); err != nil {
+					log.Error(ctx, err)
 				}
-			}
-			return reply, err
-		}()
-		// NotLeaseHolderErrors can be retried.
-		var retryable bool
-		if reply != nil && reply.Error != nil {
-			// TODO(spencer): pass the lease expiration when setting the state
-			// to set a more efficient deadline for retrying this replica.
-			if _, ok := reply.Error.GetDetail().(*roachpb.NotLeaseHolderError); ok {
-				retryable = true
 			}
 		}
-		gt.setState(client.args.Replica, false /* pending */, retryable)
-		done <- BatchCall{Reply: reply, Err: err}
+		return reply, err
 	}()
+	// NotLeaseHolderErrors can be retried.
+	var retryable bool
+	if reply != nil && reply.Error != nil {
+		// TODO(spencer): pass the lease expiration when setting the state
+		// to set a more efficient deadline for retrying this replica.
+		if _, ok := reply.Error.GetDetail().(*roachpb.NotLeaseHolderError); ok {
+			retryable = true
+		}
+	}
+	gt.setState(client.args.Replica, false /* pending */, retryable)
+	done <- BatchCall{Reply: reply, Err: err}
+	//}()
 }
 
 func (gt *grpcTransport) NextReplica() roachpb.ReplicaDescriptor {

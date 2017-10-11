@@ -918,6 +918,13 @@ func (tc *TxnCoordSender) updateState(
 			})
 		})
 
+		if pErr != nil && pErr.TransactionRestart != roachpb.TransactionRestart_NONE {
+			// On restart, clear out the existing keys. We don't have to do this, but
+			// it helps tighten assertions.
+			log.Info(ctx, "wiping out intents for %v", txnID)
+			keys = nil
+		}
+
 		if int64(len(keys)) > maxIntents.Get(&tc.st.SV) {
 			// This check comes after the new intents have already been
 			// written, but allows us to exit early from transactions that
