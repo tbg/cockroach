@@ -2217,6 +2217,7 @@ func (s *Store) removeReplicaImpl(
 	rep.cancelPendingCommandsLocked()
 	rep.mu.internalRaftGroup = nil
 	rep.mu.destroyed.destroyedErr = roachpb.NewRangeNotFoundError(rep.RangeID)
+	rep.mu.destroyed.pending = false // set this before actually destroying
 	rep.mu.Unlock()
 	rep.readOnlyCmdMu.Unlock()
 
@@ -3291,8 +3292,12 @@ func (s *Store) HandleRaftResponse(ctx context.Context, resp *RaftMessageRespons
 			if err != nil {
 				log.Errorf(ctx, "unable to add to replica GC queue: %s", err)
 			} else if added {
-				repl.mu.destroyed.destroyedErr = roachpb.NewRangeNotFoundError(repl.RangeID)
-				repl.mu.destroyed.pending = true
+				repl.mu.Lock()
+				if repl.mu.destroyed.destroyedErr == nil {
+					repl.mu.destroyed.destroyedErr = roachpb.NewRangeNotFoundError(repl.RangeID)
+					repl.mu.destroyed.pending = true
+				}
+				repl.mu.Unlock()
 				log.Infof(ctx, "added to replica GC queue (peer suggestion)")
 			}
 		case *roachpb.StoreNotFoundError:

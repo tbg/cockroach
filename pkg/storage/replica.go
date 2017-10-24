@@ -507,6 +507,7 @@ func (r *Replica) withRaftGroupLocked(
 	ctx := r.AnnotateCtx(context.TODO())
 
 	if r.mu.internalRaftGroup == nil {
+		log.Infof(context.Background(), "NEWRAFT: %+v", r.mu.destroyed)
 		raftGroup, err := raft.NewRawNode(newRaftConfig(
 			raft.Storage((*replicaRaftStorage)(r)),
 			uint64(r.mu.replicaID),
