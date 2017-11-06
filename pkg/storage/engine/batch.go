@@ -18,7 +18,10 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"bytes"
+
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
+	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
 	"github.com/pkg/errors"
 )
 
@@ -389,6 +392,90 @@ func NewRocksDBBatchReader(repr []byte) (*RocksDBBatchReader, error) {
 	return r, nil
 }
 
+func (orig *RocksDBBatchReader) Clone() RocksDBBatchReader {
+	return RocksDBBatchReader{
+		repr:   orig.repr,
+		err:    orig.err,
+		count:  orig.count,
+		offset: orig.offset,
+		typ:    orig.typ,
+		key:    orig.key,
+		value:  orig.value,
+	}
+}
+
+func (r *RocksDBBatchReader) DebugState() string {
+	return fmt.Sprintf("offset:%d/%d, (%+v, %+v)",
+		r.offset, r.count, r.key, r.value)
+}
+
+func (orig *RocksDBBatchReader) DebugBatch() string {
+	r := orig.Clone()
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("%d keys: [\n", r.count))
+
+	for {
+		r.Next()
+		if t, err := r.Valid(); !t || err != nil {
+			buf.WriteString(fmt.Sprintf("(%v, %v),\n", t, err))
+			break
+		}
+		buf.WriteString(fmt.Sprintf("(%v, %v),\n", r.key, r.value))
+	}
+
+	buf.WriteString("]")
+	return buf.String()
+}
+
+// Close is part of the SimpleIterator interface.
+func (r *RocksDBBatchReader) Close() {
+	r.repr = nil
+	r.key = nil
+	r.value = nil
+	r.err = nil
+	r.count = 0
+	r.offset = 0
+}
+
+// TODO(arjun): we really don't want to support Seek(), but it's required for the
+// SimpleIterator interface. For now we support Seek() if we're already at the
+// requested key, and panic otherwise
+func (r *RocksDBBatchReader) Seek(seekTo MVCCKey) {
+	//fmt.Printf("Seeking to %+v\n", seekTo)
+	for {
+		var decodedKey MVCCKey
+		decodedKey, r.err = DecodeKey(r.key)
+		if r.err != nil {
+			return
+		}
+		if ok, _ := r.Valid(); !ok {
+			return
+		}
+		if cmp := bytes.Compare(decodedKey.Key, seekTo.Key); cmp == 0 {
+			// We found the key, now we need to find the requested timestamp
+			for {
+				var decodedKey MVCCKey
+				decodedKey, r.err = DecodeKey(r.key)
+				if r.err != nil {
+					return
+				}
+				if ok, _ := r.Valid(); !ok {
+					return
+				}
+				if decodedKey.Timestamp.Equal(seekTo.Timestamp) {
+					return
+				}
+				r.Next()
+			}
+		} else if cmp < 0 {
+			r.NextKey()
+		} else {
+			// TODO(arjun)
+			panic(fmt.Sprintf("seek to %+v from %+v not supported", seekTo, r.key))
+		}
+	}
+}
+
 // Count returns the declared number of entries in the batch.
 func (r *RocksDBBatchReader) Count() int {
 	return int(r.count)
@@ -409,61 +496,87 @@ func (r *RocksDBBatchReader) Key() []byte {
 	return r.key
 }
 
-// MVCCKey returns the MVCC key of the current batch entry.
+// MVCCKey decodes and returns the MVCC key of the current batch entry.
 func (r *RocksDBBatchReader) MVCCKey() (MVCCKey, error) {
 	return DecodeKey(r.key)
 }
 
+// UnsafeKey decodes and returns the MVCC key of the current batch entry.
+func (r *RocksDBBatchReader) UnsafeKey() MVCCKey {
+	key, err := r.MVCCKey()
+	if err != nil {
+		panic("todo UnsafeKey")
+	}
+	return key
+}
+
 // Value returns the value of the current batch entry. Value panics if the
 // BatchType is BatchTypeDeleted.
-func (r *RocksDBBatchReader) Value() []byte {
+func (r *RocksDBBatchReader) UnsafeValue() []byte {
 	if r.typ == BatchTypeDeletion {
 		panic("cannot call Value on a deletion entry")
 	}
 	return r.value
 }
 
+func (r *RocksDBBatchReader) ValueProto(msg protoutil.Message) error {
+	return protoutil.Unmarshal(r.UnsafeValue(), msg)
+}
+
+func (r *RocksDBBatchReader) Valid() (bool, error) {
+	return r.key != nil, r.err
+}
+
 // Next advances to the next entry in the batch, returning false when the batch
 // is empty.
-func (r *RocksDBBatchReader) Next() bool {
-	if r.err != nil {
-		return false
-	}
-
+func (r *RocksDBBatchReader) Next() {
 	r.offset++
 	if len(r.repr) == 0 {
 		if r.offset < int(r.count) {
 			r.err = errors.Errorf("invalid batch: expected %d entries but found %d", r.count, r.offset)
 		}
-		return false
+		r.key = nil
+		return
 	}
 
 	r.typ = BatchType(r.repr[0])
 	r.repr = r.repr[1:]
 	switch r.typ {
 	case BatchTypeDeletion:
-		if r.key, r.err = r.varstring(); r.err != nil {
-			return false
-		}
+		r.key, r.err = r.varstring()
 	case BatchTypeValue:
-		if r.key, r.err = r.varstring(); r.err != nil {
-			return false
-		}
-		if r.value, r.err = r.varstring(); r.err != nil {
-			return false
-		}
+		fallthrough
 	case BatchTypeMerge:
 		if r.key, r.err = r.varstring(); r.err != nil {
-			return false
+			return
 		}
-		if r.value, r.err = r.varstring(); r.err != nil {
-			return false
-		}
+		r.value, r.err = r.varstring()
 	default:
 		r.err = errors.Errorf("unexpected type %d", r.typ)
-		return false
+		r.key = nil
 	}
-	return true
+}
+
+func (r *RocksDBBatchReader) NextKey() {
+	curKey, err := DecodeKey(r.key)
+	if err != nil {
+		r.err = err
+		return
+	}
+	startKey := curKey
+
+	for bytes.Compare(startKey.Key, curKey.Key) == 0 {
+		r.Next()
+		if ok, _ := r.Valid(); !ok {
+			return
+		}
+
+		curKey, err = DecodeKey(r.key)
+		if err != nil {
+			r.err = err
+			return
+		}
+	}
 }
 
 func (r *RocksDBBatchReader) varstring() ([]byte, error) {
@@ -492,3 +605,5 @@ func RocksDBBatchCount(repr []byte) (int, error) {
 	}
 	return int(binary.LittleEndian.Uint32(repr[countPos:headerSize])), nil
 }
+
+var _ SimpleIterator = &RocksDBBatchReader{}

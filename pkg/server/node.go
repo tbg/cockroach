@@ -232,6 +232,7 @@ func bootstrapCluster(
 
 		// Initialize node and store ids.  Only initialize the node once.
 		if i == 0 {
+			// TODO(arjun): Why is this broken?
 			if nodeID, err := allocateNodeID(ctx, cfg.DB); nodeID != sIdent.NodeID || err != nil {
 				return uuid.UUID{}, errors.Errorf("expected to initialize node id allocator to %d, got %d: %s",
 					sIdent.NodeID, nodeID, err)

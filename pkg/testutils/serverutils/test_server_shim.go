@@ -40,6 +40,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/httputil"
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
 	"github.com/cockroachdb/cockroach/pkg/util/stop"
+	"github.com/pkg/errors"
 )
 
 // TestServerInterface defines test server functionality that tests need; it is
@@ -194,8 +195,9 @@ func StartServerRaw(args base.TestServerArgs) (TestServerInterface, error) {
 			"from the package's TestMain()")
 	}
 	server := srvFactoryImpl.New(args).(TestServerInterface)
+
 	if err := server.Start(args); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "could not start test server")
 	}
 	return server, nil
 }

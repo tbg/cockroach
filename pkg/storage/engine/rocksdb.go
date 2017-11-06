@@ -1572,7 +1572,7 @@ var iterPool = sync.Pool{
 // instance. If snapshotHandle is not nil, uses the indicated snapshot.
 // The caller must call rocksDBIterator.Close() when finished with the
 // iterator to free up resources.
-func newRocksDBIterator(rdb *C.DBEngine, prefix bool, engine Reader) Iterator {
+func newRocksDBIterator(rdb *C.DBEngine, prefix bool, engine Reader) *rocksDBIterator {
 	// In order to prevent content displacement, caching is disabled
 	// when performing scans. Any options set within the shared read
 	// options field that should be carried over needs to be set here
@@ -1743,6 +1743,48 @@ func (r *rocksDBIterator) ComputeStats(
 		}
 	}
 	return stats, err
+}
+
+func (r *rocksDBIterator) FastScanTestWrapper(
+	start, end MVCCKey, skipScan bool,
+) ([]MVCCKeyValue, error) {
+	batch, err := FastScan(r.iter, start, end, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if !skipScan {
+		var kvs []MVCCKeyValue
+		for ; ; batch.Next() {
+			if valid, err := batch.Valid(); err != nil {
+				return nil, err
+			} else if !valid {
+				break
+			}
+			key, err := batch.MVCCKey()
+			if err != nil {
+				return nil, err
+			}
+			kvs = append(kvs, MVCCKeyValue{Key: key, Value: batch.UnsafeValue()})
+		}
+		return kvs, nil
+	}
+	return nil, nil
+}
+
+func FastScan(iter *C.DBIterator, start, end MVCCKey, isReverse bool) (*RocksDBBatchReader, error) {
+	var contents C.DBString
+	result := C.DBFastScan(iter, goToCKey(start), goToCKey(end), &contents, C.bool(isReverse))
+	if err := statusToError(result); err != nil {
+		return nil, err
+	}
+
+	batch, err := NewRocksDBBatchReader(cStringToGoBytes(contents))
+	if err != nil {
+		return nil, err
+	}
+
+	return batch, nil
 }
 
 func (r *rocksDBIterator) FindSplitKey(

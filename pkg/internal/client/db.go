@@ -604,5 +604,8 @@ func IncrementValRetryable(ctx context.Context, db *DB, key roachpb.Key, inc int
 		}
 		break
 	}
-	return res.ValueInt(), err
+	if err != nil {
+		return res.ValueInt(), errors.Wrapf(err, "could not IncrementVal")
+	}
+	return res.ValueInt(), nil
 }

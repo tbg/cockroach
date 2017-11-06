@@ -2659,3 +2659,39 @@ const rocksdb::Comparator* CockroachComparator() {
 rocksdb::WriteBatch::Handler* GetDBBatchInserter(::rocksdb::WriteBatchBase* batch) {
   return new DBBatchInserter(batch);
 }
+
+DBStatus DBFastScan(DBIterator* iter, DBKey start_key, DBKey end_key, DBString* data, bool isReverse) {
+  if(isReverse) {
+     DBKey tmp = start_key;
+     start_key = end_key;
+     end_key = tmp;
+  }
+
+  iter->rep->Seek(EncodeKey(start_key));
+  if (!iter->rep->Valid()) {
+    return ToDBStatus(iter->rep->status());
+  }
+
+  rocksdb::WriteBatch batch;
+  rocksdb::Slice end_key_enc = EncodeKey(end_key);
+
+  if(isReverse) {
+    // TODO(arjun): we can do this faster by constructing our serialized format
+    // in reverse, since calling iter->rep->Prev() is slower than Next().
+
+    for (; iter->rep->Valid() && kComparator.Compare(iter->rep->key(), end_key_enc) < 0; iter->rep->Prev()) {
+      batch.Put(iter->rep->key(), iter->rep->value());
+    }
+  } else {
+    for (; iter->rep->Valid() && kComparator.Compare(iter->rep->key(), end_key_enc) < 0; iter->rep->Next()) {
+      batch.Put(iter->rep->key(), iter->rep->value());
+    }
+  }
+
+  std::string scratch = batch.Data();
+  data->data = static_cast<char*>(malloc(scratch.size()));
+  memcpy(data->data, scratch.c_str(), scratch.size());
+  data->len = scratch.size();
+
+  return kSuccess;
+}

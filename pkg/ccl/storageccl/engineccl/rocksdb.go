@@ -49,14 +49,17 @@ func VerifyBatchRepr(
 		if err != nil {
 			return enginepb.MVCCStats{}, errors.Wrapf(err, "verifying key/value checksums")
 		}
-		for r.Next() {
+		for r.Next(); ; r.Next() {
+			if t, err := r.Valid(); err != nil || !t {
+				break
+			}
 			switch r.BatchType() {
 			case engine.BatchTypeValue:
 				mvccKey, err := r.MVCCKey()
 				if err != nil {
 					return enginepb.MVCCStats{}, errors.Wrapf(err, "verifying key/value checksums")
 				}
-				v := roachpb.Value{RawBytes: r.Value()}
+				v := roachpb.Value{RawBytes: r.UnsafeValue()}
 				if err := v.Verify(mvccKey.Key); err != nil {
 					return enginepb.MVCCStats{}, err
 				}

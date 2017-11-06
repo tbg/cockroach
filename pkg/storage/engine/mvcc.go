@@ -670,7 +670,7 @@ const (
 // via the roachpb.Intent slice, in addition to the result.
 func mvccGetInternal(
 	_ context.Context,
-	iter Iterator,
+	iter SimpleIterator,
 	metaKey MVCCKey,
 	timestamp hlc.Timestamp,
 	consistent bool,
@@ -802,7 +802,12 @@ func mvccGetInternal(
 	if allowedSafety == unsafeValue {
 		value.RawBytes = iter.UnsafeValue()
 	} else {
-		value.RawBytes = iter.Value()
+		switch iter := iter.(type) {
+		case Iterator:
+			value.RawBytes = iter.Value()
+		default:
+			panic("need to pass a real Iterator to mvccGetInternal if you want safeValue")
+		}
 	}
 	value.Timestamp = unsafeKey.Timestamp
 	if err := value.Verify(metaKey.Key); err != nil {
@@ -1462,11 +1467,33 @@ func MVCCDeleteRange(
 	return keys, resumeSpan, num, err
 }
 
+func ValueProtoHelper(iter SimpleIterator, meta *enginepb.MVCCMetadata) error {
+	switch iter := iter.(type) {
+	case Iterator:
+		return iter.ValueProto(meta)
+		// TODO(arjun): jesus this is one ugly hack
+	case *RocksDBBatchReader:
+		return iter.ValueProto(meta)
+	default:
+		panic("can't get ValueProto")
+		/*
+			val := iter.UnsafeValue()
+			valueCopy := make([]byte, len(val))
+			copy(valueCopy, val)
+			if len(val) == 0 {
+				return nil
+			}
+			return protoutil.Unmarshal(valueCopy, meta)
+		*/
+	}
+
+}
+
 // getScanMeta returns the MVCCMetadata the iterator is currently pointed at
 // (reconstructing it if the metadata is implicit). Note that the returned
 // MVCCKey is unsafe and will be invalidated by the next call to
 // Iterator.{Next,Prev,Seek,SeekReverse,Close}.
-func getScanMeta(iter Iterator, encEndKey MVCCKey, meta *enginepb.MVCCMetadata) (MVCCKey, error) {
+func getScanMeta(iter SimpleIterator, encEndKey MVCCKey, meta *enginepb.MVCCMetadata) (MVCCKey, error) {
 	metaKey := iter.UnsafeKey()
 	if !metaKey.Less(encEndKey) {
 		_, err := iter.Valid()
@@ -1483,7 +1510,7 @@ func getScanMeta(iter Iterator, encEndKey MVCCKey, meta *enginepb.MVCCMetadata) 
 		meta.Deleted = meta.ValBytes == 0
 		return metaKey, nil
 	}
-	if err := iter.ValueProto(meta); err != nil {
+	if err := ValueProtoHelper(iter, meta); err != nil {
 		return NilKey, err
 	}
 	return metaKey, nil
@@ -1634,47 +1661,108 @@ func MVCCIterate(
 		return nil, emptyKeyError()
 	}
 
+	//fmt.Printf("MVCCIterate over range [%+v, %+v)\n", startKey, endKey)
 	buf := newGetBuffer()
 	defer buf.release()
 
 	// getMetaFunc is used to get the meta and the meta key of the current
 	// row. encEndKey is used to judge whether iterator exceeds the boundary or
 	// not.
-	type getMetaFunc func(iter Iterator, encEndKey MVCCKey, meta *enginepb.MVCCMetadata) (MVCCKey, error)
+	type getMetaFunc func(iter SimpleIterator, encEndKey MVCCKey, meta *enginepb.MVCCMetadata) (MVCCKey, error)
 	var getMeta getMetaFunc
 
 	// We store encEndKey and encKey in the same buffer to avoid memory
 	// allocations.
 	var encKey, encEndKey MVCCKey
-	if reverse {
-		encEndKey = MakeMVCCMetadataKey(startKey)
-		encKey = MakeMVCCMetadataKey(endKey)
-		getMeta = getReverseScanMeta
-	} else {
-		encEndKey = MakeMVCCMetadataKey(endKey)
+
+	var iter SimpleIterator
+	switch eng := engine.(type) {
+	case InMem:
 		encKey = MakeMVCCMetadataKey(startKey)
+		encEndKey = MakeMVCCMetadataKey(endKey)
 		getMeta = getScanMeta
-	}
 
-	// Get a new iterator.
-	iter := engine.NewIterator(false)
-	defer iter.Close()
-
-	// Seeking for the first defined position.
-	if reverse {
-		iter.SeekReverse(encKey)
-		if ok, err := iter.Valid(); !ok {
+		dbIter := newRocksDBIterator(eng.rdb, false, eng)
+		defer dbIter.Close()
+		writeBatch, err := FastScan(dbIter.getIter(), encKey, encEndKey, reverse)
+		if err != nil {
+			log.Errorf(ctx, "could not fast scan: %v", err)
 			return nil, err
 		}
 
-		// If the key doesn't exist, the iterator is at the next key that does
-		// exist in the database.
-		metaKey := iter.Key()
-		if !metaKey.Less(encKey) {
-			iter.Prev()
+		iter = writeBatch
+		defer writeBatch.Close()
+
+		// FastScan will swap our key order if this is a reverse scan, so we do not need to.
+
+		// RocksDBBatchReader requires an initial call to Next() since it does not support Seek().
+		iter.Next()
+	case *RocksDB:
+		if reverse {
+			panic("no fast reverse scans yet")
 		}
-	} else {
-		iter.Seek(encKey)
+		// If we are using RocksDB, we use a FastScan that involves only one
+		// round-trip through CGo.
+		// TODO(arjun): make this work for reverse iteration
+		encKey = MakeMVCCMetadataKey(startKey)
+		encEndKey = MakeMVCCMetadataKey(endKey)
+		getMeta = getScanMeta
+
+		dbIter := newRocksDBIterator(eng.rdb, false, eng)
+		defer dbIter.Close()
+		log.Infof(ctx, "FastScan: [%+v, %+v)", encKey, encEndKey)
+		writeBatch, err := FastScan(dbIter.getIter(), encKey, encEndKey, reverse)
+		log.Infof(ctx, "WriteBatch count: %d", writeBatch.count)
+		if err != nil {
+			log.Errorf(ctx, "could not fast scan: %v", err)
+			return nil, err
+		}
+
+		iter = writeBatch
+		defer writeBatch.Close()
+
+		// FastScan will swap our key order if this is a reverse scan, so we do not need to.
+
+		// RocksDBBatchReader requires an initial call to Next() since it does not support Seek().
+		iter.Next()
+	default:
+
+		iter = engine.NewIterator(false)
+		defer iter.Close()
+
+		if reverse {
+			panic("reverse scan: dont do this")
+			/*
+				encEndKey = MakeMVCCMetadataKey(startKey)
+				encKey = MakeMVCCMetadataKey(endKey)
+				getMeta = getReverseScanMeta
+			*/
+		} else {
+			encEndKey = MakeMVCCMetadataKey(endKey)
+			encKey = MakeMVCCMetadataKey(startKey)
+			getMeta = getScanMeta
+		}
+
+		// Seek for the first defined position.
+		if reverse {
+			panic("reverse scan: dont do this")
+			/*
+				iter.SeekReverse(encKey)
+				if ok, err := iter.Valid(); !ok {
+					return nil, err
+				}
+
+				// If the key doesn't exist, the iterator is at the next key that does
+				// exist in the database.
+				metaKey := iter.Key()
+				if !metaKey.Less(encKey) {
+					iter.Prev()
+
+				}
+			*/
+		} else {
+			iter.Seek(encKey)
+		}
 	}
 
 	if ok, err := iter.Valid(); !ok {
@@ -1691,6 +1779,7 @@ func MVCCIterate(
 
 	for {
 		metaKey, err := getMeta(iter, encEndKey, &buf.meta)
+
 		if err != nil {
 			return nil, err
 		}
@@ -1704,6 +1793,8 @@ func MVCCIterate(
 		// Indicate that we're fine with an unsafe Value.RawBytes being returned.
 		value, newIntents, valueSafety, err := mvccGetInternal(
 			ctx, iter, metaKey, timestamp, consistent, unsafeValue, txn, buf)
+		//fmt.Printf("mvccGetInternal returned: (%+v, %+v)@%+v, err: %v\n", metaKey, value, timestamp, err)
+
 		intents = append(intents, newIntents...)
 		if value.IsPresent() {
 			if valueSafety == unsafeValue {
@@ -1734,38 +1825,41 @@ func MVCCIterate(
 		}
 
 		if reverse {
-			valid, err := iter.Valid()
-			if err != nil {
-				return nil, err
-			}
-
-			if buf.meta.IsInline() {
-				if valid {
-					// The current entry is an inline value. We can reach the previous
-					// entry using Prev() which is slightly faster than PrevKey().
-					//
-					// As usual, the iterator must be valid because an inline key should
-					// never result in a version scan that brings us to an invalid key.
-					iter.Prev()
+			panic("reverse scan: dont do this")
+			/*
+				valid, err := iter.Valid()
+				if err != nil {
+					return nil, err
 				}
-			} else {
-				// This is subtle: mvccGetInternal might already have advanced
-				// us to the next key in which case we have to reset our
-				// position. We also Seek when iter.Valid says that the iterator
-				// is invalid, because mvccGetInternal might have advanced us
-				// out of the valid range and we may even have reached KeyMax.
-				// In this case, we still want to continue scanning backwards.
-				if !valid || !iter.UnsafeKey().Key.Equal(metaKey.Key) {
-					iter.Seek(metaKey)
-					if ok, err := iter.Valid(); err != nil {
-						return nil, err
-					} else if ok {
+
+				if buf.meta.IsInline() {
+					if valid {
+						// The current entry is an inline value. We can reach the previous
+						// entry using Prev() which is slightly faster than PrevKey().
+						//
+						// As usual, the iterator must be valid because an inline key should
+						// never result in a version scan that brings us to an invalid key.
 						iter.Prev()
 					}
 				} else {
-					iter.PrevKey()
+					// This is subtle: mvccGetInternal might already have advanced
+					// us to the next key in which case we have to reset our
+					// position. We also Seek when iter.Valid says that the iterator
+					// is invalid, because mvccGetInternal might have advanced us
+					// out of the valid range and we may even have reached KeyMax.
+					// In this case, we still want to continue scanning backwards.
+					if !valid || !iter.UnsafeKey().Key.Equal(metaKey.Key) {
+						iter.Seek(metaKey)
+						if ok, err := iter.Valid(); err != nil {
+							return nil, err
+						} else if ok {
+							iter.Prev()
+						}
+					} else {
+						iter.PrevKey()
+					}
 				}
-			}
+			*/
 		} else {
 			if ok, err := iter.Valid(); err != nil {
 				return nil, err

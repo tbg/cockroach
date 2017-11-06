@@ -901,8 +901,9 @@ func (s *Server) Start(ctx context.Context) error {
 				bootstrapVersion = *storeKnobs.BootstrapVersion
 			}
 		}
+		// TODO(arjun): this fails
 		if err := s.node.bootstrap(ctx, s.engines, bootstrapVersion); err != nil {
-			return err
+			return errors.Wrapf(err, "failed to bootstrap node")
 		}
 		log.Infof(ctx, "**** add additional nodes by specifying --join=%s", s.cfg.AdvertiseAddr)
 	} else {

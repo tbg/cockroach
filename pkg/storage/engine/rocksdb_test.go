@@ -722,3 +722,29 @@ func TestRocksDBDeleteRangeBug(t *testing.T) {
 	}
 	iter.Close()
 }
+
+func BenchmarkFastScan(b *testing.B) {
+	for _, valueSize := range []int{8, 32, 256} {
+		for _, goScan := range []bool{true, false} {
+			b.Run(fmt.Sprintf("valueSize=%d, goScan=%v", valueSize, goScan),
+				func(b *testing.B) {
+					const rangeBytes = 64 * 1024 * 1024
+					numKeys := rangeBytes / (overhead + valueSize)
+					eng, _ := setupMVCCData(setupMVCCRocksDB, 1, numKeys, valueSize, b)
+					defer eng.Close()
+
+					b.SetBytes(rangeBytes)
+					b.ResetTimer()
+
+					iter := eng.NewIterator(false).(*rocksDBIterator)
+					for i := 0; i < b.N; i++ {
+						_, err := iter.FastScanTestWrapper(MVCCKey{}, MVCCKey{Key: keys.MaxKey}, !goScan)
+						if err != nil {
+							b.Fatal(err)
+						}
+					}
+					b.StopTimer()
+				})
+		}
+	}
+}

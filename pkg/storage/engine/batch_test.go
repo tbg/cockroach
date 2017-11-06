@@ -256,14 +256,15 @@ func TestBatchRepr(t *testing.T) {
 
 		var ops []string
 		for i := 0; i < r.Count(); i++ {
-			if ok := r.Next(); !ok {
-				t.Fatalf("%d: unexpected end of batch", i)
+			r.Next()
+			if ok, err := r.Valid(); !ok || err != nil {
+				t.Fatalf("%d: unexpected end of batch: %+v %+v", i, ok, err)
 			}
 			switch r.BatchType() {
 			case BatchTypeDeletion:
 				ops = append(ops, fmt.Sprintf("delete(%s)", string(r.Key())))
 			case BatchTypeValue:
-				ops = append(ops, fmt.Sprintf("put(%s,%s)", string(r.Key()), string(r.Value())))
+				ops = append(ops, fmt.Sprintf("put(%s,%s)", string(r.Key()), string(r.UnsafeValue())))
 			case BatchTypeMerge:
 				// The merge value is a protobuf and not easily displayable.
 				ops = append(ops, fmt.Sprintf("merge(%s)", string(r.Key())))
@@ -272,7 +273,8 @@ func TestBatchRepr(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected err during iteration: %+v", err)
 		}
-		if ok := r.Next(); ok {
+		r.Next()
+		if ok, err := r.Valid(); ok || err != nil {
 			t.Errorf("expected end of batch")
 		}
 
@@ -280,7 +282,7 @@ func TestBatchRepr(t *testing.T) {
 		// this test implies an appended 0 byte.
 		expOps := []string{"put(a\x00,value)", "delete(b\x00)", "merge(c\x00)"}
 		if !reflect.DeepEqual(expOps, ops) {
-			t.Fatalf("expected %v, but found %v", expOps, ops)
+			t.Fatalf("expected %+x, but found %+x", expOps, ops)
 		}
 
 		return e.ApplyBatchRepr(repr, false /* sync */)
@@ -1137,7 +1139,8 @@ func TestDecodeKey(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%+v", err)
 			}
-			if !r.Next() {
+			r.Next()
+			if ok, err := r.Valid(); !ok || err != nil {
 				t.Fatalf("could not get the first entry: %+v", r.Error())
 			}
 			decodedKey, err := DecodeKey(r.Key())

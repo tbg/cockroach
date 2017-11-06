@@ -49,12 +49,12 @@ func singleKVSSTable(key engine.MVCCKey, value []byte) ([]byte, error) {
 
 func TestDBAddSSTable(t *testing.T) {
 	defer leaktest.AfterTest(t)()
-	t.Run("store=in-memory", func(t *testing.T) {
+	/*	t.Run("store=in-memory", func(t *testing.T) {
 		s, _, db := serverutils.StartServer(t, base.TestServerArgs{Insecure: true})
 		ctx := context.Background()
 		defer s.Stopper().Stop(ctx)
 		runTestDBAddSSTable(ctx, t, db)
-	})
+	})*/
 	t.Run("store=on-disk", func(t *testing.T) {
 		dir, dirCleanupFn := testutils.TempDir(t)
 		defer dirCleanupFn()

@@ -319,20 +319,20 @@ func (ts *TestServer) Start(params base.TestServerArgs) error {
 
 	// Needs to be called before NewServer to ensure resolvers are initialized.
 	if err := ts.Cfg.InitNode(); err != nil {
-		return err
+		return errors.Wrapf(err, "could not initialize node with given test config")
 	}
 
 	var err error
 	ts.Server, err = NewServer(*ts.Cfg, params.Stopper)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not create TestServer.NewServer")
 	}
 
 	// Our context must be shared with our server.
 	ts.Cfg = &ts.Server.cfg
 
 	if err := ts.Server.Start(context.Background()); err != nil {
-		return err
+		return errors.Wrapf(err, "could not start TestServer")
 	}
 
 	// If enabled, wait for initial splits to complete before returning control.
@@ -344,7 +344,7 @@ func (ts *TestServer) Start(params base.TestServerArgs) error {
 	}
 	if err := ts.WaitForInitialSplits(); err != nil {
 		ts.Stop()
-		return err
+		return errors.Wrapf(err, "TestServer did not split in time")
 	}
 
 	return nil
