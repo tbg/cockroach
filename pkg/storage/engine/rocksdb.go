@@ -1748,7 +1748,7 @@ func (r *rocksDBIterator) ComputeStats(
 func (r *rocksDBIterator) FastScanTestWrapper(
 	start, end MVCCKey, skipScan bool,
 ) ([]MVCCKeyValue, error) {
-	batch, err := FastScan(r.iter, start, end, false)
+	batch, err := FastScan(context.TODO(), r.iter, start, end, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1772,7 +1772,7 @@ func (r *rocksDBIterator) FastScanTestWrapper(
 	return nil, nil
 }
 
-func FastScan(iter *C.DBIterator, start, end MVCCKey, isReverse bool) (*RocksDBBatchReader, error) {
+func FastScan(ctx context.Context, iter *C.DBIterator, start, end MVCCKey, isReverse bool) (*RocksDBBatchReader, error) {
 	var contents C.DBString
 	result := C.DBFastScan(iter, goToCKey(start), goToCKey(end), &contents, C.bool(isReverse))
 	if err := statusToError(result); err != nil {

@@ -33,6 +33,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
+	"reflect"
 )
 
 const (
@@ -1684,7 +1685,7 @@ func MVCCIterate(
 
 		dbIter := newRocksDBIterator(eng.rdb, false, eng)
 		defer dbIter.Close()
-		writeBatch, err := FastScan(dbIter.getIter(), encKey, encEndKey, reverse)
+		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, reverse)
 		if err != nil {
 			log.Errorf(ctx, "could not fast scan: %v", err)
 			return nil, err
@@ -1711,7 +1712,35 @@ func MVCCIterate(
 		dbIter := newRocksDBIterator(eng.rdb, false, eng)
 		defer dbIter.Close()
 		log.Infof(ctx, "FastScan: [%+v, %+v)", encKey, encEndKey)
-		writeBatch, err := FastScan(dbIter.getIter(), encKey, encEndKey, reverse)
+		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, reverse)
+		log.Infof(ctx, "WriteBatch count: %d", writeBatch.count)
+		if err != nil {
+			log.Errorf(ctx, "could not fast scan: %v", err)
+			return nil, err
+		}
+
+		iter = writeBatch
+		defer writeBatch.Close()
+
+		// FastScan will swap our key order if this is a reverse scan, so we do not need to.
+
+		// RocksDBBatchReader requires an initial call to Next() since it does not support Seek().
+		iter.Next()
+	case *rocksDBReadOnly:
+		if reverse {
+			panic("no fast reverse scans yet")
+		}
+		// If we are using RocksDB, we use a FastScan that involves only one
+		// round-trip through CGo.
+		// TODO(arjun): make this work for reverse iteration
+		encKey = MakeMVCCMetadataKey(startKey)
+		encEndKey = MakeMVCCMetadataKey(endKey)
+		getMeta = getScanMeta
+
+		dbIter := newRocksDBIterator(eng.parent.rdb, false, eng)
+		defer dbIter.Close()
+		log.Infof(ctx, "FastScan: [%+v, %+v)", encKey, encEndKey)
+		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, reverse)
 		log.Infof(ctx, "WriteBatch count: %d", writeBatch.count)
 		if err != nil {
 			log.Errorf(ctx, "could not fast scan: %v", err)
