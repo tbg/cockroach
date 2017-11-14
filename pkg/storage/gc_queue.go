@@ -486,7 +486,7 @@ func processLocalKeyRange(
 	startKey := keys.MakeRangeKeyPrefix(desc.StartKey)
 	endKey := keys.MakeRangeKeyPrefix(desc.EndKey)
 
-	_, err := engine.MVCCIterate(ctx, snap, startKey, endKey,
+	_, err := engine.MVCCIterate(ctx, snap, startKey, endKey, math.MaxInt64,
 		hlc.Timestamp{}, true /* consistent */, nil, /* txn */
 		false /* reverse */, func(kv roachpb.KeyValue) (bool, error) {
 			return false, handleOne(kv)

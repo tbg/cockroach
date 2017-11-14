@@ -25,6 +25,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"math"
+
 	"github.com/cockroachdb/cockroach/pkg/config"
 	"github.com/cockroachdb/cockroach/pkg/gossip"
 	"github.com/cockroachdb/cockroach/pkg/keys"
@@ -539,7 +541,7 @@ func runDebugGCCmd(cmd *cobra.Command, args []string) error {
 
 	var descs []roachpb.RangeDescriptor
 
-	if _, err := engine.MVCCIterate(context.Background(), db, start, end, hlc.MaxTimestamp,
+	if _, err := engine.MVCCIterate(context.Background(), db, start, end, math.MaxInt64, hlc.MaxTimestamp,
 		false /* consistent */, nil, /* txn */
 		false /* reverse */, func(kv roachpb.KeyValue) (bool, error) {
 			var desc roachpb.RangeDescriptor
@@ -625,7 +627,7 @@ func runDebugCheckStoreCmd(cmd *cobra.Command, args []string) error {
 		return replicaInfo[rangeID]
 	}
 
-	if _, err := engine.MVCCIterate(context.Background(), db, start, end, hlc.MaxTimestamp,
+	if _, err := engine.MVCCIterate(context.Background(), db, start, end, math.MaxInt64, hlc.MaxTimestamp,
 		false /* consistent */, nil, /* txn */
 		false /* reverse */, func(kv roachpb.KeyValue) (bool, error) {
 			rangeID, _, suffix, detail, err := keys.DecodeRangeIDKey(kv.Key)

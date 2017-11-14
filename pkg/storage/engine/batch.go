@@ -316,7 +316,7 @@ func SplitMVCCKey(mvccKey []byte) (key []byte, ts []byte, ok bool) {
 func DecodeKey(encodedKey []byte) (MVCCKey, error) {
 	key, ts, ok := SplitMVCCKey(encodedKey)
 	if !ok {
-		return MVCCKey{}, errors.Errorf("invalid encoded mvcc key: %x", encodedKey)
+		return MVCCKey{}, errors.Errorf("invalid encoded mvcc key: '%x'", encodedKey)
 	}
 
 	mvccKey := MVCCKey{Key: key}

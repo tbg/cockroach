@@ -33,7 +33,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
-	"reflect"
 )
 
 const (
@@ -1462,7 +1461,7 @@ func MVCCDeleteRange(
 	// In order to detect the potential write intent by another
 	// concurrent transaction with a newer timestamp, we need
 	// to use the max timestamp for scan.
-	_, err := MVCCIterate(ctx, engine, key, endKey, hlc.MaxTimestamp, true, txn, false, f)
+	_, err := MVCCIterate(ctx, engine, key, endKey, max, hlc.MaxTimestamp, true, txn, false, f)
 	iter.Close()
 	buf.release()
 	return keys, resumeSpan, num, err
@@ -1583,7 +1582,7 @@ func mvccScanInternal(
 	}
 
 	var resumeSpan *roachpb.Span
-	intents, err := MVCCIterate(ctx, engine, key, endKey, timestamp, consistent, txn, reverse,
+	intents, err := MVCCIterate(ctx, engine, key, endKey, max, timestamp, consistent, txn, reverse,
 		func(kv roachpb.KeyValue) (bool, error) {
 			if int64(len(res)) == max {
 				// Another key was found beyond the max limit.
@@ -1649,6 +1648,7 @@ func MVCCIterate(
 	engine Reader,
 	startKey,
 	endKey roachpb.Key,
+	max int64,
 	timestamp hlc.Timestamp,
 	consistent bool,
 	txn *roachpb.Transaction,
@@ -1685,7 +1685,7 @@ func MVCCIterate(
 
 		dbIter := newRocksDBIterator(eng.rdb, false, eng)
 		defer dbIter.Close()
-		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, reverse)
+		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, max, reverse)
 		if err != nil {
 			log.Errorf(ctx, "could not fast scan: %v", err)
 			return nil, err
@@ -1711,9 +1711,7 @@ func MVCCIterate(
 
 		dbIter := newRocksDBIterator(eng.rdb, false, eng)
 		defer dbIter.Close()
-		log.Infof(ctx, "FastScan: [%+v, %+v)", encKey, encEndKey)
-		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, reverse)
-		log.Infof(ctx, "WriteBatch count: %d", writeBatch.count)
+		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, max, reverse)
 		if err != nil {
 			log.Errorf(ctx, "could not fast scan: %v", err)
 			return nil, err
@@ -1740,7 +1738,7 @@ func MVCCIterate(
 		dbIter := newRocksDBIterator(eng.parent.rdb, false, eng)
 		defer dbIter.Close()
 		log.Infof(ctx, "FastScan: [%+v, %+v)", encKey, encEndKey)
-		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, reverse)
+		writeBatch, err := FastScan(ctx, dbIter.getIter(), encKey, encEndKey, max, reverse)
 		log.Infof(ctx, "WriteBatch count: %d", writeBatch.count)
 		if err != nil {
 			log.Errorf(ctx, "could not fast scan: %v", err)

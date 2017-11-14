@@ -1748,7 +1748,7 @@ func (r *rocksDBIterator) ComputeStats(
 func (r *rocksDBIterator) FastScanTestWrapper(
 	start, end MVCCKey, skipScan bool,
 ) ([]MVCCKeyValue, error) {
-	batch, err := FastScan(context.TODO(), r.iter, start, end, false)
+	batch, err := FastScan(context.TODO(), r.iter, start, end, math.MaxInt64, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1772,9 +1772,17 @@ func (r *rocksDBIterator) FastScanTestWrapper(
 	return nil, nil
 }
 
-func FastScan(ctx context.Context, iter *C.DBIterator, start, end MVCCKey, isReverse bool) (*RocksDBBatchReader, error) {
+func FastScan(ctx context.Context, iter *C.DBIterator, start, end MVCCKey, maxKeys int64, isReverse bool) (*RocksDBBatchReader, error) {
 	var contents C.DBString
-	result := C.DBFastScan(iter, goToCKey(start), goToCKey(end), &contents, C.bool(isReverse))
+	// FastScan must scan 1 more than asked for, since MVCCScanInternal's supplied closure
+	// uses whether there is 1 more key as a sentinal to decide whether it should continue
+	// scanning or if its done. But people who don't care about what the max value is use
+	// math.MaxInt64, so we can't just blindly add one. This hack should be cleaned up.
+	if maxKeys < math.MaxInt64 {
+		maxKeys = maxKeys + 1
+	}
+
+	result := C.DBFastScan(iter, goToCKey(start), goToCKey(end), C.int64_t(maxKeys), &contents, C.bool(isReverse))
 	if err := statusToError(result); err != nil {
 		return nil, err
 	}

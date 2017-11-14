@@ -21,8 +21,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/storage/engine/enginepb"
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
-
-	_ "github.com/ianlancetaylor/cgosymbolizer"
 )
 
 // SimpleIterator is an interface for iterating over key/value pairs in an

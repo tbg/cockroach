@@ -292,7 +292,7 @@ void DBRunLDB(int argc, char** argv);
 // DBEnvWriteFile writes the given data as a new "file" in the given engine.
 DBStatus DBEnvWriteFile(DBEngine* db, DBSlice path, DBSlice contents);
 
-DBStatus DBFastScan(DBIterator* iter, DBKey start_key, DBKey end_key, DBString* data, bool isReverse);
+DBStatus DBFastScan(DBIterator* iter, DBKey start_key, DBKey end_key, int64_t max_keys, DBString* data, bool isReverse);
 
 #ifdef __cplusplus
 }  // extern "C"

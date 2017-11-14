@@ -23,6 +23,8 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 
+	"math"
+
 	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/storage/engine"
@@ -226,6 +228,7 @@ func iterateEntries(
 		ctx, e,
 		keys.RaftLogKey(rangeID, lo),
 		keys.RaftLogKey(rangeID, hi),
+		math.MaxInt64,
 		hlc.Timestamp{},
 		true,  /* consistent */
 		nil,   /* txn */

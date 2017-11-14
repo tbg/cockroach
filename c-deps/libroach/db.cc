@@ -2660,7 +2660,7 @@ rocksdb::WriteBatch::Handler* GetDBBatchInserter(::rocksdb::WriteBatchBase* batc
   return new DBBatchInserter(batch);
 }
 
-DBStatus DBFastScan(DBIterator* iter, DBKey start_key, DBKey end_key, DBString* data, bool isReverse) {
+DBStatus DBFastScan(DBIterator* iter, DBKey start_key, DBKey end_key, int64_t max_keys, DBString* data, bool isReverse) {
   if(isReverse) {
      DBKey tmp = start_key;
      start_key = end_key;
@@ -2679,12 +2679,14 @@ DBStatus DBFastScan(DBIterator* iter, DBKey start_key, DBKey end_key, DBString* 
     // TODO(arjun): we can do this faster by constructing our serialized format
     // in reverse, since calling iter->rep->Prev() is slower than Next().
 
-    for (; iter->rep->Valid() && kComparator.Compare(iter->rep->key(), end_key_enc) < 0; iter->rep->Prev()) {
+    for (int keys_scanned = 0; iter->rep->Valid() && keys_scanned < max_keys && kComparator.Compare(iter->rep->key(), end_key_enc) < 0; keys_scanned++) {
       batch.Put(iter->rep->key(), iter->rep->value());
+      iter->rep->Prev();
     }
   } else {
-    for (; iter->rep->Valid() && kComparator.Compare(iter->rep->key(), end_key_enc) < 0; iter->rep->Next()) {
+    for (int keys_scanned = 0; iter->rep->Valid() && keys_scanned < max_keys && kComparator.Compare(iter->rep->key(), end_key_enc) < 0; keys_scanned++) {
       batch.Put(iter->rep->key(), iter->rep->value());
+      iter->rep->Next();
     }
   }
 

@@ -4204,30 +4204,29 @@ func BenchmarkMVCCFastScan(b *testing.B) {
 		b.Fatal(err)
 	}
 	defer rocksDB.Close()
+	for _, keysToScan := range []int{1000, 2000, 500, 1000, 3000, 4000, 5000} {
+		b.Run(fmt.Sprintf("keys=%d", keysToScan), func(b *testing.B) {
 
-	for i := 0; i < b.N; i++ {
+			for i := 0; i < b.N; i++ {
 
-		for {
-			kvs, _, _, err := MVCCScan(
-				context.TODO(),
-				rocksDB,
-				keyMin,
-				keyMax,
-				1000,
-				hlc.MinTimestamp,
-				false,
-				nil,
-			)
-			if err != nil {
-				b.Fatal(err)
+				kvs, _, _, err := MVCCScan(
+					context.TODO(),
+					rocksDB,
+					keyMin,
+					keyMax,
+					int64(keysToScan),
+					hlc.MinTimestamp,
+					false,
+					nil,
+				)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if len(kvs) != keysToScan {
+					b.Fatalf("expected to read %d keys but saw %d", keysToScan, len(kvs))
+				}
 			}
-			lastKV := kvs[len(kvs)-1]
-			fmt.Printf("hit%d\n", len(kvs))
-			if bytes.Compare(lastKV.Key, keyMax) >= 0 {
-				fmt.Println("im out boys")
-				break
-			}
-		}
+		})
 	}
 }
 

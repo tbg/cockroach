@@ -19,6 +19,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"math"
+
 	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/storage/engine"
@@ -111,7 +113,7 @@ func (sc *AbortSpan) Get(
 func (sc *AbortSpan) Iterate(
 	ctx context.Context, e engine.Reader, f func([]byte, roachpb.AbortSpanEntry),
 ) {
-	_, _ = engine.MVCCIterate(ctx, e, sc.min(), sc.max(), hlc.Timestamp{},
+	_, _ = engine.MVCCIterate(ctx, e, sc.min(), sc.max(), math.MaxInt64, hlc.Timestamp{},
 		true /* consistent */, nil /* txn */, false, /* reverse */
 		func(kv roachpb.KeyValue) (bool, error) {
 			var entry roachpb.AbortSpanEntry
