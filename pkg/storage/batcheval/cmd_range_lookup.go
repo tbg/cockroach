@@ -124,7 +124,7 @@ func RangeLookup(
 
 		// Scan for descriptors.
 		kvs, _, intents, err = engine.MVCCScan(
-			ctx, batch, span.Key.AsRawKey(), span.EndKey.AsRawKey(), rangeCount, ts, consistent, txn,
+			ctx, batch, span.Key.AsRawKey(), span.EndKey.AsRawKey(), rangeCount, ts, consistent, txn, false,
 		)
 		if err != nil {
 			// An error here is likely a WriteIntentError when reading consistently.
@@ -178,7 +178,7 @@ func RangeLookup(
 			}
 
 			kvs, _, intents, err = engine.MVCCScan(
-				ctx, batch, span.Key.AsRawKey(), span.EndKey.AsRawKey(), 1, ts, consistent, txn,
+				ctx, batch, span.Key.AsRawKey(), span.EndKey.AsRawKey(), 1, ts, consistent, txn, false,
 			)
 			if err != nil {
 				return result.Result{}, err

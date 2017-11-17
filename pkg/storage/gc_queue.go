@@ -490,7 +490,7 @@ func processLocalKeyRange(
 		hlc.Timestamp{}, true /* consistent */, nil, /* txn */
 		false /* reverse */, func(kv roachpb.KeyValue) (bool, error) {
 			return false, handleOne(kv)
-		})
+		}, false)
 	return gcKeys, err
 }
 

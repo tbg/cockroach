@@ -20,6 +20,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/storage/batcheval/result"
 	"github.com/cockroachdb/cockroach/pkg/storage/engine"
+	"github.com/cockroachdb/cockroach/pkg/util/log"
 )
 
 func init() {
@@ -38,9 +39,17 @@ func Scan(
 	reply := resp.(*roachpb.ScanResponse)
 
 	rows, resumeSpan, intents, err := engine.MVCCScan(ctx, batch, args.Key, args.EndKey,
-		cArgs.MaxKeys, h.Timestamp, h.ReadConsistency == roachpb.CONSISTENT, h.Txn)
+		cArgs.MaxKeys, h.Timestamp, h.ReadConsistency == roachpb.CONSISTENT, h.Txn, args.NoValues)
 	if err != nil {
 		return result.Result{}, err
+	}
+
+	if args.NoValues {
+		log.Info(ctx, "no values")
+		upper := len(rows)
+		for i := 0; i < upper; i++ {
+			rows[i].Key = nil
+		}
 	}
 
 	reply.NumKeys = int64(len(rows))

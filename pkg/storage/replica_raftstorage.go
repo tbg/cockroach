@@ -231,6 +231,7 @@ func iterateEntries(
 		nil,   /* txn */
 		false, /* reverse */
 		scanFunc,
+		false,
 	)
 	return err
 }

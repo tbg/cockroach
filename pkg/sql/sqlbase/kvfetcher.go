@@ -24,6 +24,7 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/internal/client"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
+	"github.com/cockroachdb/cockroach/pkg/util"
 	"github.com/cockroachdb/cockroach/pkg/util/encoding"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 )
@@ -162,6 +163,8 @@ type txnKVFetcher struct {
 	// rangeInfos are deduped, so they're not ordered in any particular way and
 	// they don't map to kvFetcher.spans in any particular way.
 	rangeInfos []roachpb.RangeInfo
+
+	neededCols util.FastIntSet
 }
 
 func (f *txnKVFetcher) getRangesInfo() []roachpb.RangeInfo {
@@ -227,6 +230,7 @@ func makeKVFetcher(
 	useBatchLimit bool,
 	firstBatchLimit int64,
 	returnRangeInfo bool,
+	neededCols util.FastIntSet,
 ) (txnKVFetcher, error) {
 	if firstBatchLimit < 0 || (!useBatchLimit && firstBatchLimit != 0) {
 		return txnKVFetcher{}, errors.Errorf("invalid batch limit %d (useBatchLimit: %t)",
@@ -260,6 +264,7 @@ func makeKVFetcher(
 		useBatchLimit:   useBatchLimit,
 		firstBatchLimit: firstBatchLimit,
 		returnRangeInfo: returnRangeInfo,
+		neededCols:      neededCols,
 	}, nil
 }
 
@@ -279,6 +284,9 @@ func (f *txnKVFetcher) fetch(ctx context.Context) error {
 		scans := make([]roachpb.ScanRequest, len(f.spans))
 		for i := range f.spans {
 			scans[i].Span = f.spans[i]
+			if (f.neededCols == util.FastIntSet{}) {
+				scans[i].NoValues = true
+			}
 			ba.Requests[i].MustSetInner(&scans[i])
 		}
 	}

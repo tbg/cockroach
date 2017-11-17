@@ -248,7 +248,7 @@ message DeleteRangeResponse {
 // requests (i.e.  {Reverse,}ScanReques), except for
 // {Begin,End}TransactionRequest which are still allowed. Moreover, the batch
 // cannot mix forward and reverse scans.
-// 
+//
 // TODO(andrei): add option to stop scan(s) when an intent is encountered.
 message ScanOptions {
   option (gogoproto.equal) = true;
@@ -298,6 +298,7 @@ message ScanRequest {
   // scan should also be returned. An error will be thrown if this is set to
   // true for a consistent scan.
   bool return_intents = 3;
+  bool no_values = 4;
 }
 
 // A ScanResponse is the return value from the Scan() method.
@@ -476,7 +477,7 @@ message AdminTransferLeaseRequest {
   option (gogoproto.equal) = true;
 
   Span header = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-  int32 target = 2 [(gogoproto.casttype) = "StoreID"];  
+  int32 target = 2 [(gogoproto.casttype) = "StoreID"];
 }
 
 message AdminTransferLeaseResponse {

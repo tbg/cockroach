@@ -185,6 +185,8 @@ func (mrf *MultiRowFetcher) Init(
 		panic("no tables to fetch from")
 	}
 
+	//log.Info(context.TODO(), pretty.Sprint(tables))
+
 	mrf.reverse = reverse
 	mrf.returnRangeInfo = returnRangeInfo
 	mrf.alloc = alloc
@@ -348,7 +350,7 @@ func (mrf *MultiRowFetcher) StartScan(
 		firstBatchLimit++
 	}
 
-	f, err := makeKVFetcher(txn, spans, mrf.reverse, limitBatches, firstBatchLimit, mrf.returnRangeInfo)
+	f, err := makeKVFetcher(txn, spans, mrf.reverse, limitBatches, firstBatchLimit, mrf.returnRangeInfo, mrf.currentTable.neededCols)
 	if err != nil {
 		return err
 	}
@@ -369,12 +371,16 @@ func (mrf *MultiRowFetcher) StartScanFrom(ctx context.Context, f kvFetcher) erro
 // has been completed.
 func (mrf *MultiRowFetcher) NextKey(ctx context.Context) (rowDone bool, err error) {
 	var ok bool
+	//defer func() {
+	//	log.Info(ctx, "rowDone", rowDone, err)
+	//}()
 
 	for {
 		ok, mrf.kv, err = mrf.kvFetcher.nextKV(ctx)
 		if err != nil {
 			return false, err
 		}
+		//log.Info(ctx, ok, pretty.Sprint(mrf.kv))
 		mrf.kvEnd = !ok
 		if mrf.kvEnd {
 			// No more keys in the scan. We need to transition
@@ -387,6 +393,9 @@ func (mrf *MultiRowFetcher) NextKey(ctx context.Context) (rowDone bool, err erro
 		// See Init() for a detailed description of when we can get away with not
 		// reading the index key.
 		if mrf.mustDecodeIndexKey || mrf.traceKV {
+			if (mrf.currentTable.neededCols == util.FastIntSet{}) {
+				log.Fatal(ctx, "have to decode index key")
+			}
 			mrf.keyRemainingBytes, ok, err = mrf.ReadIndexKey(mrf.kv.Key)
 			if err != nil {
 				return false, err
@@ -423,6 +432,11 @@ func (mrf *MultiRowFetcher) NextKey(ctx context.Context) (rowDone bool, err erro
 		// secondary index as secondary indexes have only one key per row.
 		// If mrf.rowReadyTable differs from mrf.currentTable, this denotes
 		// a row is ready for output.
+		if len(mrf.kv.Key) == 0 {
+			// Hack.
+			mrf.indexKey = nil
+			return true, nil
+		}
 		if mrf.indexKey != nil && (mrf.currentTable.isSecondaryIndex || !bytes.HasPrefix(mrf.kv.Key, mrf.indexKey) || mrf.rowReadyTable != mrf.currentTable) {
 			// The current key belongs to a new row. Output the
 			// current row.

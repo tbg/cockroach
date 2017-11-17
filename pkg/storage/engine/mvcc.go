@@ -1456,7 +1456,7 @@ func MVCCDeleteRange(
 	// In order to detect the potential write intent by another
 	// concurrent transaction with a newer timestamp, we need
 	// to use the max timestamp for scan.
-	_, err := MVCCIterate(ctx, engine, key, endKey, hlc.MaxTimestamp, true, txn, false, f)
+	_, err := MVCCIterate(ctx, engine, key, endKey, hlc.MaxTimestamp, true, txn, false, f, false)
 	iter.Close()
 	buf.release()
 	return keys, resumeSpan, num, err
@@ -1548,6 +1548,7 @@ func mvccScanInternal(
 	consistent bool,
 	txn *roachpb.Transaction,
 	reverse bool,
+	noValues bool,
 ) ([]roachpb.KeyValue, *roachpb.Span, []roachpb.Intent, error) {
 	var res []roachpb.KeyValue
 	if max == 0 {
@@ -1558,6 +1559,12 @@ func mvccScanInternal(
 	intents, err := MVCCIterate(ctx, engine, key, endKey, timestamp, consistent, txn, reverse,
 		func(kv roachpb.KeyValue) (bool, error) {
 			if int64(len(res)) == max {
+				if noValues {
+					// Make the copy now, we didn't make one earlier.
+					// Don't really need the +1 since `reverse=false`
+					// in this hack.
+					kv.Key = append(make([]byte, 0, len(kv.Key)+1), kv.Key...)
+				}
 				// Another key was found beyond the max limit.
 				if reverse {
 					resumeSpan = &roachpb.Span{Key: key, EndKey: kv.Key.Next()}
@@ -1568,7 +1575,7 @@ func mvccScanInternal(
 			}
 			res = append(res, kv)
 			return false, nil
-		})
+		}, noValues)
 
 	if err != nil {
 		return nil, nil, nil, err
@@ -1590,9 +1597,10 @@ func MVCCScan(
 	timestamp hlc.Timestamp,
 	consistent bool,
 	txn *roachpb.Transaction,
+	noValues bool,
 ) ([]roachpb.KeyValue, *roachpb.Span, []roachpb.Intent, error) {
 	return mvccScanInternal(ctx, engine, key, endKey, max, timestamp,
-		consistent, txn, false /* reverse */)
+		consistent, txn, false /* reverse */, noValues)
 }
 
 // MVCCReverseScan scans the key range [start,end) key up to some maximum
@@ -1609,7 +1617,7 @@ func MVCCReverseScan(
 	txn *roachpb.Transaction,
 ) ([]roachpb.KeyValue, *roachpb.Span, []roachpb.Intent, error) {
 	return mvccScanInternal(ctx, engine, key, endKey, max, timestamp,
-		consistent, txn, true /* reverse */)
+		consistent, txn, true /* reverse */, false)
 }
 
 // MVCCIterate iterates over the key range [start,end). At each step of the
@@ -1626,6 +1634,7 @@ func MVCCIterate(
 	txn *roachpb.Transaction,
 	reverse bool,
 	f func(roachpb.KeyValue) (bool, error),
+	noValues bool,
 ) ([]roachpb.Intent, error) {
 	if !consistent && txn != nil {
 		return nil, errors.Errorf("cannot allow inconsistent reads within a transaction")
@@ -1687,7 +1696,11 @@ func MVCCIterate(
 	// Gathers up all the intents from WriteIntentErrors. We only get those if
 	// the scan is consistent.
 	var wiErr error
-	var alloc bufalloc.ByteAllocator
+	// make bench PKG=./pkg/storage/engine/ BENCHES=BenchmarkMVCCScan_RocksDB
+	// TESTFLAGS='-count 1 -benchmem' TESTTIMEOUT=20m shows less allocs (not
+	// dramatic because ByteAllocator does pretty good job, but amount
+	// drastically smaller)
+	var alloc bufalloc.ByteAllocator // unused if `noValues`
 
 	for {
 		metaKey, err := getMeta(iter, encEndKey, &buf.meta)
@@ -1699,14 +1712,18 @@ func MVCCIterate(
 			break
 		}
 
-		alloc, metaKey.Key = alloc.Copy(metaKey.Key, 1)
+		if !noValues {
+			alloc, metaKey.Key = alloc.Copy(metaKey.Key, 1)
+		}
 
 		// Indicate that we're fine with an unsafe Value.RawBytes being returned.
 		value, newIntents, valueSafety, err := mvccGetInternal(
 			ctx, iter, metaKey, timestamp, consistent, unsafeValue, txn, buf)
 		intents = append(intents, newIntents...)
 		if value.IsPresent() {
-			if valueSafety == unsafeValue {
+			if noValues {
+				value.RawBytes = nil
+			} else if valueSafety == unsafeValue {
 				// Copy the unsafe value into our allocation buffer.
 				alloc, value.RawBytes = alloc.Copy(value.RawBytes, 0)
 			}

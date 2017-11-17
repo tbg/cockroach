@@ -123,7 +123,7 @@ func (sc *AbortSpan) Iterate(
 			}
 			f(kv.Key, entry)
 			return false, nil
-		})
+		}, false)
 }
 
 func copySeqCache(
