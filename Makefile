@@ -396,6 +396,7 @@ PROTOBUF_SRC_DIR := $(C_DEPS_DIR)/protobuf
 ROCKSDB_SRC_DIR  := $(C_DEPS_DIR)/rocksdb
 SNAPPY_SRC_DIR   := $(C_DEPS_DIR)/snappy
 LIBROACH_SRC_DIR := $(C_DEPS_DIR)/libroach
+LLVM_SRC_DIR   := $(C_DEPS_DIR)/llvm
 
 C_LIBS_SRCS := $(JEMALLOC_SRC_DIR) $(PROTOBUF_SRC_DIR) $(ROCKSDB_SRC_DIR) $(SNAPPY_SRC_DIR) $(LIBROACH_SRC_DIR)
 
@@ -466,11 +467,12 @@ PROTOBUF_DIR := $(BUILD_DIR)/protobuf
 ROCKSDB_DIR  := $(BUILD_DIR)/rocksdb$(STDMALLOC_SUFFIX)$(if $(ENABLE_ROCKSDB_ASSERTIONS),_assert)
 SNAPPY_DIR   := $(BUILD_DIR)/snappy
 LIBROACH_DIR := $(BUILD_DIR)/libroach
+LLVM_DIR     := $(BUILD_DIR)/llvm
 # Can't share with protobuf because protoc is always built for the host.
 PROTOC_DIR := $(GOPATH)/native/$(HOST_TRIPLE)/protobuf
 PROTOC 		 := $(PROTOC_DIR)/protoc
 
-C_LIBS_OSS = $(if $(USE_STDMALLOC),,libjemalloc) libprotobuf libsnappy librocksdb libroach
+C_LIBS_OSS = $(if $(USE_STDMALLOC),,libjemalloc) libprotobuf libsnappy librocksdb libroach llvm
 C_LIBS_CCL = $(C_LIBS_OSS) libroachccl
 
 # Go does not permit dashes in build tags. This is undocumented. Fun!
@@ -496,7 +498,7 @@ NATIVE_SPECIFIER_TAG := $(subst -,_,$(NATIVE_SPECIFIER))$(STDMALLOC_SUFFIX)
 # build encounters a given `arch_vendor_os_abi` target triple. The Go
 # toolchain does not automatically set target-triple build tags, so these
 # files are only compiled when building with Make.
-CGO_PKGS := cli server/status storage/engine ccl/storageccl/engineccl
+CGO_PKGS := cli jit server/status storage/engine ccl/storageccl/engineccl
 CGO_UNSUFFIXED_FLAGS_FILES := $(addprefix $(PKG_ROOT)/,$(addsuffix /zcgo_flags.go,$(CGO_PKGS)))
 CGO_SUFFIXED_FLAGS_FILES   := $(addprefix $(PKG_ROOT)/,$(addsuffix /zcgo_flags_$(NATIVE_SPECIFIER_TAG).go,$(CGO_PKGS)))
 CGO_FLAGS_FILES := $(CGO_UNSUFFIXED_FLAGS_FILES) $(CGO_SUFFIXED_FLAGS_FILES)
@@ -512,7 +514,7 @@ $(CGO_FLAGS_FILES): Makefile
 	@echo 'package $(notdir $(@D))' >> $@
 	@echo >> $@
 	@echo '// #cgo CPPFLAGS: -I$(JEMALLOC_DIR)/include' >> $@
-	@echo '// #cgo LDFLAGS: $(addprefix -L,$(PROTOBUF_DIR) $(JEMALLOC_DIR)/lib $(SNAPPY_DIR) $(ROCKSDB_DIR) $(LIBROACH_DIR))' >> $@
+	@echo '// #cgo LDFLAGS: $(addprefix -L,$(PROTOBUF_DIR) $(JEMALLOC_DIR)/lib $(SNAPPY_DIR) $(ROCKSDB_DIR) $(LIBROACH_DIR) $(LLVM_DIR)/lib)' >> $@
 	@echo 'import "C"' >> $@
 
 # BUILD ARTIFACT CACHING
@@ -586,12 +588,21 @@ $(SNAPPY_DIR)/Makefile: $(C_DEPS_DIR)/snappy-rebuild $(BOOTSTRAP_TARGET)
 	@# $(C_DEPS_DIR)/snappy-rebuild. See above for rationale.
 	cd $(SNAPPY_DIR) && cmake $(CMAKE_FLAGS) $(SNAPPY_SRC_DIR)
 
-$(LIBROACH_DIR)/Makefile: $(C_DEPS_DIR)/libroach-rebuild $(BOOTSTRAP_TARGET)
+$(LIBROACH_DIR)/Makefile: $(LLVM_DIR)/.built $(C_DEPS_DIR)/libroach-rebuild $(BOOTSTRAP_TARGET)
 	rm -rf $(LIBROACH_DIR)
 	mkdir -p $(LIBROACH_DIR)
 	@# NOTE: If you change the CMake flags below, bump the version in
 	@# $(C_DEPS_DIR)/libroach-rebuild. See above for rationale.
-	cd $(LIBROACH_DIR) && cmake $(CMAKE_FLAGS) $(LIBROACH_SRC_DIR) -DCMAKE_BUILD_TYPE=Release
+	cd $(LIBROACH_DIR) && cmake $(CMAKE_FLAGS) -DCMAKE_PREFIX_PATH=$(LLVM_DIR) $(LIBROACH_SRC_DIR) -DCMAKE_BUILD_TYPE=Release
+
+$(LLVM_DIR)/Makefile: $(C_DEPS_DIR)/llvm-rebuild $(BOOTSTRAP_TARGET)
+	rm -rf $(LLVM_DIR)
+	mkdir -p $(LLVM_DIR)
+	@# NOTE: debug build for now as it builds faster.
+	@# We need to build LLVM with RTTI enabled, as libroach requires it for protobuf.
+	@# NOTE: If you change the CMake flags below, bump the version in
+	@# $(C_DEPS_DIR)/libroach-rebuild. See above for rationale.
+	cd $(LLVM_DIR) && cmake $(CMAKE_FLAGS) $(LLVM_SRC_DIR) -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$(LLVM_DIR)
 
 # We mark C and C++ dependencies as .PHONY (or .ALWAYS_REBUILD) to avoid
 # having to name the artifact (for .PHONY), which can vary by platform, and so
@@ -625,6 +636,14 @@ libroach: $(LIBROACH_DIR)/Makefile $(CPP_PROTOS_TARGET)
 .PHONY: libroachccl
 libroachccl: $(LIBROACH_DIR)/Makefile libroach
 	@$(MAKE) --no-print-directory -C $(LIBROACH_DIR) roachccl
+
+.PHONY: llvm
+$(LLVM_DIR)/.built:
+llvm: $(LLVM_DIR)/Makefile
+	@# Awkward workaround since llvm's Makefile is far from a no-op.
+	@# Additionally, specifying `llvm` as a prereq for `libroach`
+	@# means that `libroach` is constantly rebuilt.
+	@[ -f $(LLVM_DIR)/.built ] || ($(MAKE) --no-print-directory -C $(LLVM_DIR) install && touch $(LLVM_DIR)/.built)
 
 override TAGS += make $(NATIVE_SPECIFIER_TAG)
 

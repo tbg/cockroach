@@ -17,3 +17,6 @@
 [submodule "c-deps/cryptopp"]
 	path = c-deps/cryptopp
 	url = https://github.com/cockroachdb/cryptopp.git
+[submodule "c-deps/llvm"]
+	path = c-deps/llvm
+	url = https://github.com/llvm-mirror/llvm/
