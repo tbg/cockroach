@@ -719,6 +719,17 @@ func (mrf *MultiRowFetcher) processValueSingle(
 	return prettyKey, prettyValue, nil
 }
 
+type ReducedFetcher struct {
+	TraceKV         bool
+	PrettyValueBuf  *bytes.Buffer
+	Alloc           *DatumAlloc
+	TableNeededCols util.FastIntSet
+	TableColIdxMap  map[ColumnID]int
+	TableDesc       *TableDescriptor
+	TableCols       []ColumnDescriptor
+	TableRow        EncDatumRow
+}
+
 func (mrf *MultiRowFetcher) processValueBytes(
 	ctx context.Context,
 	table *tableInfo,
@@ -734,6 +745,31 @@ func (mrf *MultiRowFetcher) processValueBytes(
 		mrf.prettyValueBuf.Reset()
 	}
 
+	var _ = table // HACK, just use currentTable
+	return mrf.MakeReducedFetcher().ProcessValueBytes(
+		ctx, kv, valueBytes, prettyKeyPrefix,
+	)
+}
+
+func (mrf *MultiRowFetcher) MakeReducedFetcher() ReducedFetcher {
+	return ReducedFetcher{
+		TraceKV:         mrf.traceKV,
+		PrettyValueBuf:  mrf.prettyValueBuf,
+		Alloc:           mrf.alloc,
+		TableNeededCols: mrf.currentTable.neededCols,
+		TableColIdxMap:  mrf.currentTable.colIdxMap,
+		TableDesc:       mrf.currentTable.desc,
+		TableCols:       mrf.currentTable.cols,
+		TableRow:        mrf.currentTable.row,
+	}
+}
+
+func (mrf ReducedFetcher) ProcessValueBytes(
+	ctx context.Context,
+	kv roachpb.KeyValue,
+	valueBytes []byte,
+	prettyKeyPrefix string,
+) (prettyKey string, prettyValue string, err error) {
 	var colIDDiff uint32
 	var lastColID ColumnID
 	for len(valueBytes) > 0 {
@@ -741,9 +777,10 @@ func (mrf *MultiRowFetcher) processValueBytes(
 		if err != nil {
 			return "", "", err
 		}
+		// neededCols colIdxMap desc cols row
 		colID := lastColID + ColumnID(colIDDiff)
 		lastColID = colID
-		if !table.neededCols.Contains(int(colID)) {
+		if !mrf.TableNeededCols.Contains(int(colID)) {
 			// This column wasn't requested, so read its length and skip it.
 			_, len, err := encoding.PeekValueLength(valueBytes)
 			if err != nil {
@@ -755,32 +792,32 @@ func (mrf *MultiRowFetcher) processValueBytes(
 			}
 			continue
 		}
-		idx := table.colIdxMap[colID]
+		idx := mrf.TableColIdxMap[colID]
 
-		if mrf.traceKV {
-			prettyKey = fmt.Sprintf("%s/%s", prettyKey, table.desc.Columns[idx].Name)
+		if mrf.TraceKV {
+			prettyKey = fmt.Sprintf("%s/%s", prettyKey, mrf.TableDesc.Columns[idx].Name)
 		}
 
 		var encValue EncDatum
 		encValue, valueBytes, err =
-			EncDatumFromBuffer(&table.cols[idx].Type, DatumEncoding_VALUE, valueBytes)
+			EncDatumFromBuffer(&mrf.TableCols[idx].Type, DatumEncoding_VALUE, valueBytes)
 		if err != nil {
 			return "", "", err
 		}
-		if mrf.traceKV {
-			err := encValue.EnsureDecoded(&table.cols[idx].Type, mrf.alloc)
+		if mrf.TraceKV {
+			err := encValue.EnsureDecoded(&mrf.TableCols[idx].Type, mrf.Alloc)
 			if err != nil {
 				return "", "", err
 			}
-			fmt.Fprintf(mrf.prettyValueBuf, "/%v", encValue.Datum)
+			fmt.Fprintf(mrf.PrettyValueBuf, "/%v", encValue.Datum)
 		}
-		table.row[idx] = encValue
+		mrf.TableRow[idx] = encValue
 		if debugRowFetch {
 			log.Infof(ctx, "Scan %d -> %v", idx, encValue)
 		}
 	}
-	if mrf.traceKV {
-		prettyValue = mrf.prettyValueBuf.String()
+	if mrf.TraceKV {
+		prettyValue = mrf.PrettyValueBuf.String()
 	}
 	return prettyKey, prettyValue, nil
 }

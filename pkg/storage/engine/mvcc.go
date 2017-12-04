@@ -1535,6 +1535,9 @@ func getReverseScanMeta(
 	return metaKey, nil
 }
 
+type FilterKey struct{}
+type FilterFunc func(roachpb.KeyValue) bool
+
 // mvccScanInternal scans the key range [key,endKey) up to some maximum number
 // of results. Specify reverse=true to scan in descending instead of ascending
 // order.
@@ -1556,15 +1559,33 @@ func mvccScanInternal(
 	}
 
 	var resumeSpan *roachpb.Span
+
+	var filter FilterFunc
+	//if noValues {
+	filter, _ = ctx.Value(FilterKey{}).(FilterFunc)
+	if filter == nil {
+		log.Warningf(ctx, "no filter!")
+	} else {
+		log.Warningf(ctx, "found filter")
+	}
+	//}
+
 	intents, err := MVCCIterate(ctx, engine, key, endKey, timestamp, consistent, txn, reverse,
 		func(kv roachpb.KeyValue) (bool, error) {
+			if filter != nil {
+				log.Infof(ctx, "executing filter on %+v", kv)
+				passes := filter(kv)
+				log.Info(ctx, "executed filter; passes=%t", passes)
+			}
+
+			if noValues {
+				// Make the copy now, we didn't make one earlier.
+				// Don't really need the +1 since `reverse=false`
+				// in this hack.
+				kv.Key = append(make([]byte, 0, len(kv.Key)+1), kv.Key...)
+			}
+
 			if int64(len(res)) == max {
-				if noValues {
-					// Make the copy now, we didn't make one earlier.
-					// Don't really need the +1 since `reverse=false`
-					// in this hack.
-					kv.Key = append(make([]byte, 0, len(kv.Key)+1), kv.Key...)
-				}
 				// Another key was found beyond the max limit.
 				if reverse {
 					resumeSpan = &roachpb.Span{Key: key, EndKey: kv.Key.Next()}

@@ -22,6 +22,7 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/sql/sqlbase"
+	"github.com/cockroachdb/cockroach/pkg/storage/engine"
 	"github.com/cockroachdb/cockroach/pkg/util"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/tracing"
@@ -147,6 +148,31 @@ func (tr *tableReader) Run(ctx context.Context, wg *sync.WaitGroup) {
 	log.VEventf(ctx, 1, "starting")
 	if log.V(1) {
 		defer log.Infof(ctx, "exiting")
+	}
+
+	filter := tr.out.filter
+	if filter != nil && tr.tableID == 51 {
+		log.Warning(ctx, "populating ctx with filter")
+		ctx = context.WithValue(ctx, engine.FilterKey{}, engine.FilterFunc(func(kv roachpb.KeyValue) bool {
+			rf := tr.fetcher.MakeReducedFetcher()
+			valueBytes, err := kv.Value.GetBytes()
+			if err != nil {
+				log.Fatal(ctx, err)
+			}
+			if _, _, err := rf.ProcessValueBytes(
+				ctx, kv, valueBytes, "hack-no-pretty-prefix",
+			); err != nil {
+				log.Fatal(ctx, err)
+			}
+
+			d := rf.TableRow
+
+			passes, err := filter.evalFilter(d)
+			if err != nil {
+				log.Fatal(ctx, err)
+			}
+			return passes
+		}))
 	}
 
 	// TODO(radu,andrei,knz): set the traceKV flag when requested by the session.
