@@ -1576,6 +1576,9 @@ func mvccScanInternal(
 				log.Infof(ctx, "executing filter on %+v", kv)
 				passes := filter(kv)
 				log.Info(ctx, "executed filter; passes=%t", passes)
+				if !passes {
+					return false, nil
+				}
 			}
 
 			if noValues {
