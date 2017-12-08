@@ -15,6 +15,7 @@
 package distsqlrun
 
 import (
+	"bytes"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -154,13 +155,17 @@ func (tr *tableReader) Run(ctx context.Context, wg *sync.WaitGroup) {
 	if filter != nil && tr.tableID == 51 {
 		log.Warning(ctx, "populating ctx with filter")
 		ctx = context.WithValue(ctx, engine.FilterKey{}, engine.FilterFunc(func(kv roachpb.KeyValue) bool {
+			if !bytes.HasPrefix(kv.Key, tr.spans[0].Key) {
+				log.Warningf(ctx, "%+v does not match %+v", kv, tr.spans[0].Key)
+				return true
+			}
 			rf := tr.fetcher.MakeReducedFetcher()
-			valueBytes, err := kv.Value.GetBytes()
+			tupleBytes, err := kv.Value.GetTuple()
 			if err != nil {
 				log.Fatal(ctx, err)
 			}
 			if _, _, err := rf.ProcessValueBytes(
-				ctx, kv, valueBytes, "hack-no-pretty-prefix",
+				ctx, kv, tupleBytes, "hack-no-pretty-prefix",
 			); err != nil {
 				log.Fatal(ctx, err)
 			}
