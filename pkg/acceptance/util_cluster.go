@@ -32,6 +32,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/testutils"
+	"github.com/cockroachdb/cockroach/pkg/util/binfetcher"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/pkg/errors"
 )
@@ -153,7 +154,11 @@ func StartCluster(ctx context.Context, t *testing.T, cfg cluster.TestConfig) (c 
 				if cfg.Nodes[i].Version != "" {
 					var err error
 					var nCfg localcluster.NodeConfig
-					nCfg.Binary, err = fetchAndCacheBinary(ctx, ".localcluster_cache", cfg.Nodes[i].Version)
+					nCfg.Binary, err = binfetcher.Download(ctx, binfetcher.Options{
+						Binary:  "cockroach",
+						Dir:     ".localcluster_cache",
+						Version: cfg.Nodes[i].Version,
+					})
 					if err != nil {
 						t.Fatalf("unable to set up binary for v%s: %s", cfg.Nodes[i].Version, err)
 					}
