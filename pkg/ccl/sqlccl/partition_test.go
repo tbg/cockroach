@@ -1295,3 +1295,21 @@ func TestRepartitioning(t *testing.T) {
 		})
 	}
 }
+
+func TestLotsaSplits(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+
+	ctx := context.Background()
+	sqlDB, cleanup := setupPartitioningTestCluster(ctx, t)
+	defer cleanup()
+
+	sqlDB.Exec(t, `CREATE DATABASE d`)
+	sqlDB.Exec(t, `CREATE TABLE d.t (a INT PRIMARY KEY)`)
+
+	for i := 0; i < 1000; i++ {
+		for j := 0; j < 5; j++ {
+			sqlDB.Exec(t, `ALTER TABLE d.t SPLIT AT VALUES ((random() * 1000000)::int)`)
+		}
+		sqlDB.Exec(t, `ALTER TABLE d.t SCATTER`)
+	}
+}

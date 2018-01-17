@@ -41,7 +41,7 @@ const (
 	// all ranges to be cleared when a big table is dropped, so the
 	// compactor can determine contiguous stretches and efficient delete
 	// sstable files.
-	defaultCompactionMinInterval = 2 * time.Minute
+	defaultCompactionMinInterval = 20 * time.Minute
 
 	// defaultThresholdBytes is the threshold in bytes of suggested
 	// reclamation, after which the compactor will begin processing

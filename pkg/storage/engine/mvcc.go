@@ -19,6 +19,8 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -2257,6 +2259,13 @@ func mvccResolveWriteIntent(
 		if intent.Status == roachpb.COMMITTED {
 			log.Warningf(ctx, "unable to find value for %s @ %s",
 				intent.Key, intent.Txn.Timestamp)
+			if strings.Contains(intent.Key.String(), "RangeDescriptor") {
+				log.Errorf(ctx, "killing server in 5s")
+				go func() {
+					time.Sleep(5 * time.Second)
+					os.Exit(1)
+				}()
+			}
 		}
 		return false, nil
 	}

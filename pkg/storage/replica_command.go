@@ -1815,6 +1815,12 @@ func (r *Replica) changeReplicas(
 		}
 		return errors.Wrapf(err, "change replicas of r%d failed", rangeID)
 	}
+	kv, err := r.store.DB().Get(ctx, descKey)
+	if kv.Value == nil {
+		panic("descKey is missing o_O")
+	} else {
+		log.Errorf(ctx, "range desc key %s probably exists. err=%+v", descKey, err)
+	}
 	log.Event(ctx, "txn complete")
 	return nil
 }
