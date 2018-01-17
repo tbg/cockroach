@@ -41,7 +41,7 @@ const (
 	// all ranges to be cleared when a big table is dropped, so the
 	// compactor can determine contiguous stretches and efficient delete
 	// sstable files.
-	defaultCompactionMinInterval = 43*time.Second
+	defaultCompactionMinInterval = 43 * time.Second
 
 	// defaultThresholdBytes is the threshold in bytes of suggested
 	// reclamation, after which the compactor will begin processing
@@ -306,9 +306,9 @@ func (c *Compactor) processCompaction(
 	if shouldProcess {
 		startTime := timeutil.Now()
 		log.Eventf(ctx, "processing compaction %s", aggr)
-		if err := c.eng.CompactRange(aggr.StartKey, aggr.EndKey); err != nil {
-			return 0, errors.Wrapf(err, "unable to compact range %+v", aggr)
-		}
+		// if err := c.eng.CompactRange(aggr.StartKey, aggr.EndKey); err != nil {
+		// 	return 0, errors.Wrapf(err, "unable to compact range %+v", aggr)
+		// }
 		c.Metrics.BytesCompacted.Inc(aggr.Bytes)
 		c.Metrics.Compactions.Inc(1)
 		duration := timeutil.Since(startTime)
