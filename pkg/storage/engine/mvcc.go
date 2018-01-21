@@ -1650,9 +1650,13 @@ func mvccScanInternal(
 	}
 
 	iter := engine.NewIterator(false)
-	kvData, intentData, err := iter.MVCCScan(
+	kvData, intentData, genMoves, err := iter.MVCCScan(
 		key, endKey, max, timestamp, txn, consistent, reverse)
 	iter.Close()
+
+	if l := len(genMoves); l > 0 {
+		log.Info(ctx, "generational move batch size", l)
+	}
 
 	if err != nil {
 		return nil, nil, nil, err

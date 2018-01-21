@@ -2545,6 +2545,76 @@ DBStatus MVCCFindSplitKey(DBIterator* iter, DBKey start, DBKey end, DBKey min_sp
 // [1,kMaxItersBeforeSeek].
 static const int kMaxItersBeforeSeek = 10;
 
+enum generation { noGeneration, active, passive };
+enum versionState { noVersion, meta, firstVersion, shadowed };
+
+class genHelper {
+ public:
+  genHelper(DBTimestamp cutoff)
+      : cutoff_(cutoff),
+        // TODO(tschottdorf): allocate on first use instead?
+        ops_(new rocksdb::WriteBatch),
+        max_move_ts_(kZeroTimestamp),
+        gen_(noGeneration),
+        state_(noVersion){};
+  DBTimestamp cutoff_;
+  std::unique_ptr<rocksdb::WriteBatch> ops_;
+  // The maximum timestamp over all keys moved in ops_. Once ops_ is applied, all
+  // reads at timestamps <= max_move_ts must consult the passive generation.
+  DBTimestamp max_move_ts_;
+  void first(bool is_value) {
+    state_ = is_value ? firstVersion : meta;
+    gen_ = active;
+  };
+  void next() {
+    switch (state_) {
+    case meta:
+      state_ = firstVersion;
+    case firstVersion:
+      state_ = shadowed;
+    case shadowed:
+      break;
+    default:
+      abort();
+    }
+  }
+  void nextAndMove(rocksdb::Slice raw_key, DBTimestamp ts) {
+    next();
+    move(raw_key, ts);
+  }
+  void move(rocksdb::Slice raw_key, DBTimestamp ts) {
+    if (gen_ != active) {
+      // Don't move a key that is already in the passive generation.
+      return;
+    }
+    if (state_ != shadowed) {
+      // Don't move a key that is not shadowed. Anything that is live or could be
+      // live again in the future must be in the active generation.
+      return;
+    }
+
+    if (ts == kZeroTimestamp || ts > cutoff_) {
+      // Don't move keys that are inline or recent.
+      return;
+    }
+
+    if (ts > max_move_ts_) {
+      max_move_ts_ = ts;
+    }
+
+    // TODO(tschottdorf): actually move to a passive generation.
+    ops_->Delete(raw_key);
+  };
+
+ private:
+  // gen_ holds the generation the current key came from. This is relevant a)
+  // when emitting the key (there may be a prefix we must strip before returning
+  // the key to the caller) and b) when deciding whether to move the key into
+  // the passive generation, which we only want to do if it isn't already there.
+  generation gen_;
+  versionState state_;
+};
+
 // mvccScanner implements the MVCCGet, MVCCScan and MVCCReverseScan
 // operations. Parameterizing the code on whether a forward or reverse
 // scan is performed allows the different code paths to be compiled
