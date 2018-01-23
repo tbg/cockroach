@@ -17,9 +17,11 @@ package storage
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/kr/pretty"
 	"github.com/pkg/errors"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
@@ -461,6 +463,9 @@ func (nl *NodeLiveness) heartbeatInternal(
 		}
 		newLiveness.Expiration = hlc.LegacyTimestamp(
 			nl.clock.Now().Add((nl.livenessThreshold + maxOffset).Nanoseconds(), 0))
+		if liveness != nil && newLiveness.Expiration.Less(liveness.Expiration) {
+			return errors.Errorf("proposed liveness update expires earlier than previous record")
+		}
 	}
 	if err := nl.updateLiveness(ctx, &newLiveness, liveness, func(actual Liveness) error {
 		// Update liveness to actual value on mismatch.
@@ -473,6 +478,8 @@ func (nl *NodeLiveness) heartbeatInternal(
 			return errNodeAlreadyLive
 		}
 		// Otherwise, return error.
+		diff := pretty.Diff(newLiveness, actual)
+		log.Infof(ctx, strings.Join(diff, "\n"))
 		return ErrEpochIncremented
 	}); err != nil {
 		if err == errNodeAlreadyLive {
