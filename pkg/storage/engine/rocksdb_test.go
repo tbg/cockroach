@@ -981,66 +981,86 @@ func TestSSTableInfosByLevel(t *testing.T) {
 func TestGenerationalMoveTombstonesImmediately(t *testing.T) {
 	ctx := context.Background()
 
-	eng := NewInMem(roachpb.Attributes{}, 1<<20)
-	defer eng.Close()
-
-	collectKeys := func() []MVCCKey {
-		var sl []MVCCKey
-		if err := eng.Iterate(NilKey, MVCCKeyMax, func(kv MVCCKeyValue) (bool, error) {
-			sl = append(sl, kv.Key)
-			return false, nil
-		}); err != nil {
-			t.Fatal(err)
-		}
-		return sl
-	}
-
-	// Write versioned keys at t=1s, 2s, ..., 10s. They're all deletions, but this
-	// does not matter (so far).
-	const count = 10
-	key := roachpb.Key("manydel")
-	for i := 0; i < count; i++ {
-		ts := hlc.Timestamp{WallTime: int64(i+1) * 1E9}
-		if err := MVCCDelete(ctx, eng, nil, key, ts, nil); err != nil {
-			t.Fatal(err)
-		}
-	}
-
 	rev := false
 
-	scanTS := hlc.Timestamp{WallTime: 6E9}
 	// This mirrors what's currently hard-coded on the C++ side.
 	const minAge = 5 * time.Second
 	_ = minAge
 
 	type testCase struct {
-		readTS       int   // in seconds
-		expSurvivors []int // in seconds
+		readTS  int // in seconds
+		removes util.FastIntSet
 	}
 
 	testCases := []testCase{
-		{readTS: 10, expSurvivors: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
+		// Reading at 10s removes nothing. The iterator sees first the top value,
+		// then iterates five times (seeing the version at 5s last, which is not
+		// eligible for move), then seeks to the next key.
+		{readTS: 10, removes: util.FastIntSet{}},
+		// When reading at 11s, the cutoff is now `6s`, and five iters in we hit
+		// the version at `5s` which can be removed (and then resort to seeking, so
+		// that's it).
+		// {readTS: 11, removes: util.MakeFastIntSet(5)},
 	}
 
-	allKeys := collectKeys()
+	run := func(t *testing.T, test testCase) {
+		eng := NewInMem(roachpb.Attributes{}, 1<<20)
+		defer eng.Close()
 
-	iter := eng.NewIterator(false)
-	defer iter.Close()
-	kvs, intents, genMoves, err := iter.MVCCScan(roachpb.KeyMin, roachpb.KeyMax, 0, scanTS, nil, true, rev)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(kvs) > 0 || len(intents) > 0 {
-		t.Fatal("unexpected results: intents=%v kvs=%v", intents, kvs)
-	}
+		collectKeys := func() (sl []MVCCKey, s util.FastIntSet) {
+			if err := eng.Iterate(NilKey, MVCCKeyMax, func(kv MVCCKeyValue) (bool, error) {
+				sl = append(sl, kv.Key)
+				s.Add(int(kv.Key.Timestamp.WallTime / 1E9))
+				return false, nil
+			}); err != nil {
+				t.Fatal(err)
+			}
+			return sl, s
+		}
 
-	if len(genMoves) > 0 {
-		if err := eng.ApplyBatchRepr(genMoves, false /* sync */); err != nil {
+		// Write versioned keys at t=1s, 2s, ..., 10s. They're all deletions, but this
+		// does not matter (so far).
+		const count = 10
+		key := roachpb.Key("manydel")
+		for i := 0; i < count; i++ {
+			ts := hlc.Timestamp{WallTime: int64(i+1) * 1E9}
+			if err := MVCCDelete(ctx, eng, nil, key, ts, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		_, origS := collectKeys()
+
+		scanTS := hlc.Timestamp{WallTime: int64(test.readTS) * 1E9}
+
+		iter := eng.NewIterator(false)
+		defer iter.Close()
+		kvs, intents, genMoves, err := iter.MVCCScan(roachpb.KeyMin, roachpb.KeyMax, 0, scanTS, nil, true, rev)
+		if err != nil {
 			t.Fatal(err)
+		}
+		if len(kvs) > 0 || len(intents) > 0 {
+			t.Fatal("unexpected results: intents=%v kvs=%v", intents, kvs)
+		}
+
+		if len(genMoves) > 0 {
+			if err := eng.ApplyBatchRepr(genMoves, false /* sync */); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		_, s := collectKeys()
+
+		diff := origS.Difference(test.removes)
+
+		if !s.Equals(diff) {
+			t.Fatalf("expected %v, not %v", diff, s)
 		}
 	}
 
-	s := collectKeys()
-
-	t.Error(s)
+	for _, test := range testCases {
+		t.Run(fmt.Sprintf("readTS=%d", test.readTS), func(t *testing.T) {
+			run(t, test)
+		})
+	}
 }

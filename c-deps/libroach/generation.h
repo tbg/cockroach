@@ -25,8 +25,9 @@ class genHelper {
     gen_ = active;
     fprintf(stderr, "first %d, state=%d\n", is_value, state_);
   };
-  // move_to signals that the indicator has been moved to the next version (whose raw key bytes
-  // and timestamp are supplied).
+  // move_to signals that the iterator has been moved to the next version of the
+  // current key (whose raw key bytes and timestamp are supplied), which should
+  // be considered for moving to the passive generation.
   void move_to(rocksdb::Slice raw_key, DBTimestamp ts) {
     fprintf(stderr, "move_to %s %lld\n", raw_key.ToString().c_str(), ts.wall_time);
     next();
@@ -57,19 +58,19 @@ class genHelper {
   void move(rocksdb::Slice raw_key, DBTimestamp ts) {
     if (gen_ != active) {
       // Don't move a key that is already in the passive generation.
-      fprintf(stderr, "not active");
+      fprintf(stderr, "not active\n");
       return;
     }
     if (state_ != shadowed) {
       // Don't move a key that is not shadowed. Anything that is live or could be
       // live again in the future must be in the active generation.
-      fprintf(stderr, "not shadowed");
+      fprintf(stderr, "not shadowed\n");
       return;
     }
 
     if (ts == cockroach::kZeroTimestamp || ts > cutoff_) {
       // Don't move keys that are inline or recent.
-      fprintf(stderr, "ts=%lld cutoff=%lld\n", ts.wall_time, cutoff_.wall_time);
+      fprintf(stderr, "too recent: ts=%lld cutoff=%lld\n", ts.wall_time, cutoff_.wall_time);
       return;
     }
 
@@ -78,7 +79,7 @@ class genHelper {
     }
 
     // TODO(tschottdorf): actually move to a passive generation.
-    fprintf(stderr, "deleting");
+    fprintf(stderr, "deleting\n");
     ops_->Delete(raw_key);
   };
 
