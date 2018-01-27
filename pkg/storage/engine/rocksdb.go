@@ -2081,12 +2081,12 @@ func (r *rocksDBIterator) MVCCScan(
 	)
 
 	if err := statusToError(state.status); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if err := uncertaintyToError(timestamp, state.uncertainty_timestamp, txn); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return cSliceToGoBytes(state.data), cSliceToGoBytes(state.intents), nil
+	return cSliceToGoBytes(state.data), cSliceToGoBytes(state.intents), cSliceToGoBytes(state.generational_move), nil
 }
 
 func cStatsToGoStats(stats C.MVCCStatsResult, nowNanos int64) (enginepb.MVCCStats, error) {

@@ -114,7 +114,7 @@ type Iterator interface {
 	// repr format and can be iterated over using RocksDBBatchReader.
 	MVCCScan(start, end roachpb.Key, max int64, timestamp hlc.Timestamp,
 		txn *roachpb.Transaction, consistent, reverse bool,
-	) (kvs []byte, intents []byte, err error)
+	) (kvs []byte, intents []byte, generationalMoves []byte, err error)
 }
 
 // Reader is the read interface to an engine's data.
