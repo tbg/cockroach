@@ -16,11 +16,11 @@
 
 #include "db.h"
 #include "encoding.h"
+#include "generation.h"
 #include "iterator.h"
 #include "protos/storage/engine/enginepb/mvcc.pb.h"
 #include "status.h"
 #include "timestamp.h"
-#include "generation.h"
 
 namespace cockroach {
 
@@ -69,7 +69,7 @@ template <bool reverse> class mvccScanner {
         iters_before_seek_(kMaxItersBeforeSeek / 2),
         // Hard-code the threshold to "five seconds behind the read timestamp".
         // TODO(tschottdorf): pass this in.
-        gen_(DBTimestamp{.wall_time = timestamp.wall_time - int64_t(5e9)}) {
+        gen_(DBTimestamp{.wall_time = (timestamp.wall_time <= 5e9) ? 0 : (timestamp.wall_time - int64_t(5e9))}) {
     memset(&results_, 0, sizeof(results_));
     results_.status = kSuccess;
 
@@ -157,8 +157,13 @@ template <bool reverse> class mvccScanner {
       if (intents_->Count() > 0) {
         results_.intents = ToDBSlice(intents_->Data());
       }
+      if (gen_.ops_->Count() > 0 ) {
+        fprintf(stderr, "%d", gen_.ops_->Count());
+        results_.generational_move = ToDBSlice(gen_.ops_->Data());
+      }
       iter_->kvs.reset(kvs_.release());
       iter_->intents.reset(intents_.release());
+      iter_->generational_move.reset(gen_.ops_.release());
     }
     return results_;
   }

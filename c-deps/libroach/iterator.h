@@ -23,4 +23,6 @@ struct DBIterator {
   std::unique_ptr<rocksdb::Iterator> rep;
   std::unique_ptr<rocksdb::WriteBatch> kvs;
   std::unique_ptr<rocksdb::WriteBatch> intents;
+  std::unique_ptr<rocksdb::WriteBatch> generational_move;
+  DBTimestamp generational_ts;
 };

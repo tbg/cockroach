@@ -1352,7 +1352,7 @@ func (r *batchIterator) MVCCScan(
 	timestamp hlc.Timestamp,
 	txn *roachpb.Transaction,
 	consistent, reverse bool,
-) (kvs []byte, intents []byte, err error) {
+) (kvs []byte, intents []byte, generationalMoves []byte, err error) {
 	r.batch.flushMutations()
 	return r.iter.MVCCScan(start, end, max, timestamp, txn, consistent, reverse)
 }
@@ -2066,12 +2066,12 @@ func (r *rocksDBIterator) MVCCScan(
 	timestamp hlc.Timestamp,
 	txn *roachpb.Transaction,
 	consistent, reverse bool,
-) (kvs []byte, intents []byte, err error) {
+) (kvs []byte, intents []byte, generationalMoves []byte, err error) {
 	if !consistent && txn != nil {
-		return nil, nil, errors.Errorf("cannot allow inconsistent reads within a transaction")
+		return nil, nil, nil, errors.Errorf("cannot allow inconsistent reads within a transaction")
 	}
 	if len(end) == 0 {
-		return nil, nil, emptyKeyError()
+		return nil, nil, nil, emptyKeyError()
 	}
 
 	state := C.MVCCScan(

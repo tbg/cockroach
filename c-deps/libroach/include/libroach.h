@@ -256,6 +256,7 @@ typedef struct {
   DBStatus status;
   DBSlice data;
   DBSlice intents;
+  DBSlice generational_move;
   DBTimestamp uncertainty_timestamp;
 } DBScanResults;
 
