@@ -993,14 +993,22 @@ func TestGenerationalMoveTombstonesImmediately(t *testing.T) {
 	}
 
 	testCases := []testCase{
-		// Reading at 10s removes nothing. The iterator sees first the top value,
-		// then iterates five times (seeing the version at 5s last, which is not
-		// eligible for move), then seeks to the next key.
-		{readTS: 10, removes: util.FastIntSet{}},
-		// When reading at 11s, the cutoff is now `6s`, and five iters in we hit
-		// the version at `5s` which can be removed (and then resort to seeking, so
-		// that's it).
-		// {readTS: 11, removes: util.MakeFastIntSet(5)},
+		// Since the oldest version we have is at 1s and we use a "5s age" rule,
+		// nothing gets moved.
+		{readTS: 5, removes: util.FastIntSet{}},
+		// Reading at 10s removes the version at 5s. This is because the iterator
+		// reads the tombstone at 10s and then iterates five times to get to the
+		// next key (until resorting to Seek() instead). The versions at 9s-6s are
+		// not old enough yet, but the last one it sees (5s) is.
+		{readTS: 10, removes: util.MakeFastIntSet(5)},
+		// Similar logic, but now everything is one second older than before and
+		// consequently one newer version gets removed.
+		{readTS: 11, removes: util.MakeFastIntSet(5, 6)},
+		{readTS: 14, removes: util.MakeFastIntSet(5, 6, 7, 8, 9)},
+		// Now we hit a new code path: the newest version is a deletion tombstone,
+		// and so becomes eligible for deletion, too. (This wouldn't happen with a
+		// non-tombstone).
+		{readTS: 15, removes: util.MakeFastIntSet(5, 6, 7, 8, 9, 10)},
 	}
 
 	run := func(t *testing.T, test testCase) {
@@ -1018,8 +1026,7 @@ func TestGenerationalMoveTombstonesImmediately(t *testing.T) {
 			return sl, s
 		}
 
-		// Write versioned keys at t=1s, 2s, ..., 10s. They're all deletions, but this
-		// does not matter (so far).
+		// Write tombstones at t=1s, 2s, ..., 10s.
 		const count = 10
 		key := roachpb.Key("manydel")
 		for i := 0; i < count; i++ {

@@ -2,8 +2,8 @@
 
 namespace cockroach {
 
-enum generation { noGeneration, active, passive };
-enum versionState { noVersion, meta, metaVersion, firstVersion, shadowed };
+enum generation { kUnknownGeneration, kActive, kPassive };
+enum versionState { kUnknownState, kNewKey, kMeta, kMetaVersion, kFirstVersion, kShadowed };
 
 // genHelper is fed information from an (active-generation) iterator during an
 // MVCC read operation which it uses to decide which versioned values are
@@ -15,37 +15,43 @@ class genHelper {
         // TODO(tschottdorf): allocate on first use instead?
         ops_(new rocksdb::WriteBatch),
         max_move_ts_(cockroach::kZeroTimestamp),
-        gen_(noGeneration),
-        state_(noVersion){};
+        gen_(kUnknownGeneration),
+        state_(kUnknownState){};
 
-  // first is called when the top level record of a new of a new key is visited.
-  // is_value is true if and only if there is no intent on that key.
-  void first(bool is_value) {
-    state_ = is_value ? firstVersion : meta;
-    gen_ = active;
-    fprintf(stderr, "first %d, state=%d\n", is_value, state_);
+  // newKey is called when the top level record of a new of a new key is visited.
+  void newKey(rocksdb::Slice raw_key, DBTimestamp ts, bool is_deletion) {
+    state_ = kNewKey;
+    gen_ = kActive;
+
+    next(ts, is_deletion);
+    move(raw_key, ts);
+
+    fprintf(stderr, "first: deletion=%d, state=%d\n", is_deletion, state_);
   };
-  // move_to signals that the iterator has been moved to the next version of the
-  // current key (whose raw key bytes and timestamp are supplied), which should
-  // be considered for moving to the passive generation.
-  void move_to(rocksdb::Slice raw_key, DBTimestamp ts) {
+
+  // moveKey signals that the iterator has been moved to a later (i.e. next or
+  // further ahead) version of the current key (whose raw key bytes and timestamp
+  // are supplied), which should be considered for moving to the passive generation.
+  void moveKey(rocksdb::Slice raw_key, DBTimestamp ts, bool is_deletion) {
     fprintf(stderr, "move_to %s %lld\n", raw_key.ToString().c_str(), ts.wall_time);
-    next();
+    next(ts, is_deletion);
     move(raw_key, ts);
   }
 
  private:
   // next is called to signal that the iterator has moved to (at least) the next versioned key,
   // which affects whether future versions are shadowed.
-  void next() {
+  void next(DBTimestamp ts, bool is_deletion) {
     switch (state_) {
-    case meta:
-      state_ = metaVersion;
-    case metaVersion:
-      state_ = firstVersion;
-    case firstVersion:
-      state_ = shadowed;
-    case shadowed:
+    case kNewKey:
+      state_ = (ts == kZeroTimestamp) ? kMeta : (is_deletion ? kShadowed : kFirstVersion);
+    case kMeta:
+      state_ = kMetaVersion;
+    case kMetaVersion:
+      state_ = (is_deletion ? kShadowed : kFirstVersion);
+    case kFirstVersion:
+      state_ = kShadowed;
+    case kShadowed:
       break;
     default:
       abort();
@@ -56,12 +62,12 @@ class genHelper {
   // move offers a versioned value for moving to the passive keyspace (if it is permanently
   // shadowed and old enough).
   void move(rocksdb::Slice raw_key, DBTimestamp ts) {
-    if (gen_ != active) {
+    if (gen_ != kActive) {
       // Don't move a key that is already in the passive generation.
       fprintf(stderr, "not active\n");
       return;
     }
-    if (state_ != shadowed) {
+    if (state_ != kShadowed) {
       // Don't move a key that is not shadowed. Anything that is live or could be
       // live again in the future must be in the active generation.
       fprintf(stderr, "not shadowed\n");

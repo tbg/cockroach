@@ -69,7 +69,8 @@ template <bool reverse> class mvccScanner {
         iters_before_seek_(kMaxItersBeforeSeek / 2),
         // Hard-code the threshold to "five seconds behind the read timestamp".
         // TODO(tschottdorf): pass this in.
-        gen_(DBTimestamp{.wall_time = (timestamp.wall_time <= 5e9) ? 0 : (timestamp.wall_time - int64_t(5e9))}) {
+        gen_(DBTimestamp{
+            .wall_time = (timestamp.wall_time <= 5e9) ? 0 : (timestamp.wall_time - int64_t(5e9))}) {
     memset(&results_, 0, sizeof(results_));
     results_.status = kSuccess;
 
@@ -157,7 +158,7 @@ template <bool reverse> class mvccScanner {
       if (intents_->Count() > 0) {
         results_.intents = ToDBSlice(intents_->Data());
       }
-      if (gen_.ops_->Count() > 0 ) {
+      if (gen_.ops_->Count() > 0) {
         fprintf(stderr, "%d", gen_.ops_->Count());
         results_.generational_move = ToDBSlice(gen_.ops_->Data());
       }
@@ -181,8 +182,8 @@ template <bool reverse> class mvccScanner {
   }
 
   bool getAndAdvance() {
+    genNewKey();
     const bool is_value = cur_timestamp_ != kZeroTimestamp;
-    gen_.first(is_value);
 
     if (is_value) {
       if (timestamp_ >= cur_timestamp_) {
@@ -316,7 +317,7 @@ template <bool reverse> class mvccScanner {
         iters_before_seek_ = std::max<int>(kMaxItersBeforeSeek, iters_before_seek_ + 1);
         return true;
       }
-      gen_.move_to(cur_raw_key_, cur_timestamp_);
+      genMoveKey();
     }
 
     // We're pointed at a different version of the same key. Fall back
@@ -462,7 +463,7 @@ template <bool reverse> class mvccScanner {
         iters_before_seek_ = std::min<int>(kMaxItersBeforeSeek, iters_before_seek_ + 1);
         return advanceKeyAtNewKey(key_buf_);
       }
-      gen_.move_to(cur_raw_key_, cur_timestamp_);
+      genMoveKey();
       if (desired_timestamp >= cur_timestamp_) {
         iters_before_seek_ = std::min<int>(kMaxItersBeforeSeek, iters_before_seek_ + 1);
         if (check_uncertainty && timestamp_ < cur_timestamp_) {
@@ -479,7 +480,7 @@ template <bool reverse> class mvccScanner {
     if (cur_key_ != key_buf_) {
       return advanceKeyAtNewKey(key_buf_);
     }
-    gen_.move_to(cur_raw_key_, cur_timestamp_);
+    genMoveKey();
     if (desired_timestamp >= cur_timestamp_) {
       if (check_uncertainty && timestamp_ < cur_timestamp_) {
         return uncertaintyError(cur_timestamp_);
@@ -604,6 +605,9 @@ template <bool reverse> class mvccScanner {
       peeked_ = false;
     }
   }
+  void genNewKey() { gen_.newKey(cur_raw_key_, cur_timestamp_, cur_value_.size() == 0); }
+
+  void genMoveKey() { gen_.moveKey(cur_raw_key_, cur_timestamp_, cur_value_.size() == 0); }
 
  public:
   DBIterator* const iter_;
