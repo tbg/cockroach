@@ -1675,9 +1675,11 @@ func mvccScanInternal(
 					return nil, nil, nil, err
 				}
 			}
-			if err := rwEng.ApplyBatchRepr(genMoves, false /* sync */); err != nil {
-				return nil, nil, nil, err
-			}
+			go func() {
+				if err := rwEng.ApplyBatchRepr(genMoves, false /* sync */); err != nil {
+					log.Warning(ctx, err)
+				}
+			}()
 		} else {
 			log.Warningf(ctx, "discarding moves")
 		}
