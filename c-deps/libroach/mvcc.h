@@ -126,7 +126,8 @@ template <bool reverse> class mvccScanner {
     // auto elapsed = std::chrono::steady_clock::now() - start_time;
     // auto micros = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
     // printf("seek %d: %s\n", int(micros), pctx->ToString(true).c_str());
-    fprintf(stderr, "called for %s-%s\n", prettyPrintKey(ToDBKey(start_key_)), prettyPrintKey(ToDBKey(end_key_)));
+    fprintf(stderr, "called for %s-%s\n", prettyPrintKey(ToDBKey(EncodeKey(start_key_, 0, 0))),
+prettyPrintKey(ToDBKey(EncodeKey(end_key_, 0, 0))));
 
     if (reverse) {
       if (!iterSeekReverse(EncodeKey(start_key_, 0, 0))) {
