@@ -1638,7 +1638,7 @@ func MVCCDeleteRange(
 // order.
 func mvccScanInternal(
 	ctx context.Context,
-	engine Reader,
+	eng Reader,
 	key,
 	endKey roachpb.Key,
 	max int64,
@@ -1651,13 +1651,30 @@ func mvccScanInternal(
 		return nil, &roachpb.Span{Key: key, EndKey: endKey}, nil, nil
 	}
 
-	iter := engine.NewIterator(false)
+	iter := eng.NewIterator(false)
 	kvData, intentData, genMoves, err := iter.MVCCScan(
 		key, endKey, max, timestamp, txn, consistent, reverse)
 	iter.Close()
 
 	if l := len(genMoves); l > 0 {
-		log.Info(ctx, "generational move batch size", l)
+		log.Infof(ctx, "moving keys:")
+		rwEng, ok := eng.(ReadWriter)
+		if ok {
+			reader, err := NewRocksDBBatchReader(genMoves)
+			for reader.Next() {
+				key, err := reader.MVCCKey()
+				if err != nil {
+					panic(err)
+				}
+				log.Infof(ctx, "moving %v", key)
+			}
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			if err := rwEng.ApplyBatchRepr(genMoves, false /* sync */); err != nil {
+				return nil, nil, nil, err
+			}
+		}
 	}
 
 	if err != nil {

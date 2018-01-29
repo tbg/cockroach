@@ -16,6 +16,7 @@ package keys
 
 import (
 	"bytes"
+	"fmt"
 	"math"
 	"reflect"
 	"testing"
@@ -26,6 +27,10 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
 	"github.com/cockroachdb/cockroach/pkg/util/uuid"
 )
+
+func TestToby(t *testing.T) {
+	t.Error(fmt.Sprintf("%x", UserTableDataMin[0]))
+}
 
 func TestStoreKeyEncodeDecode(t *testing.T) {
 	testCases := []struct {

@@ -70,7 +70,7 @@ template <bool reverse> class mvccScanner {
         // Hard-code the threshold to "five seconds behind the read timestamp".
         // TODO(tschottdorf): pass this in.
         gen_(DBTimestamp{
-            .wall_time = (timestamp.wall_time <= 5e9) ? 0 : (timestamp.wall_time - int64_t(5e9))}) {
+            .wall_time = (timestamp.wall_time <= 5e9 || timestamp.wall_time == 9223372036854775807) ? 0 : (timestamp.wall_time - int64_t(5e9))}) {
     memset(&results_, 0, sizeof(results_));
     results_.status = kSuccess;
 

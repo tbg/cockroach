@@ -300,9 +300,11 @@ func runRun(gen workload.Generator, args []string) error {
 			fmt.Sprintf("duration=%s", *duration),
 		}, "/")
 		// NB: This visits in a deterministic order.
-		gen.Flags().Visit(func(f *pflag.Flag) {
-			benchmarkName += fmt.Sprintf(`/%s=%s`, f.Name, f.Value)
-		})
+		if gen.Flags() != nil {
+			gen.Flags().Visit(func(f *pflag.Flag) {
+				benchmarkName += fmt.Sprintf(`/%s=%s`, f.Name, f.Value)
+			})
+		}
 
 		result := testing.BenchmarkResult{
 			N: int(numOps),

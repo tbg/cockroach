@@ -15,4 +15,5 @@ import (
 	// workloads
 	_ "github.com/cockroachdb/cockroach/pkg/testutils/workload/bank"
 	_ "github.com/cockroachdb/cockroach/pkg/testutils/workload/kv"
+	_ "github.com/cockroachdb/cockroach/pkg/testutils/workload/queue"
 )

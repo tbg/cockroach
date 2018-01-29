@@ -1,4 +1,5 @@
 #include "timestamp.h"
+#include "godefs.h"
 
 namespace cockroach {
 
@@ -26,14 +27,14 @@ class genHelper {
     next(ts, is_deletion);
     move(raw_key, ts);
 
-    fprintf(stderr, "first: deletion=%d, state=%d\n", is_deletion, state_);
+    // fprintf(stderr, "first: deletion=%d, state=%d\n", is_deletion, state_);
   };
 
   // moveKey signals that the iterator has been moved to a later (i.e. next or
   // further ahead) version of the current key (whose raw key bytes and timestamp
   // are supplied), which should be considered for moving to the passive generation.
   void moveKey(rocksdb::Slice raw_key, DBTimestamp ts, bool is_deletion) {
-    fprintf(stderr, "move_to %s %lld\n", raw_key.ToString().c_str(), ts.wall_time);
+    // fprintf(stderr, "move_to %s %lld\n", raw_key.ToString().c_str(), ts.wall_time);
     next(ts, is_deletion);
     move(raw_key, ts);
   }
@@ -56,27 +57,28 @@ class genHelper {
     default:
       abort();
     }
-    fprintf(stderr, "state is now %d\n", state_);
+    // fprintf(stderr, "state is now %d\n", state_);
   }
 
   // move offers a versioned value for moving to the passive keyspace (if it is permanently
   // shadowed and old enough).
   void move(rocksdb::Slice raw_key, DBTimestamp ts) {
+    char* pretty_key = prettyPrintKey(ToDBKey(raw_key));
     if (gen_ != kActive) {
       // Don't move a key that is already in the passive generation.
-      fprintf(stderr, "not active\n");
+      // fprintf(stderr, "not active\n");
       return;
     }
     if (state_ != kShadowed) {
       // Don't move a key that is not shadowed. Anything that is live or could be
       // live again in the future must be in the active generation.
-      fprintf(stderr, "not shadowed\n");
+      fprintf(stderr, "not shadowed: %s\n", pretty_key);
       return;
     }
 
     if (ts == cockroach::kZeroTimestamp || ts > cutoff_) {
       // Don't move keys that are inline or recent.
-      fprintf(stderr, "too recent: ts=%lld cutoff=%lld\n", ts.wall_time, cutoff_.wall_time);
+      // fprintf(stderr, "too recent: ts=%lld cutoff=%lld\n", ts.wall_time, cutoff_.wall_time);
       return;
     }
 
@@ -84,8 +86,20 @@ class genHelper {
       max_move_ts_ = ts;
     }
 
+    unsigned char first = (unsigned char)raw_key.data()[0];
+    unsigned char utdm = (unsigned char)'\xba';
+    if (first < utdm) { // keys.UserTableDataMin
+      fprintf(stderr, "not deleting %s, first char is %d < %d\n", pretty_key, first, utdm);
+      return;
+    }
+    if (utdm != (unsigned char) 186) {
+      //abort();
+    }
+
+
     // TODO(tschottdorf): actually move to a passive generation.
-    fprintf(stderr, "deleting\n");
+    fprintf(stderr, "deleting %s @ %lld < %lld because first char is %d >= %d\n", pretty_key, ts.wall_time, cutoff_.wall_time,
+      first, utdm);
     ops_->Delete(raw_key);
   };
 
