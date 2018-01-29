@@ -21,6 +21,7 @@
 #include "protos/storage/engine/enginepb/mvcc.pb.h"
 #include "status.h"
 #include "timestamp.h"
+#include <rocksdb/perf_context.h>
 
 namespace cockroach {
 
@@ -119,12 +120,13 @@ template <bool reverse> class mvccScanner {
 
   const DBScanResults& scan() {
     // TODO(peter): Remove this timing/debugging code.
-    // auto pctx = rocksdb::get_perf_context();
-    // pctx->Reset();
+    auto pctx = rocksdb::get_perf_context();
+    pctx->Reset();
     // auto start_time = std::chrono::steady_clock::now();
     // auto elapsed = std::chrono::steady_clock::now() - start_time;
     // auto micros = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
     // printf("seek %d: %s\n", int(micros), pctx->ToString(true).c_str());
+    fprintf(stderr, "called for %s-%s\n", prettyPrintKey(ToDBKey(start_key_)), prettyPrintKey(ToDBKey(end_key_)));
 
     if (reverse) {
       if (!iterSeekReverse(EncodeKey(start_key_, 0, 0))) {
@@ -137,6 +139,7 @@ template <bool reverse> class mvccScanner {
       }
     } else {
       if (!iterSeek(EncodeKey(start_key_, 0, 0))) {
+        fprintf(stderr, "after scan: %s\n", pctx->ToString(true).c_str());
         return results_;
       }
       for (; cur_key_.compare(end_key_) < 0;) {
@@ -145,6 +148,7 @@ template <bool reverse> class mvccScanner {
         }
       }
     }
+    fprintf(stderr, "after scan: %s\n", pctx->ToString(true).c_str());
 
     return fillResults();
   }

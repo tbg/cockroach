@@ -2074,6 +2074,7 @@ func (r *rocksDBIterator) MVCCScan(
 		return nil, nil, nil, emptyKeyError()
 	}
 
+	log.Infof(context.TODO(), "mvccscan %v-%v", start, end)
 	state := C.MVCCScan(
 		r.iter, goToCSlice(start), goToCSlice(end),
 		goToCTimestamp(timestamp), C.int64_t(max),
