@@ -63,7 +63,7 @@ class genHelper {
   // move offers a versioned value for moving to the passive keyspace (if it is permanently
   // shadowed and old enough).
   void move(rocksdb::Slice raw_key, DBTimestamp ts) {
-    char* pretty_key = prettyPrintKey(ToDBKey(raw_key));
+    // char* pretty_key = prettyPrintKey(ToDBKey(raw_key));
     if (gen_ != kActive) {
       // Don't move a key that is already in the passive generation.
       // fprintf(stderr, "not active\n");
@@ -72,7 +72,7 @@ class genHelper {
     if (state_ != kShadowed) {
       // Don't move a key that is not shadowed. Anything that is live or could be
       // live again in the future must be in the active generation.
-      fprintf(stderr, "not shadowed: %s\n", pretty_key);
+      //fprintf(stderr, "not shadowed: %s\n", pretty_key);
       return;
     }
 
@@ -89,17 +89,17 @@ class genHelper {
     unsigned char first = (unsigned char)raw_key.data()[0];
     unsigned char utdm = (unsigned char)'\xba';
     if (first < utdm) { // keys.UserTableDataMin
-      fprintf(stderr, "not deleting %s, first char is %d < %d\n", pretty_key, first, utdm);
+      // fprintf(stderr, "not deleting %s, first char is %d < %d\n", pretty_key, first, utdm);
       return;
     }
     if (utdm != (unsigned char) 186) {
-      //abort();
+      abort();
     }
 
 
     // TODO(tschottdorf): actually move to a passive generation.
-    fprintf(stderr, "deleting %s @ %lld < %lld because first char is %d >= %d\n", pretty_key, ts.wall_time, cutoff_.wall_time,
-      first, utdm);
+    // fprintf(stderr, "deleting %s @ %lld < %lld because first char is %d >= %d\n", pretty_key, ts.wall_time, cutoff_.wall_time,
+    //  first, utdm);
     ops_->Delete(raw_key);
   };
 

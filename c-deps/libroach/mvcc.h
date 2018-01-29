@@ -159,7 +159,7 @@ template <bool reverse> class mvccScanner {
         results_.intents = ToDBSlice(intents_->Data());
       }
       if (gen_.ops_->Count() > 0) {
-        fprintf(stderr, "%d", gen_.ops_->Count());
+        // fprintf(stderr, "%d", gen_.ops_->Count());
         results_.generational_move = ToDBSlice(gen_.ops_->Data());
       }
       iter_->kvs.reset(kvs_.release());

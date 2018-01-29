@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	schema = `(ts BIGINT, k BYTES, v BYTES NOT NULL, PRIMARY KEY (k, v))`
+	schema = `(ts BIGINT, k BYTES, v BYTES NOT NULL, PRIMARY KEY (ts, k))`
 )
 
 func init() {

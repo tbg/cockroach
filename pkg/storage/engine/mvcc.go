@@ -1657,9 +1657,9 @@ func mvccScanInternal(
 	iter.Close()
 
 	if l := len(genMoves); l > 0 {
-		log.Infof(ctx, "moving keys:")
+		// log.Infof(ctx, "moving keys:")
 		rwEng, ok := eng.(ReadWriter)
-		if ok {
+		if false && ok {
 			reader, err := NewRocksDBBatchReader(genMoves)
 			for reader.Next() {
 				key, err := reader.MVCCKey()
