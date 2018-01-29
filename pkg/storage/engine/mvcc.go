@@ -1633,6 +1633,8 @@ func MVCCDeleteRange(
 	return keys, resumeSpan, int64(len(kvs)), err
 }
 
+var every = log.Every(10 * time.Second)
+
 // mvccScanInternal scans the key range [key,endKey) up to some maximum number
 // of results. Specify reverse=true to scan in descending instead of ascending
 // order.
@@ -1659,21 +1661,25 @@ func mvccScanInternal(
 	if l := len(genMoves); l > 0 {
 		// log.Infof(ctx, "moving keys:")
 		rwEng, ok := eng.(ReadWriter)
-		if false && ok {
-			reader, err := NewRocksDBBatchReader(genMoves)
-			for reader.Next() {
-				key, err := reader.MVCCKey()
-				if err != nil {
-					panic(err)
+		if ok {
+			if every.ShouldLog() {
+				reader, err := NewRocksDBBatchReader(genMoves)
+				for reader.Next() {
+					key, err := reader.MVCCKey()
+					if err != nil {
+						panic(err)
+					}
+					log.Infof(ctx, "moving %v", key)
 				}
-				log.Infof(ctx, "moving %v", key)
-			}
-			if err != nil {
-				return nil, nil, nil, err
+				if err != nil {
+					return nil, nil, nil, err
+				}
 			}
 			if err := rwEng.ApplyBatchRepr(genMoves, false /* sync */); err != nil {
 				return nil, nil, nil, err
 			}
+		} else {
+			log.Warningf(ctx, "discarding moves")
 		}
 	}
 
