@@ -43,6 +43,7 @@ var meta = workload.Meta{
 	New: func() workload.Generator {
 		g := &queue{}
 		g.flags = pflag.NewFlagSet(`kv`, pflag.ContinueOnError)
+		g.flags.BoolVar(&g.scans, `scans`, true, `Use scans for deletion (when false, inserted rows are removed immediately)`)
 		g.mu.Rand = rand.New(rand.NewSource(0))
 		return g
 	},
@@ -50,6 +51,7 @@ var meta = workload.Meta{
 
 type queue struct {
 	flags *pflag.FlagSet
+	scans bool
 	mu    struct {
 		syncutil.Mutex
 		*rand.Rand
@@ -87,9 +89,17 @@ func (w *queue) Ops() []workload.Operation {
 			return nil, err
 		}
 
-		pRemove, err := db.Prepare("DELETE FROM queue LIMIT 1")
-		if err != nil {
-			return nil, err
+		var pRemove *gosql.Stmt
+		{
+			var err error
+			if w.scans {
+				pRemove, err = db.Prepare("DELETE FROM queue LIMIT 1")
+			} else {
+				pRemove, err = db.Prepare("DELETE FROM queue WHERE (ts, k) = ($1, $2)")
+			}
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return func(ctx context.Context) error {
@@ -103,7 +113,11 @@ func (w *queue) Ops() []workload.Operation {
 				return err
 			}
 
-			_, err := pRemove.Exec() //seq) //, k)
+			if w.scans {
+				_, err := pRemove.Exec() //seq) //, k)
+				return err
+			}
+			_, err := pRemove.Exec(seq, k)
 			return err
 		}, nil
 	}
