@@ -1664,12 +1664,18 @@ func mvccScanInternal(
 		if ok {
 			if every.ShouldLog() {
 				reader, err := NewRocksDBBatchReader(genMoves)
+				count := 0
 				for reader.Next() {
+					count++
 					key, err := reader.MVCCKey()
 					if err != nil {
 						panic(err)
 					}
 					log.Infof(ctx, "moving %v", key)
+					if count > 10 {
+						log.Infof(ctx, "[skipping remainder]")
+						break
+					}
 				}
 				if err != nil {
 					return nil, nil, nil, err

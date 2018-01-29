@@ -44,6 +44,10 @@ case ${1-} in
     shift
     gcloud compute ssh "${NAME}" --ssh-flag="-A" "$@"
     ;;
+    scp)
+    shift
+    gcloud compute scp --recurse "${NAME}":$1 .
+    ;;
     *)
     echo "$0: unknown command: ${1-}, use one of create, start, stop, delete, or ssh"
     exit 1
