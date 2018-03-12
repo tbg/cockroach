@@ -4,12 +4,13 @@ Original author: Spencer Kimball
 
 ## Introduction
 
-Follower reads make the non-leader replicas in a range suitable sources for
-historical reads. The key enabling technology is the propagation of **closed
-timestamp heartbeats** from the Raft leader to followers. The closed timestamp
-heartbeat (CT heartbeat) is more than just a timestamp. It is a set of
-conditions, that if met, guarantee that a follower replica has all state
-necessary to satisfy reads at or before the CT.
+Follower reads make the non-leader replicas in a range suitable
+sources for historical reads. The key enabling technology is the
+propagation of **closed timestamp heartbeats** from range lease
+holders to followers. The closed timestamp heartbeat (CT heartbeat) is
+more than just a timestamp. It is a set of conditions, that if met,
+guarantee that a follower replica has all state necessary to satisfy
+reads at or before the CT.
 
 Follower reads can increase read throughput by allowing every replica
 to serve read requests. For geo-distributed clusters, this can
@@ -25,8 +26,9 @@ has far reaching consequences for database functionality.
 
 - Because it records successively higher timestamps at which a
   replica's contents are completely valid, it can be used to implement
-  disaster recovery for a cluster by rebuilding total cluster state at
-  the maximum of the surviving replicas' CTs.
+  disaster recovery for a cluster by rebuilding a consistent (though
+  possibly regressed) cluster state at the minimum of the surviving
+  replicas' CTs.
 - It serves as a checkpoint for change data capture consumers,
   informing them when it is safe to consider all data to have been
   received at or before the CT from a source replica.
@@ -60,10 +62,10 @@ located on different nodes) is the following:
 serving reads if the other conditions below hold. This value typically trails
 the clock of the originating store by at least a constant target duration. Each
 coalesced Raft heartbeat contains one such timestamp on behalf of all
-non-quiesced ranges for which the originating store believes it holds the lease.
+ranges for which the originating store believes it holds the lease.
 - For non-quiesced ranges (i.e. origin store holds the lease, replica is not
 quiesced when inspecting it for the coalesced heartbeat):
-  - **Min lease applied index (MLAI)**: if the follower's LeaseAppliedIndex is less
+  - **Min lease applied index (MLAI)**: if the follower's LeaseAppliedIndex is greater
   than or equal to the MLAI, the follower may serve reads at timestamps less
   than or equal to the CT.
   - **Quiesce**: a boolean that, if true, announces that the range is now quiesced
@@ -79,18 +81,18 @@ is the point of quiescence). Instead, the origin store
   To this end, it includes the following:
   - **Sequence**: a sequence number incremented and sent with successive
   coalesced heartbeats. This is used to maintain the former guarantee:
-  the lease holder guarantees that a newly unquiesced replica is
+  the leaseholder guarantees that a newly unquiesced replica is
   contained in and respects the next outgoing CT heartbeat. Thanks to
   the sequence number, a missed heartbeat can be detected by the
   recipient, and it must assume that all replicas are unquiesced.
   - **Liveness epoch**: the sending store's own epoch (that it is aware of) for
   asserting the latter condition. Followers must check whether the lease for the
   replica is that of the originating store at the given epoch and confirm that
-  it is live. If not, another lease holder may have taken over (and should use
+  it is live. If not, another leaseholder may have taken over (and should use
   the same mechanism to contact the follower).
 
 Note that Raft plays no fundamental role in this mechanism and thus,
-it is irrelevant whether the Raft leader and the lease holder are
+it is irrelevant whether the Raft leader and the leaseholder are
 colocated (though in the common case, they are). We rely on coalesced
 heartbeats merely for convenience and for easy access to the
 quiescence state (which in itself is not a Raft concept but an
@@ -125,24 +127,19 @@ for a given range it holds the lease for:
 a later timestamp than the closed timestamp (CT).*
 
 We ignore the MLAI for a moment (it's straightforward) and focus on the CT. The
-lease holder wants to
-- force new proposals' timestamps to remain roughly within the target duration
-of the node's clock, and
-- maintains an answer to the question: What's the largest timestamp for which
+leaseholder wants to
+- maintain an answer to the question: What's the largest timestamp for which
 there's nothing in flight (any more) and never will be?
+- have that answer increase over time, roughly staying within the
+target duration of the node's clock.
 
-
-The object in charge of this is the per-`Store` **min proposal timestamp** (MPT)
-which is linked to Raft proposals in order to provide successively
-higher closed timestamps to send with heartbeats. The min proposal
-timestamp, as the name suggests, maintains a low water timestamp for
-command proposals. Similar to the timestamp cache, when commands are
-evaluated on the write path, their timestamp is forwarded to be at
-least the MPT.
-
-QUESTION: intents are written sometimes at lower (`OrigTimestamp`), sometimes at
-higher (`WriteTooOld`) timestamps. Higher seems fine, but lower seems
-problematic! Morally we have to forward the `OrigTimestamp` eagerly.
+The object in charge of this is the per-`Store` **min proposal
+timestamp** (MPT) which is linked to Raft proposals in order to
+provide successively higher closed timestamps to send with heartbeats.
+The min proposal timestamp, as the name suggests, maintains a low
+water timestamp for command proposals. Similar to the timestamp cache,
+when commands are evaluated on the write path, their timestamp is
+forwarded to be at least the MPT.
 
 The MPT is a slightly tricky object. It consists of two timestamps
 `last` and `cur` with associated ref counts (and a reader/writer mutex
@@ -203,7 +200,7 @@ typically trails the node's clock by seconds.
 ------------------------------x--x----------x------------> time
 ```
 
-Two of the commands gets proposed, decrementing `last`s refcount. Additionally,
+Two of the commands get proposed, decrementing `last`s refcount. Additionally,
 two new commands arrive at timestamps below `cur`. As before, `cur` picks up a
 refcount of two, but additionally the commands are moved forward in time to `cur`
 itself. These new commands get proposed quickly (so they don't show up again) and
@@ -292,6 +289,33 @@ timestamp `C(K)`, and `C(K) > L(K)`, then a heartbeat for any range
 will report a min log index at which that command and all subsequent
 commands must have a timestamp greater than `L(k)`, which proves the
 stated guarantee.
+
+
+#### Timestamp forwarding and intents
+
+We forward commands' timestamps in order to guarantee that they don't
+produce visible data at timestamps below the CT. A case in which that
+is less obvious is that of an intent.
+
+To see this, consider that a transaction has two relevant timestamps:
+`OrigTimestamp` (also known as its read timestamp) and `Timestamp`
+(also known as its commit timestamp). while the timestamp we forward
+is `Timestamp`, the transaction internally will in fact attempt to
+write at OrigTimestamp (but relies on moving these intents to their
+actual timestamp later, when they are resolved). This prevents certain
+anomalies, particularly with `SNAPSHOT` isolation.
+
+Naively, this violates the guarantee: we promise that no more data will
+appear below a certain timestamp, but then it does. Note however that
+this data isn't visible at timestamps below the commit timestamp (which
+was forwarded): to read the value, the intent has to be resolved first,
+which implies that it will move at least to `Timestamp` in the progress,
+restoring the guarantee required.
+
+Similarly, this does not impede the usefulness of the CT mechanism for
+recovery: the restored consistent state may contain intents that belong
+to transactions that started after the CT; however, they will simply be
+aborted.
 
 #### What about leaseholdership changes and node restarts?
 
