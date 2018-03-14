@@ -20,6 +20,8 @@ import (
 	"fmt"
 
 	_ "github.com/lib/pq"
+
+	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 )
 
 func init() {
@@ -48,21 +50,65 @@ func init() {
 				}
 			}
 
+			count := func(msg string) int {
+				const stmt = "SELECT COUNT(*) FROM tpcc.stock"
+				var n int
+				tBegin := timeutil.Now()
+				if err := db.QueryRowContext(ctx, stmt).Scan(&n); err != nil {
+					t.Fatal(err)
+				}
+				c.l.printf("%s: ran %s in %s\n", msg, stmt, timeutil.Since(tBegin))
+				return n
+			}
+
 			run(`SET CLUSTER SETTING trace.debug.enable = true`)
 
 			t.Status("importing TPCC fixture")
 			c.Run(ctx, 1, fmt.Sprintf(
 				"./workload fixtures load tpcc --warehouses=%d --db tpcc {pgurl:1}", warehouses))
 
+			for i := 0; i < 5; i++ {
+				if exp, act := warehouses*100000, count("before delete"); exp != act {
+					t.Fatalf("expected %d rows, got %d", exp, act)
+				}
+			}
+
 			// Drop a constraint that would get in the way of deleting from tpcc.stock.
 			const stmtDropConstraint = "ALTER TABLE tpcc.order_line DROP CONSTRAINT fk_ol_supply_w_id_ref_stock"
 			run(stmtDropConstraint)
 
-			const stmtDelete = "DELETE FROM tpcc.stock"
-			run(stmtDelete)
+			// NB: activate the other branch if you ever want to run this
+			// test against v1.1. (It will fail when changing the zone
+			// config below, though).
+			if true {
+				const stmtDelete = "DELETE FROM tpcc.stock"
+				run(stmtDelete)
+			} else {
+				for {
+					res, err := db.ExecContext(ctx, "DELETE FROM tpcc.stock LIMIT 10000")
+					if err != nil {
+						t.Fatal(err)
+					}
+					if n, err := res.RowsAffected(); err != nil {
+						t.Fatal(err)
+					} else if n == 0 {
+						break
+					}
+				}
+			}
+
+			for i := 0; i < 5; i++ {
+				if exp, act := 0, count("after delete"); exp != act {
+					t.Fatalf("expected %d rows, got %d", exp, act)
+				}
+			}
 
 			const stmtTruncate = "TRUNCATE TABLE tpcc.stock"
 			run(stmtTruncate)
+
+			if exp, act := 0, count("after truncate"); exp != act {
+				t.Fatalf("expected %d rows, got %d", exp, act)
+			}
 
 			const stmtDrop = "DROP DATABASE tpcc"
 			run(stmtDrop)
