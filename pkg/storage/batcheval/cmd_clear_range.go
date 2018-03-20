@@ -26,6 +26,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/storage/spanset"
 	"github.com/cockroachdb/cockroach/pkg/storage/storagebase"
 	"github.com/cockroachdb/cockroach/pkg/util"
+	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/kr/pretty"
 )
@@ -52,6 +53,13 @@ func declareKeysClearRange(
 	// space span of keys in the range.
 	spans.Add(spanset.SpanReadOnly, roachpb.Span{Key: keys.RangeStatsKey(header.RangeID)})
 }
+
+// UseClearRange specifies whether to use ClearRange. If false,
+// ClearIterRange is used. NB: this must be set to the same value for
+// all nodes in the cluster, and may not be changed across restarts.
+//
+// Do not set this to true in production.
+var UseClearRange = envutil.EnvOrDefaultBool("COCKROACH_USE_CLEAR_RANGE", false)
 
 // ClearRange wipes all MVCC versions of keys covered by the specified
 // span, adjusting the MVCC stats accordingly.
@@ -108,8 +116,10 @@ func ClearRange(
 			},
 		},
 	}
-	if err := batch.ClearRange(from, to); err != nil {
-		return result.Result{}, err
+	if UseClearRange {
+		if err := batch.ClearRange(from, to); err != nil {
+			return result.Result{}, err
+		}
 	}
 	return pd, nil
 }

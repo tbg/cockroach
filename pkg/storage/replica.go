@@ -4992,6 +4992,20 @@ func (r *Replica) applyRaftCommand(
 		}
 	}
 
+	if !batcheval.UseClearRange {
+		for _, clearRange := range rResult.SuggestedCompactions {
+			if err := func() error {
+				iter := r.store.engine.NewIterator(false)
+				defer iter.Close()
+				from := engine.MVCCKey{Key: clearRange.StartKey}
+				to := engine.MVCCKey{Key: clearRange.EndKey}
+				return batch.ClearIterRange(iter, from, to)
+			}(); err != nil {
+				return enginepb.MVCCStats{}, errors.Wrap(err, "unable to clear key range")
+			}
+		}
+	}
+
 	// The only remaining use of the batch is for range-local keys which we know
 	// have not been previously written within this batch. Currently the only
 	// remaining writes are the raft applied index and the updated MVCC stats.
