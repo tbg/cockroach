@@ -16,6 +16,7 @@
 #include <rocksdb/filter_policy.h>
 #include <rocksdb/slice_transform.h>
 #include <rocksdb/table.h>
+#include <rocksdb/utilities/table_properties_collectors.h>
 #include "cache.h"
 #include "comparator.h"
 #include "encoding.h"
@@ -204,6 +205,9 @@ rocksdb::Options DBMakeOptions(DBOptions db_opts) {
   std::shared_ptr<rocksdb::TablePropertiesCollectorFactory> time_bound_prop_collector(
       new TimeBoundTblPropCollectorFactory());
   options.table_properties_collector_factories.push_back(time_bound_prop_collector);
+
+  auto deletion_collector = rocksdb::NewCompactOnDeletionCollectorFactory(1000 /* window */, 100 /* threshold */);
+  options.table_properties_collector_factories.push_back(deletion_collector);
 
   // The write buffer size is the size of the in memory structure that
   // will be flushed to create L0 files.
