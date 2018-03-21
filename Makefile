@@ -150,7 +150,7 @@ else ifeq ($(TYPE),release-linux-gnu)
 # this toolchain's libstdc++ version is quite recent and must be statically
 # linked to avoid depending on the target's available libstdc++.
 XHOST_TRIPLE := x86_64-unknown-linux-gnu
-override LINKFLAGS += -s -w -extldflags "-static-libgcc -static-libstdc++"
+override LINKFLAGS += -extldflags "-static-libgcc -static-libstdc++"
 override SUFFIX := $(SUFFIX)-linux-2.6.32-gnu-amd64
 BUILD_TYPE := release
 else ifeq ($(TYPE),release-linux-musl)
@@ -590,7 +590,7 @@ $(ROCKSDB_DIR)/Makefile: $(C_DEPS_DIR)/rocksdb-rebuild | $(SUBMODULES_TARGET) li
 	  $(if $(findstring release,$(BUILD_TYPE)),-DPORTABLE=ON) \
 	  -DSNAPPY_LIBRARIES=$(SNAPPY_DIR)/libsnappy.a -DSNAPPY_INCLUDE_DIR="$(SNAPPY_SRC_DIR);$(SNAPPY_DIR)" -DWITH_SNAPPY=ON \
 	  $(if $(USE_STDMALLOC),,-DJEMALLOC_LIBRARIES=$(JEMALLOC_DIR)/lib/libjemalloc.a -DJEMALLOC_INCLUDE_DIR=$(JEMALLOC_DIR)/include -DWITH_JEMALLOC=ON) \
-	  -DCMAKE_CXX_FLAGS="$(if $(findstring x86_64,$(TARGET_TRIPLE)),-msse3) $(if $(ENABLE_ROCKSDB_ASSERTIONS),,-DNDEBUG)"
+	  -DCMAKE_CXX_FLAGS="$(if $(findstring x86_64,$(TARGET_TRIPLE)),-msse3 -g) $(if $(ENABLE_ROCKSDB_ASSERTIONS),,-DNDEBUG)"
 	@# TODO(benesch): Tweak how we pass -DNDEBUG above when we upgrade to a
 	@# RocksDB release that includes https://github.com/facebook/rocksdb/pull/2300.
 
