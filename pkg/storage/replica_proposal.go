@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	batcheval "github.com/cockroachdb/cockroach/pkg/storage/batcheval"
 	"github.com/coreos/etcd/raft"
 	"github.com/kr/pretty"
 	"github.com/pkg/errors"
@@ -603,8 +604,10 @@ func (r *Replica) handleReplicatedEvalResult(
 		}
 	}
 
-	for _, sc := range rResult.SuggestedCompactions {
-		r.store.compactor.Suggest(ctx, sc)
+	if !batcheval.UseClearRange {
+		for _, sc := range rResult.SuggestedCompactions {
+			r.store.compactor.Suggest(ctx, sc)
+		}
 	}
 	rResult.SuggestedCompactions = nil
 
