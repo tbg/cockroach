@@ -71,7 +71,7 @@ This effectively doubles the latency (ignoring the client<->gateway latency).
 
 ## A solution
 
-The basic solution, of course, is to send everything in parallel, and the problem we have to solve is that of lost writes. To address these, we have to change the semantics of what it means for a transaction to commit. As it stands, they are
+The solution is being able to send everything in parallel, and the problem we have to solve is that of lost writes. To address these, we have to change the semantics of what it means for a transaction to commit. As it stands, they are
 
 > A transaction is committed if and only if there is a transaction record with status COMMITTED.
 
@@ -103,6 +103,62 @@ The third item is new and is necessary, as the following scenario demonstrates.
 1. was it written by the transaction? Not clear.
 
 It motivates a later section about switching the format of our transaction IDs.
+
+Before going through more details, here are some examples that may demonstrate what's happening better than the explanations below. Time flows from left to right.
+
+### Happy Case
+
+The transaction writes its three writes and staged txn record in parallel. When all operations come back as success, the client receives the responses, and an asynchronous request marks the transaction record as committed, saving others the expensive manual verification of this fact.
+
+```
+Write(k1)   ok
+Stage(k1)  ok      Commit(k1) ok
+Write(k2)        ok
+```
+
+### Unhappy Case 1: failed write
+
+```
+Write(k1) ok                        Abort(k1)
+Stage(k1)
+Write(k2)       non-retryable-error
+Write(k3)    ok
+```
+
+The history with a retryable error is similar except that the write may be retried.
+
+### Unhappy Case 2: coordinator dies without txn record
+
+```
+Write(k1)    ok
+Stage(k1)      crash
+Write(k2)    ok
+Write(k3)  ok
+conflicting client:
+Read(k3)            discover-txn Abort(k1) Resolve(k3)
+```
+
+### Unhappy Case 3: coordinator dies with all intended writes staged
+
+```
+Write(k1)    ok
+Stage(k1)    ok
+Write(k2)       ok crash
+Write(k3)  ok
+conflicting client:
+Read(k3)           discover-txn Check(k1,k2,k3) Commit(k1) Resolve(k1,k2,k3) Commit(k1)
+```
+
+### Unhappy Case 4: coordinator dies with txn record, but missing intended write
+
+```
+Write(k1) ok
+Stage(k1) ok
+Write(k2)  ok crash
+Write(k3)     fail
+conflicting client:
+Read(k1)           discover-txn Check(k1,k2,k3) Abort(k1) Resolve(k1,k2,k3) Commit(k1)
+```
 
 ## Pushing a transaction
 
@@ -158,7 +214,56 @@ This will often be faster (depending on latencies between the involved nodes), t
 
 When the coordinator isn't reachable within a heartbeat timeout (or however long we're willing to wait), abort the transaction the hard way.
 
+NB: this would address [#20448].
+
 ### Phasing out HeartbeatTxn
 
 Now that a coordinator is directly reachable, we can consider not sending HeartbeatTxn. The only reason for keeping it is that during exotic network partitions, some nodes may find their transactions aborted by other nodes unable to contact them.
 
+## Idempotency
+
+Today, the KV layer is not idempotent. For example, take a transaction that finishes with the following batch on a range:
+
+```
+CPut(k1)       // change k1 from v0 to v1
+EndTransaction // commit
+```
+
+and the executing leaseholder dies while this RPC is in flight, so that it's unclear whether it applied or not.
+
+If it did apply successfully, the intent at k1 would have been resolved automatically and the transaction record removed, so when retrying there is no way to tell whether it was our txn that actually wrote the value; we have to return an ambiguous result.
+
+Now that we embed a transaction ID in each write (committed or not), we can do better if we also embed the sequence number used for the write (i.e. retain it from the intent) as we're now able to see that this is our prior write, and can execute the `CPut` as a no-op. When we execute `EndTransaction` the current code would still fail as it requires the transaction record to be present (created by `BeginTransaction`), so let's look at that next.
+
+### BeginTransaction
+
+Why do we have `BeginTransaction` in the first place? Some light archaeology,
+
+```
+git log origin/master --oneline --grep BeginTransaction -- {pkg,.}/{storage,kv}
+```
+
+suggests that its [original raison d'être][#2062] was to prevent outdated heartbeats or pushes from recreating the transaction record (neither of these are a reason to keep it today).
+An additional moving piece involving them is replay protection, where we populate the write timestamp cache for `BeginTransaction` to make sure that a 1PC batch can't apply more than once. This too would be addressed by having the txnID in committed values (for you'd recognize the replay that way and apply as a no-op). Eagerly creating the transaction record was also a concern in improving conflict resolution since in the absence of a record, conflicting writers could not communicate. However, this is more than adequately addressed by communicating directly with the coordinator.
+
+All in all, this leads me to believe that there's no good reason to keep `BeginTransaction` around.
+
+### The `Writing` Flag
+
+This is one of the warts in the transaction machinery that has caused a long string of bugs. It is a flag that is *supposed to be* set on the transaction proto if and only if the transaction record has been created (which in turn is if and only if the transaction has laid down an intent). This is used in two ways: 1. to decide whether to insert a `BeginTransaction` into a batch in `client.Txn` and 2. to decide whether TxnCoordSender should be heartbeating the transaction record.
+
+The problem is that this is impossible to track adequately given the current setup; the `Writing` status is updated above in `TxnCoordSender` which sits above `DistSender`, but `DistSender` splits up batches across ranges and so may end up writing a few intents but return with an error (not mentioning those intents).
+
+Note that 1. immediately becomes obsolete if we remove `BeginTransaction`.
+For 2., the heartbeat loop is a lot less important when conflicting transactions communicate directly. In fact, heartbeats are unnecessary unless we want to keep them as a fallback in the case of exotic network partitions, but then they are more of a best-effort affair and don't need to be tracked as closely.
+
+Combining these, I think we can remove the `Writing` flag along with `BeginTransaction`, though we may find a reason to to want to move the abort cache protection to `EndTransaction` instead (may not be necessary with the new-found idempotence).
+
+### Detecting Replays
+
+This is straightforward but worth spelling out. We currently embed a sequence number into each intent for which we guarantee that it increases monotonically per key for each write. So trying to overwrite an intent with an equal or lower sequence number results in an error; this catches cases in which a previous write from the same epoch gets stuck in the RPC subsystem and clobbers a newer one (which would result in lost updates)
+
+See [#20448] for a related discussion.
+
+[#20448]: https://github.com/cockroachdb/cockroach/issues/20448#issuecomment-373611915
+[#2062]: https://github.com/cockroachdb/cockroach/issues/2062#issuecomment-144437252
