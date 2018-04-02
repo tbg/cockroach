@@ -1131,6 +1131,7 @@ func TestLint(t *testing.T) {
 
 	// TestHelpURLs checks that all help texts have a valid documentation URL.
 	t.Run("TestHelpURLs", func(t *testing.T) {
+		t.Skip("#24405")
 		if testing.Short() {
 			t.Skip("short flag")
 		}
