@@ -1313,6 +1313,10 @@ type batchIterator struct {
 	batch *rocksDBBatch
 }
 
+func (r *batchIterator) Stats() IteratorStats {
+	return r.iter.Stats()
+}
+
 func (r *batchIterator) Close() {
 	if r.batch == nil {
 		panic("closing idle iterator")
@@ -1869,7 +1873,7 @@ func (r *rocksDBIterator) init(rdb *C.DBEngine, opts IterOptions, engine Reader,
 		r.parent.iters.Unlock()
 	}
 
-	r.iter = C.DBNewIter(rdb, C.bool(opts.Prefix))
+	r.iter = C.DBNewIter(rdb, C.bool(opts.Prefix), C.bool(opts.WithStats))
 	if r.iter == nil {
 		panic("unable to create iterator")
 	}
@@ -1900,7 +1904,18 @@ func (r *rocksDBIterator) destroy() {
 	*r = rocksDBIterator{}
 }
 
+// IteratorStats is returned from (Iterator).Stats.
+type IteratorStats struct {
+	InternalDeleteSkippedCount int
+}
+
 // The following methods implement the Iterator interface.
+func (r *rocksDBIterator) Stats() IteratorStats {
+	stats := C.DBIterStats(r.iter)
+	return IteratorStats{
+		InternalDeleteSkippedCount: int(C.ulonglong(stats.internal_delete_skipped_count)),
+	}
+}
 
 func (r *rocksDBIterator) Close() {
 	r.destroy()

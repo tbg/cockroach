@@ -47,6 +47,11 @@ func NewIterator(iter engine.Iterator, spans *SpanSet) *Iterator {
 	}
 }
 
+// Stats is part of the engine.Iterator interface.
+func (s *Iterator) Stats() engine.IteratorStats {
+	return s.i.Stats()
+}
+
 // Close is part of the engine.Iterator interface.
 func (s *Iterator) Close() {
 	s.i.Close()

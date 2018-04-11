@@ -116,6 +116,8 @@ type Iterator interface {
 	MVCCScan(start, end roachpb.Key, max int64, timestamp hlc.Timestamp,
 		txn *roachpb.Transaction, consistent, reverse, tombstone bool,
 	) (kvs []byte, numKvs int64, intents []byte, err error)
+
+	Stats() IteratorStats
 }
 
 // IterOptions contains options used to create an Iterator.
@@ -125,6 +127,9 @@ type IterOptions struct {
 	// but iteration (using Next) over keys without the same user-key
 	// prefix will not work correctly (keys may be skipped)
 	Prefix bool
+	// If WithStats is true, the iterator accumulates RocksDB performance
+	// counters over its lifetime which can be queried via `Stats()`.
+	WithStats bool
 }
 
 // Reader is the read interface to an engine's data.
