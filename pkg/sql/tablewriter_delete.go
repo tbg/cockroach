@@ -154,7 +154,9 @@ func (td *tableDeleter) deleteAllRows(
 		log.VEvent(ctx, 2, "delete forced to scan: table is interleaved")
 		return td.deleteAllRowsScan(ctx, resume, limit, autoCommit, traceKV)
 	}
-	return td.deleteAllRowsFast(ctx, resume, limit, autoCommit, traceKV)
+	sp, err := td.deleteAllRowsFast(ctx, resume, limit, autoCommit, traceKV)
+	log.Warning(ctx, "TSX delete fast: ", err)
+	return sp, err
 }
 
 // deleteAllRowsFast employs a ClearRange KV API call to delete the

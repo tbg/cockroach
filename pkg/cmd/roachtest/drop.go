@@ -157,10 +157,11 @@ gc:
 			return nil
 		})
 		m.Wait()
+		t.Fatal("intentionally failing")
 	}
 
 	warehouses := 100
-	numNodes := 9
+	numNodes := 3
 
 	// 1GB
 	initDiskSpace := int(1E9)

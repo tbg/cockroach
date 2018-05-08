@@ -68,7 +68,7 @@ var (
 // TODO(mjibson): Refine the job coordinator to elect a new job coordinator
 // on coordinator failure without causing a storm of polling requests
 // attempting to become the job coordinator.
-const asyncSchemaChangeDelay = 30 * time.Second
+const asyncSchemaChangeDelay = 1 * time.Second
 
 // SchemaChanger is used to change the schema on a table.
 type SchemaChanger struct {
@@ -360,7 +360,8 @@ func (sc *SchemaChanger) maybeAddDrop(
 				if err != nil {
 					return err
 				}
-				deadline := table.DropTime + int64(zoneCfg.GC.TTLSeconds)*time.Second.Nanoseconds()
+				deadline := table.DropTime // HACK+ int64(zoneCfg.GC.TTLSeconds)*time.Second.Nanoseconds()
+				_ = zoneCfg
 				timeRemaining = timeutil.Since(timeutil.Unix(0, deadline))
 				return nil
 			}); err != nil {
