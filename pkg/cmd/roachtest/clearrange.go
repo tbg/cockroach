@@ -57,6 +57,10 @@ func registerClearRange(r *registry) {
 				t.WorkerStatus("dropping table")
 				defer t.WorkerStatus()
 
+				if _, err := conn.ExecContext(ctx, `SET CLUSTER SETTING server.consistency_check.interval = '0s'`); err != nil {
+					return err
+				}
+
 				if _, err := conn.ExecContext(ctx, `ALTER TABLE bank.bank EXPERIMENTAL CONFIGURE ZONE 'gc: {ttlseconds: 30}'`); err != nil {
 					return err
 				}
