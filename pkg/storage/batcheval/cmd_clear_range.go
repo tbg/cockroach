@@ -104,8 +104,11 @@ func ClearRange(
 			},
 		},
 	}
-	if err := batch.ClearRange(from, to); err != nil {
-		return result.Result{}, err
+
+	if false {
+		if err := batch.ClearRange(from, to); err != nil {
+			return result.Result{}, err
+		}
 	}
 	return pd, nil
 }

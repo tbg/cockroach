@@ -302,6 +302,12 @@ func (c *Compactor) processCompaction(
 			aggr, aboveSizeThresh, aboveUsedFracThresh, aboveAvailFracThresh,
 		)
 
+		// Lay down a range tombstone that we then immediately compact away.
+		if err := c.eng.ClearRange(
+			engine.MakeMVCCMetadataKey(aggr.StartKey), engine.MakeMVCCMetadataKey(aggr.EndKey),
+		); err != nil {
+			return 0, errors.Wrapf(err, "unable to ClearRange %+v", aggr)
+		}
 		if err := c.eng.CompactRange(aggr.StartKey, aggr.EndKey, false /* forceBottommost */); err != nil {
 			c.Metrics.CompactionFailures.Inc(1)
 			return 0, errors.Wrapf(err, "unable to compact range %+v", aggr)

@@ -86,7 +86,7 @@ func registerClearRange(r *registry) {
 				return nil
 			})
 			m.Wait()
-			t.Fail("intentionally failing")
+			t.Fatal("intentionally failing")
 		},
 	})
 }
