@@ -367,7 +367,7 @@ func (c *Compactor) aggregateCompaction(
 		// the bottommost level.
 		span := roachpb.Span{Key: aggr.EndKey, EndKey: sc.StartKey}
 		maxLevel := ssti.MaxLevelSpanOverlapsContiguousSSTables(span)
-		if maxLevel < ssti.MaxLevel() {
+		if maxLevel < ssti.MaxLevel() || true { // avoid ClearRange on others' key space
 			return true // suggested compaction could not be aggregated
 		}
 	}
