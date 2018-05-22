@@ -372,6 +372,7 @@ func (sc *SchemaChanger) maybeAddDrop(
 		}
 		// Do all the hard work of deleting the table data and the table ID.
 		if err := truncateTableInChunks(ctx, table, sc.db, false /* traceKV */); err != nil {
+			log.Fatal(ctx, err)
 			return false, err
 		}
 
