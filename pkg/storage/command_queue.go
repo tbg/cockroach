@@ -19,6 +19,8 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
@@ -719,6 +721,47 @@ func (cq *CommandQueue) add(
 	}
 
 	cq.insertIntoTree(cmd)
+
+	const commandQueueCountWarningThreshold = 10000
+	{
+		sum := cq.localMetrics.readCommands + cq.localMetrics.writeCommands
+		if sum > commandQueueCountWarningThreshold &&
+			sum-int64(cmd.cmdCount()) <= commandQueueCountWarningThreshold {
+
+			ctx := log.WithLogTagStr(context.Background(), "cmdqueue", "")
+			snapshot := cq.GetSnapshot()
+			dir, err := ioutil.TempDir("", "cockroach-cmd-queue")
+			if err != nil {
+				log.Error(ctx, err)
+			} else {
+				log.Warningf(
+					ctx,
+					"command queue contains %d commands (above threshold %d), writing snapshot to %s",
+					sum, commandQueueCountWarningThreshold, dir,
+				)
+				// We'll be writing thousands of files here, so it's better to
+				// not block the command queue any more. We're only using the
+				// snapshot from now on.
+				go func() {
+					cq = nil // avoid accidental use in goroutine
+					for id, node := range snapshot {
+						data, err := node.Marshal()
+						if err != nil {
+							log.Warning(ctx, err)
+						}
+						if err := ioutil.WriteFile(
+							filepath.Join(dir, fmt.Sprintf("%d", id)), data, 0644,
+						); err != nil {
+							log.Warning(ctx, err)
+							continue
+						}
+					}
+				}()
+			}
+
+		}
+	}
+
 	return cmd
 }
 
