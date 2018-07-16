@@ -209,6 +209,7 @@ func (s *raftScheduler) worker(ctx context.Context) {
 		if state&stateRaftTick != 0 {
 			// processRaftTick returns true if the range should perform ready
 			// processing. Do not reorder this below the call to processReady.
+			log.Warningf(ctx, "TSX process tick %d", id)
 			if s.processor.processTick(ctx, id) {
 				state |= stateRaftReady
 			}
@@ -230,6 +231,7 @@ func (s *raftScheduler) worker(ctx context.Context) {
 		// With a similar argument, we unquiesce last (a tick in the same cycle
 		// might initiate quiescence).
 		if state&stateRaftUnquiesce != 0 {
+			log.Warningf(ctx, "TSX process unquiesce %d", id)
 			s.processor.processUnquiesce(ctx, id)
 		}
 
