@@ -22,6 +22,7 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"runtime/debug"
 	"sort"
 	"sync/atomic"
 	"time"
@@ -3674,8 +3675,9 @@ func (r *Replica) quiesceLocked() bool {
 		return false
 	}
 	if !r.mu.quiescent {
-		if log.V(3) {
-			log.Infof(ctx, "quiescing")
+		if true || log.V(3) {
+			log.Infof(ctx, "TSX quiescing")
+			debug.PrintStack()
 		}
 		r.mu.quiescent = true
 

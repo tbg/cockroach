@@ -3765,6 +3765,7 @@ func (s *Store) nodeIsLiveCallback(nodeID roachpb.NodeID) {
 		select {
 		case <-s.stopper.ShouldQuiesce():
 		case s.livenessChange <- nodeID:
+			log.Warningf(ctx, "TSX triggering unquiesce for n%d", nodeID)
 		}
 	})
 }
@@ -3814,6 +3815,7 @@ func (s *Store) raftTickLoop(ctx context.Context) {
 			s.scheduler.EnqueueRaftTick(rangeIDs...)
 			s.metrics.RaftTicks.Inc(1)
 		case nodeID := <-s.livenessChange:
+			log.Warningf(ctx, "TSX unquiescing n%d", nodeID)
 			// A node is now live (when it wasn't before). Some ranges may have
 			// quiesced without this node having had a chance to catch up, so
 			// go through all of our ranges that have this node as a member and
@@ -3827,12 +3829,15 @@ func (s *Store) raftTickLoop(ctx context.Context) {
 				r.mu.RLock()
 				if r.mu.quiescent {
 					desc = r.descRLocked()
+				} else {
+					log.Warningf(ctx, "TSX not quiescent: %v", desc)
 				}
 				r.mu.RUnlock()
 
 				if desc != nil {
 					for _, rep := range desc.Replicas {
 						if rep.NodeID == nodeID {
+							log.Warningf(ctx, "TSX unquiesce %v", desc)
 							r.unquiesce()
 							break
 						}
