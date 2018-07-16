@@ -113,6 +113,7 @@ type raftProcessor interface {
 	// Process a raft tick for the specified range. Return true if the range
 	// should be queued for ready processing.
 	processTick(context.Context, roachpb.RangeID) bool
+	processUnquiesce(context.Context, roachpb.RangeID)
 }
 
 type raftScheduleState int
@@ -122,6 +123,7 @@ const (
 	stateRaftReady
 	stateRaftRequest
 	stateRaftTick
+	stateRaftUnquiesce
 )
 
 type raftScheduler struct {
@@ -225,6 +227,11 @@ func (s *raftScheduler) worker(ctx context.Context) {
 		if state&stateRaftRequest != 0 {
 			s.processor.processRequestQueue(ctx, id)
 		}
+		// With a similar argument, we unquiesce last (a tick in the same cycle
+		// might initiate quiescence).
+		if state&stateRaftUnquiesce != 0 {
+			s.processor.processUnquiesce(ctx, id)
+		}
 
 		s.mu.Lock()
 		state = s.mu.state[id]
@@ -301,4 +308,8 @@ func (s *raftScheduler) EnqueueRaftRequest(id roachpb.RangeID) {
 
 func (s *raftScheduler) EnqueueRaftTick(ids ...roachpb.RangeID) {
 	s.signal(s.enqueueN(stateRaftTick, ids...))
+}
+
+func (s *raftScheduler) EnqueueRaftUnquiesce(ids ...roachpb.RangeID) {
+	s.signal(s.enqueueN(stateRaftUnquiesce, ids...))
 }

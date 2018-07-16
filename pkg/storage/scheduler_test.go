@@ -129,9 +129,10 @@ func TestRangeIDQueue(t *testing.T) {
 type testProcessor struct {
 	mu struct {
 		syncutil.Mutex
-		raftReady   map[roachpb.RangeID]int
-		raftRequest map[roachpb.RangeID]int
-		raftTick    map[roachpb.RangeID]int
+		raftReady     map[roachpb.RangeID]int
+		raftRequest   map[roachpb.RangeID]int
+		raftTick      map[roachpb.RangeID]int
+		raftUnquiesce map[roachpb.RangeID]int
 	}
 }
 
@@ -140,6 +141,7 @@ func newTestProcessor() *testProcessor {
 	p.mu.raftReady = make(map[roachpb.RangeID]int)
 	p.mu.raftRequest = make(map[roachpb.RangeID]int)
 	p.mu.raftTick = make(map[roachpb.RangeID]int)
+	p.mu.raftUnquiesce = make(map[roachpb.RangeID]int)
 	return p
 }
 
@@ -160,6 +162,12 @@ func (p *testProcessor) processTick(_ context.Context, rangeID roachpb.RangeID) 
 	p.mu.raftTick[rangeID]++
 	p.mu.Unlock()
 	return false
+}
+
+func (p *testProcessor) processUnquiesce(_ context.Context, rangeID roachpb.RangeID) {
+	p.mu.Lock()
+	p.mu.raftUnquiesce[rangeID]++
+	p.mu.Unlock()
 }
 
 func (p *testProcessor) countsLocked(m map[roachpb.RangeID]int) string {

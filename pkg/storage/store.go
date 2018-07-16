@@ -3735,6 +3735,13 @@ func (s *Store) processReady(ctx context.Context, rangeID roachpb.RangeID) {
 	}
 }
 
+func (s *Store) processUnquiesce(ctx context.Context, rangeID roachpb.RangeID) {
+	value, ok := s.mu.replicas.Load(int64(rangeID))
+	if ok {
+		(*Replica)(value).unquiesce()
+	}
+}
+
 func (s *Store) processTick(ctx context.Context, rangeID roachpb.RangeID) bool {
 	value, ok := s.mu.replicas.Load(int64(rangeID))
 	if !ok {
@@ -3825,20 +3832,18 @@ func (s *Store) raftTickLoop(ctx context.Context) {
 			s.mu.replicas.Range(func(k int64, v unsafe.Pointer) bool {
 				r := (*Replica)(v)
 				var desc *roachpb.RangeDescriptor
-
 				r.mu.RLock()
-				if r.mu.quiescent {
-					desc = r.descRLocked()
-				} else {
-					log.Warningf(ctx, "TSX not quiescent: %v", desc)
-				}
+				// NB: we don't check whether r.mu.quiescent is true because (at least in
+				// tests) that information is still sitting in the raft scheduler, and if we
+				// don't generate an unquiesce event, things get stuck.
+				desc = r.descRLocked()
 				r.mu.RUnlock()
 
 				if desc != nil {
 					for _, rep := range desc.Replicas {
 						if rep.NodeID == nodeID {
 							log.Warningf(ctx, "TSX unquiesce %v", desc)
-							r.unquiesce()
+							s.scheduler.EnqueueRaftUnquiesce(desc.RangeID)
 							break
 						}
 					}
