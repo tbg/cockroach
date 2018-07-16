@@ -532,6 +532,12 @@ type Store struct {
 	// livenessMap is a map from nodeID to a bool indicating
 	// liveness. It is updated periodically in raftTickLoop().
 	livenessMap atomic.Value
+	// livenessChange is signaled every time a node is newly
+	// live. The Raft tick loop reads from it to make sure it
+	// unquiesces all ranges that have this node as a member,
+	// so that it can be caught up (quiescence ignores non-live
+	// nodes).
+	livenessChange chan roachpb.NodeID
 
 	// cachedCapacity caches information on store capacity to prevent
 	// expensive recomputations in case leases or replicas are rapidly
@@ -988,6 +994,8 @@ func NewStore(cfg StoreConfig, eng engine.Engine, nodeDesc *roachpb.NodeDescript
 	if cfg.TestingKnobs.DisableScanner {
 		s.setScannerActive(false)
 	}
+
+	s.livenessChange = make(chan roachpb.NodeID)
 
 	return s
 }
@@ -3753,17 +3761,11 @@ func (s *Store) processTick(ctx context.Context, rangeID roachpb.RangeID) bool {
 // be rare, however, and we expect the newly live node to eventually
 // unquiesce the range.
 func (s *Store) nodeIsLiveCallback(nodeID roachpb.NodeID) {
-	// Update the liveness map.
-	s.livenessMap.Store(s.cfg.NodeLiveness.GetIsLiveMap())
-
-	s.mu.replicas.Range(func(k int64, v unsafe.Pointer) bool {
-		r := (*Replica)(v)
-		for _, rep := range r.Desc().Replicas {
-			if rep.NodeID == nodeID {
-				r.unquiesce()
-			}
+	_ = s.stopper.RunAsyncTask(s.AnnotateCtx(context.Background()), "node is live callback", func(ctx context.Context) {
+		select {
+		case <-s.stopper.ShouldQuiesce():
+		case s.livenessChange <- nodeID:
 		}
-		return true
 	})
 }
 
@@ -3811,6 +3813,33 @@ func (s *Store) raftTickLoop(ctx context.Context) {
 
 			s.scheduler.EnqueueRaftTick(rangeIDs...)
 			s.metrics.RaftTicks.Inc(1)
+		case nodeID := <-s.livenessChange:
+			// A node is now live (when it wasn't before). Some ranges may have
+			// quiesced without this node having had a chance to catch up, so
+			// go through all of our ranges that have this node as a member and
+			// make sure they unquiesce.
+			//
+			// NB: s.mu.replicas can be read without holding the lock.
+			s.mu.replicas.Range(func(k int64, v unsafe.Pointer) bool {
+				r := (*Replica)(v)
+				var desc *roachpb.RangeDescriptor
+
+				r.mu.RLock()
+				if r.mu.quiescent {
+					desc = r.descRLocked()
+				}
+				r.mu.RUnlock()
+
+				if desc != nil {
+					for _, rep := range desc.Replicas {
+						if rep.NodeID == nodeID {
+							r.unquiesce()
+							break
+						}
+					}
+				}
+				return true // want more
+			})
 
 		case <-s.stopper.ShouldStop():
 			return
