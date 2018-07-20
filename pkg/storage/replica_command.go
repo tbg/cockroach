@@ -37,6 +37,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
 	"github.com/cockroachdb/cockroach/pkg/util/retry"
+	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 )
 
 // evaluateCommand delegates to the eval method for the given
@@ -138,10 +139,14 @@ func returnRangeInfo(reply roachpb.Response, rec batcheval.EvalContext) {
 // AdminSplit divides the range into into two ranges using args.SplitKey.
 func (r *Replica) AdminSplit(
 	ctx context.Context, args roachpb.AdminSplitRequest,
-) (reply roachpb.AdminSplitResponse, _ *roachpb.Error) {
+) (reply roachpb.AdminSplitResponse, fooErr *roachpb.Error) {
 	if len(args.SplitKey) == 0 {
 		return roachpb.AdminSplitResponse{}, roachpb.NewErrorf("cannot split range with no key provided")
 	}
+	tBegin := timeutil.Now()
+	var restarts int
+	log.Warning(ctx, "********** SPLIT STARTS")
+	log.Warning(ctx, "********** SPLIT ENDS after %s and %d restarts (%v)", timeutil.Since(tBegin), restarts, fooErr)
 
 	var lastErr error
 	retryOpts := base.DefaultRetryOptions()
@@ -165,6 +170,7 @@ func (r *Replica) AdminSplit(
 		default:
 			return reply, roachpb.NewError(lastErr)
 		}
+		restarts++
 	}
 	// If we broke out of the loop after MaxRetries, return the last error.
 	return roachpb.AdminSplitResponse{}, roachpb.NewError(lastErr)
