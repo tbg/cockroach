@@ -211,7 +211,9 @@ func (r *Replica) adminSplitWithDescriptor(
 	tBegin := timeutil.Now()
 	var restarts int
 	log.Warning(ctx, "********** SPLIT STARTS")
-	defer log.Warningf(ctx, "********** SPLIT ENDS after %s and %d restarts (%v)", timeutil.Since(tBegin), restarts, fooErr)
+	defer func() {
+		log.Warningf(ctx, "********** SPLIT ENDS after %s and %d restarts (%v)", timeutil.Since(tBegin), restarts, fooErr)
+	}()
 
 	// Determine split key if not provided with args. This scan is
 	// allowed to be relatively slow because admin commands don't block
