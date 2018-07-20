@@ -143,11 +143,6 @@ func (r *Replica) AdminSplit(
 	if len(args.SplitKey) == 0 {
 		return roachpb.AdminSplitResponse{}, roachpb.NewErrorf("cannot split range with no key provided")
 	}
-	tBegin := timeutil.Now()
-	var restarts int
-	log.Warning(ctx, "********** SPLIT STARTS")
-	defer log.Warningf(ctx, "********** SPLIT ENDS after %s and %d restarts (%v)", timeutil.Since(tBegin), restarts, fooErr)
-
 	var lastErr error
 	retryOpts := base.DefaultRetryOptions()
 	retryOpts.MaxRetries = 10
@@ -170,7 +165,6 @@ func (r *Replica) AdminSplit(
 		default:
 			return reply, roachpb.NewError(lastErr)
 		}
-		restarts++
 	}
 	// If we broke out of the loop after MaxRetries, return the last error.
 	return roachpb.AdminSplitResponse{}, roachpb.NewError(lastErr)
@@ -211,8 +205,13 @@ func maybeDescriptorChangedError(desc *roachpb.RangeDescriptor, err error) (stri
 // See the comment on splitTrigger for details on the complexities.
 func (r *Replica) adminSplitWithDescriptor(
 	ctx context.Context, args roachpb.AdminSplitRequest, desc *roachpb.RangeDescriptor,
-) (roachpb.AdminSplitResponse, error) {
+) (_ roachpb.AdminSplitResponse, fooErr error) {
 	var reply roachpb.AdminSplitResponse
+
+	tBegin := timeutil.Now()
+	var restarts int
+	log.Warning(ctx, "********** SPLIT STARTS")
+	defer log.Warningf(ctx, "********** SPLIT ENDS after %s and %d restarts (%v)", timeutil.Since(tBegin), restarts, fooErr)
 
 	// Determine split key if not provided with args. This scan is
 	// allowed to be relatively slow because admin commands don't block
@@ -285,7 +284,9 @@ func (r *Replica) adminSplitWithDescriptor(
 	log.Infof(ctx, "initiating a split of this range at key %s [r%d]",
 		splitKey, rightDesc.RangeID)
 
+	restarts = -1
 	if err := r.store.DB().Txn(ctx, func(ctx context.Context, txn *client.Txn) error {
+		restarts++
 		log.Event(ctx, "split closure begins")
 		defer log.Event(ctx, "split closure ends")
 		txn.SetDebugName(splitTxnName)
