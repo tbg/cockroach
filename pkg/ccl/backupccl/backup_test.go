@@ -68,8 +68,7 @@ const (
 )
 
 func TestFoo(t *testing.T) {
-	tc := testcluster.StartTestCluster(t, 3, base.TestClusterArgs{})
-	tc.Stopper().Stop(context.Background())
+	_ = testcluster.StartTestCluster(t, 3, base.TestClusterArgs{})
 }
 
 func backupRestoreTestSetupWithParams(

@@ -26,6 +26,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
+	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 )
 
 const (
@@ -118,7 +119,10 @@ var _ purgatoryError = unsplittableRangeError{}
 
 // process synchronously invokes admin split for each proposed split key.
 func (sq *splitQueue) process(ctx context.Context, r *Replica, sysCfg config.SystemConfig) error {
+	log.Warning(ctx, "---- SPLIT ATTEMPT START")
+	tBegin := timeutil.Now()
 	err := sq.processAttempt(ctx, r, sysCfg)
+	log.Warningf(ctx, "---- SPLIT ATTEMPT END %s %v", timeutil.Since(tBegin), err)
 	switch errors.Cause(err).(type) {
 	case nil:
 	case *roachpb.ConditionFailedError:

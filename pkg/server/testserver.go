@@ -45,6 +45,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/ts"
 	"github.com/cockroachdb/cockroach/pkg/util"
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
+	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/metric"
 	"github.com/cockroachdb/cockroach/pkg/util/retry"
 	"github.com/cockroachdb/cockroach/pkg/util/stop"
@@ -420,6 +421,7 @@ func WaitForInitialSplits(db *client.DB) error {
 	if err != nil {
 		return err
 	}
+	log.Warningf(context.Background(), "========= START WAITING")
 	return retry.ForDuration(initialSplitsTimeout, func() error {
 		// Scan all keys in the Meta2Prefix; we only need a count.
 		rows, err := db.Scan(context.TODO(), keys.Meta2Prefix, keys.MetaMax, 0)
