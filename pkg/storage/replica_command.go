@@ -146,7 +146,7 @@ func (r *Replica) AdminSplit(
 	tBegin := timeutil.Now()
 	var restarts int
 	log.Warning(ctx, "********** SPLIT STARTS")
-	defer log.Warning(ctx, "********** SPLIT ENDS after %s and %d restarts (%v)", timeutil.Since(tBegin), restarts, fooErr)
+	defer log.Warningf(ctx, "********** SPLIT ENDS after %s and %d restarts (%v)", timeutil.Since(tBegin), restarts, fooErr)
 
 	var lastErr error
 	retryOpts := base.DefaultRetryOptions()
