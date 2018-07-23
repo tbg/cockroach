@@ -58,7 +58,7 @@ const (
 	// initialSplitsTimeout is the amount of time to wait for initial splits to
 	// occur on a freshly started server.
 	// Note: this needs to be fairly high or tests become flaky.
-	initialSplitsTimeout = 2 * time.Second
+	initialSplitsTimeout = 10 * time.Second
 )
 
 // makeTestConfig returns a config for testing. It overrides the
