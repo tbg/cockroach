@@ -157,14 +157,14 @@ func (ltc *LocalTestCluster) Start(t testing.TB, baseCtx *base.Config, initFacto
 		t.Fatalf("unable to start local test cluster: %s", err)
 	}
 	ltc.Store = storage.NewStore(cfg, ltc.Eng, nodeDesc)
-
-	ltc.Stores.AddStore(ltc.Store)
 	if err := ltc.Store.BootstrapRange(nil, cfg.Settings.Version.ServerVersion); err != nil {
 		t.Fatalf("unable to start local test cluster: %s", err)
 	}
 	if err := ltc.Store.Start(ctx, ltc.Stopper); err != nil {
 		t.Fatalf("unable to start local test cluster: %s", err)
 	}
+
+	ltc.Stores.AddStore(ltc.Store)
 	nc.Set(ctx, nodeDesc.NodeID)
 	if err := ltc.Gossip.SetNodeDescriptor(nodeDesc); err != nil {
 		t.Fatalf("unable to set node descriptor: %s", err)
