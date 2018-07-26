@@ -151,12 +151,12 @@ func (ltc *LocalTestCluster) Start(t testing.TB, baseCtx *base.Config, initFacto
 	)
 	cfg.Transport = transport
 	cfg.TimestampCachePageSize = tscache.TestSklPageSize
-	ltc.Store = storage.NewStore(cfg, ltc.Eng, nodeDesc)
 	ctx := context.TODO()
 
-	if err := ltc.Store.Bootstrap(ctx, roachpb.StoreIdent{NodeID: nodeID, StoreID: 1}, cfg.Settings.Version.BootstrapVersion()); err != nil {
+	if err := storage.Bootstrap(ctx, ltc.Eng, roachpb.StoreIdent{NodeID: nodeID, StoreID: 1}, cfg.Settings.Version.BootstrapVersion()); err != nil {
 		t.Fatalf("unable to start local test cluster: %s", err)
 	}
+	ltc.Store = storage.NewStore(cfg, ltc.Eng, nodeDesc)
 
 	ltc.Stores.AddStore(ltc.Store)
 	if err := ltc.Store.BootstrapRange(nil, cfg.Settings.Version.ServerVersion); err != nil {
