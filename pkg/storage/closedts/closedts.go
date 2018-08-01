@@ -96,6 +96,23 @@ type Storage interface {
 	Add(roachpb.NodeID, ctpb.Entry)
 }
 
+// MaxPeeker is a helper that uses a Storage to extract the largest closed
+// timestamp a given node is known to have closed out.
+type MaxPeeker struct{ Storage }
+
+// Peek returns the largest closed timestamp for the given node known to the
+// Storage. This is useful when deciding whether to try to route a read to
+// a follower: if we know that the request's timestamp has been closed out,
+// there's a good chance the request will be served by the follower.
+func (p MaxPeeker) Peek(nodeID roachpb.NodeID) (hlc.Timestamp, bool) {
+	var maxClosed hlc.Timestamp
+	p.Storage.VisitDescending(nodeID, func(entry ctpb.Entry) (done bool) {
+		maxClosed = entry.ClosedTimestamp
+		return true // done
+	})
+	return maxClosed, maxClosed == hlc.Timestamp{}
+}
+
 // A Notifyee is a sink for closed timestamp updates.
 type Notifyee interface {
 	// Notify returns a channel into which updates are written.

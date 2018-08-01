@@ -185,8 +185,10 @@ type DistSenderConfig struct {
 	nodeDescriptor    *roachpb.NodeDescriptor
 	RPCContext        *rpc.Context
 	RangeDescriptorDB RangeDescriptorDB
-
-	TestingKnobs ClientTestingKnobs
+	// A method that, given a node ID, returns the largest closed timestamp known
+	// for that node (with a boolean indicating whether a timestamp is returned).
+	MaxClosedTimestamp func(nodeID roachpb.NodeID) (hlc.Timestamp, bool)
+	TestingKnobs       ClientTestingKnobs
 }
 
 // NewDistSender returns a batch.Sender instance which connects to the

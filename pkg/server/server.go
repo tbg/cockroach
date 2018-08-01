@@ -68,6 +68,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/sql/stats"
 	"github.com/cockroachdb/cockroach/pkg/sqlmigrations"
 	"github.com/cockroachdb/cockroach/pkg/storage"
+	"github.com/cockroachdb/cockroach/pkg/storage/closedts"
 	"github.com/cockroachdb/cockroach/pkg/storage/closedts/container"
 	"github.com/cockroachdb/cockroach/pkg/storage/engine"
 	"github.com/cockroachdb/cockroach/pkg/ts"
@@ -270,7 +271,13 @@ func NewServer(cfg Config, stopper *stop.Stopper) (*Server, error) {
 		Clock:           s.clock,
 		RPCContext:      s.rpcContext,
 		RPCRetryOptions: &retryOpts,
-		TestingKnobs:    clientTestingKnobs,
+		MaxClosedTimestamp: func(nodeID roachpb.NodeID) (hlc.Timestamp, bool) {
+			// NB: we wrap this in a closure because we need the late binding. s.node
+			// isn't even initialized at this point in the code, and Storage is only
+			// initialized when the node *starts*.
+			return closedts.MaxPeeker{s.node.storeCfg.ClosedTimestamp.Storage}.Peek(nodeID)
+		},
+		TestingKnobs: clientTestingKnobs,
 	}
 	s.distSender = kv.NewDistSender(distSenderCfg, s.gossip)
 	s.registry.AddMetricStruct(s.distSender.Metrics())
