@@ -3799,7 +3799,7 @@ func (s *Store) processTick(ctx context.Context, rangeID roachpb.RangeID) bool {
 
 	// Make sure we ask all live nodes for closed timestamp updates.
 	for nodeID, live := range livenessMap {
-		if live {
+		if live && nodeID != s.nodeDesc.NodeID {
 			s.cfg.ClosedTimestamp.Clients.EnsureClient(nodeID)
 		}
 	}

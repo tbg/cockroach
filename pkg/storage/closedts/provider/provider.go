@@ -16,6 +16,7 @@ package provider
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 
@@ -124,6 +125,7 @@ func (p *Provider) runCloser(ctx context.Context) {
 		closeFraction := closedts.CloseFraction.Get(&p.cfg.Settings.SV)
 		targetDuration := float64(closedts.TargetDuration.Get(&p.cfg.Settings.SV))
 		t.Reset(time.Duration(closeFraction * targetDuration))
+		log.Warningf(ctx, "TSX waiting to close for %s", time.Duration(closeFraction*targetDuration))
 
 		select {
 		case <-p.cfg.Stopper.ShouldQuiesce():
@@ -175,6 +177,8 @@ func (p *Provider) runCloser(ctx context.Context) {
 // to the local Storage.
 func (p *Provider) Notify(nodeID roachpb.NodeID) chan<- ctpb.Entry {
 	ch := make(chan ctpb.Entry)
+
+	log.Warningf(context.Background(), "new notification for n%d", nodeID)
 
 	p.cfg.Stopper.RunWorker(context.Background(), func(ctx context.Context) {
 		handle := func(entry ctpb.Entry) {
@@ -239,9 +243,9 @@ func (p *Provider) Subscribe(ctx context.Context, ch chan<- ctpb.Entry) {
 		return
 	}
 
-	if log.V(1) {
-		log.Info(ctx, "new subscriber connected")
-	}
+	// if log.V(1) {
+	log.Info(ctx, "TSX new subscriber %d connected", i)
+	// }
 
 	// The subscription is already active, so any storage snapshot from now on is
 	// going to fully catch up the subscriber without a gap.
@@ -283,13 +287,29 @@ func (p *Provider) Subscribe(ctx context.Context, ch chan<- ctpb.Entry) {
 			return
 		}
 
+		var n int
+		minMLAI := ctpb.LAI(math.MaxInt64)
+		var minRangeID, maxRangeID roachpb.RangeID
+		var maxMLAI ctpb.LAI
 		for _, entry := range queue {
+			n += len(entry.MLAI)
+			for rangeID, mlai := range entry.MLAI {
+				if mlai < minMLAI {
+					minMLAI = mlai
+					minRangeID = rangeID
+				}
+				if mlai > maxMLAI {
+					maxMLAI = mlai
+					maxRangeID = rangeID
+				}
+			}
 			select {
 			case ch <- entry:
 			case <-ctx.Done():
 				return
 			}
 		}
+		log.Warningf(ctx, "TSX sent %d entries to client %d (%d range updates total, min/max mlai: %d@r%d / %d@r%d)", len(queue), i, n, minMLAI, minRangeID, maxMLAI, maxRangeID)
 	}
 }
 

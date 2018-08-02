@@ -3136,7 +3136,11 @@ func (r *Replica) tryExecuteWriteBatch(
 		}
 		return nil, pErr, proposalNoRetry
 	}
-	untrack(ctx, r.RangeID, ctpb.LAI(maxLeaseIndex))
+	// A max lease index of zero is returned when no proposal was made or a lease was proposed.
+	// In both cases, we don't need to communicate a MLAI.
+	if maxLeaseIndex != 0 {
+		untrack(ctx, r.RangeID, ctpb.LAI(maxLeaseIndex))
+	}
 
 	// After the command is proposed to Raft, invoking endCmds.done is now the
 	// responsibility of processRaftCommand.
@@ -3384,7 +3388,7 @@ func (r *Replica) evaluateProposal(
 }
 
 // insertProposalLocked assigns a MaxLeaseIndex to a proposal and adds
-// it to the pending map. Returns the assigned MaxLeaseIndex.
+// it to the pending map. Returns the assigned MaxLeaseIndex, if any.
 func (r *Replica) insertProposalLocked(
 	proposal *ProposalData, proposerReplica roachpb.ReplicaDescriptor, proposerLease roachpb.Lease,
 ) int64 {
@@ -3395,7 +3399,8 @@ func (r *Replica) insertProposalLocked(
 	if r.mu.lastAssignedLeaseIndex < r.mu.state.LeaseAppliedIndex {
 		r.mu.lastAssignedLeaseIndex = r.mu.state.LeaseAppliedIndex
 	}
-	if !proposal.Request.IsLeaseRequest() {
+	isLease := proposal.Request.IsLeaseRequest()
+	if !isLease {
 		r.mu.lastAssignedLeaseIndex++
 	}
 	proposal.command.MaxLeaseIndex = r.mu.lastAssignedLeaseIndex
@@ -3412,6 +3417,11 @@ func (r *Replica) insertProposalLocked(
 		log.Fatalf(ctx, "pending command already exists for %s", proposal.idKey)
 	}
 	r.mu.localProposals[proposal.idKey] = proposal
+	if isLease {
+		// For lease requests, we return zero because no real MaxLeaseIndex is assigned.
+		// We could also return the lastAssignedIndex but this invites confusion.
+		return 0
+	}
 	return int64(proposal.command.MaxLeaseIndex)
 }
 
@@ -3603,6 +3613,9 @@ func (r *Replica) propose(
 		return nil, nil, 0, roachpb.NewError(err)
 	}
 	maxLeaseIndex := r.insertProposalLocked(proposal, repDesc, lease)
+	if maxLeaseIndex == 0 && !ba.IsLeaseRequest() {
+		log.Fatalf(ctx, "no MaxLeaseIndex returned for %s", ba)
+	}
 
 	if filter := r.store.TestingKnobs().TestingProposalFilter; filter != nil {
 		filterArgs := storagebase.ProposalFilterArgs{
