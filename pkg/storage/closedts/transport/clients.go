@@ -82,7 +82,6 @@ func (pr *Clients) EnsureClient(nodeID roachpb.NodeID) {
 }
 
 func (pr *Clients) getOrCreateClient(nodeID roachpb.NodeID) *client {
-	ctx := log.WithLogTagStr(context.Background(), "ct-client", "")
 	// Fast path to check for existing client without an allocation.
 	p, found := pr.clients.Load(int64(nodeID))
 	cl := (*client)(p)
@@ -94,6 +93,10 @@ func (pr *Clients) getOrCreateClient(nodeID roachpb.NodeID) *client {
 	}
 
 	// Slow path: create the client. Another inserter might race us to it.
+
+	// This allocates, so only do it when necessary.
+	ctx := log.WithLogTagStr(context.Background(), "ct-client", "")
+
 	cl = &client{}
 	cl.mu.requested = map[roachpb.RangeID]struct{}{}
 
