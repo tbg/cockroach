@@ -29,6 +29,7 @@ import (
 	"net"
 	"reflect"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -591,6 +592,7 @@ func (rd rangeDescByAge) Less(i, j int) bool {
 // the gossip network used by multiTestContext is only partially operational.
 func (m *multiTestContext) FirstRange() (*roachpb.RangeDescriptor, error) {
 	var descs []*roachpb.RangeDescriptor
+	var msgs []string
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	for _, str := range m.senders {
@@ -604,19 +606,21 @@ func (m *multiTestContext) FirstRange() (*roachpb.RangeDescriptor, error) {
 		// current version is guaranteed to be present on one of them.
 		if err := str.VisitStores(func(s *storage.Store) error {
 			firstRng := s.LookupReplica(roachpb.RKeyMin)
+			msgs = append(msgs, fmt.Sprintf("visiting %s, found first range: %t", s, firstRng != nil))
 			if firstRng != nil {
 				descs = append(descs, firstRng.Desc())
 			}
 			return nil
 		}); err != nil {
-			panic(fmt.Sprintf(
-				"no error should be possible from this invocation of VisitStores, but found %s", err))
+			panic(fmt.Sprintf("no error should be possible from this invocation of VisitStores, but found %s", err))
 		}
 	}
 	if len(descs) == 0 {
 		// This is a panic because it should currently be impossible in a properly
 		// constructed multiTestContext.
-		panic("first Range is not present on any store in the multiTestContext.")
+		panic(fmt.Sprintf(
+			"first Range is not present on any store in the multiTestContext, log:\n%s", strings.Join(msgs, "\n"),
+		))
 	}
 	// Sort the RangeDescriptor versions by age and return the most recent
 	// version.
