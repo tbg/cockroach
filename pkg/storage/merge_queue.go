@@ -292,7 +292,8 @@ func (mq *mergeQueue) process(
 		// as purgatory-worthy.
 		return rangeMergePurgatoryError{err}
 	}
-	return nil
+	return mq.store.consistencyQueue.process(ctx, lhsRepl, config.SystemConfig{})
+	// return nil
 }
 
 func (*mergeQueue) timer(time.Duration) time.Duration {

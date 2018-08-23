@@ -110,7 +110,9 @@ func (q *consistencyQueue) process(
 		log.VErrEventf(ctx, 2, "failed to update last processed time: %v", err)
 	}
 
-	req := roachpb.CheckConsistencyRequest{}
+	req := roachpb.CheckConsistencyRequest{
+		WithDiff: true,
+	}
 	if _, pErr := repl.CheckConsistency(ctx, req); pErr != nil {
 		var shouldQuiesce bool
 		select {
