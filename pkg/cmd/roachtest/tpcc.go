@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"strconv"
@@ -51,8 +52,11 @@ func registerTPCC(r *registry) {
 				"./workload run tpcc --init --warehouses=%d --histograms=logs/stats.json"+
 					extra+duration+" {pgurl:1-%d}",
 				warehouses, nodes)
-			c.Run(ctx, c.Node(nodes+1), cmd)
-			return nil
+			l, err := c.l.childLogger2("workload", ioutil.Discard, ioutil.Discard)
+			if err != nil {
+				return err
+			}
+			return c.RunL(ctx, l, c.Node(nodes+1), cmd)
 		})
 		chaos := Chaos{
 			Timer: Periodic{

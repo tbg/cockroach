@@ -89,12 +89,16 @@ func (l *logger) close() {
 }
 
 func (l *logger) childLogger(name string) (*logger, error) {
+	return l.childLogger2(name, l.stdout, l.stderr)
+}
+
+func (l *logger) childLogger2(name string, stdout, stderr io.Writer) (*logger, error) {
 	if l.file == nil {
 		p := []byte(name + ": ")
 		return &logger{
 			name:   name,
-			stdout: &prefixWriter{out: l.stdout, prefix: p},
-			stderr: &prefixWriter{out: l.stderr, prefix: p},
+			stdout: &prefixWriter{out: stdout, prefix: p},
+			stderr: &prefixWriter{out: stderr, prefix: p},
 		}, nil
 	}
 	return newLogger(l.name, name, name+": " /* prefix */, l.stdout, l.stderr)
