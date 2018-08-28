@@ -101,7 +101,7 @@ func (l *logger) childLogger2(name string, stdout, stderr io.Writer) (*logger, e
 			stderr: &prefixWriter{out: stderr, prefix: p},
 		}, nil
 	}
-	return newLogger(l.name, name, name+": " /* prefix */, l.stdout, l.stderr)
+	return newLogger(l.name, name, name+": " /* prefix */, stdout, stderr)
 }
 
 func (l *logger) printf(f string, args ...interface{}) {
