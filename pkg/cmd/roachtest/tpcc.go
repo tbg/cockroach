@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -45,7 +46,7 @@ func registerTPCC(r *registry) {
 		t.Status("running workload")
 		m := newMonitor(ctx, c, c.Range(1, nodes))
 		m.Go(func(ctx context.Context) error {
-			duration := " --duration=" + ifLocal("10s", "10m")
+			duration := " --duration=24h" // HACK + ifLocal("10s", "10m")
 			cmd := fmt.Sprintf(
 				"./workload run tpcc --init --warehouses=%d --histograms=logs/stats.json"+
 					extra+duration+" {pgurl:1-%d}",
@@ -53,6 +54,16 @@ func registerTPCC(r *registry) {
 			c.Run(ctx, c.Node(nodes+1), cmd)
 			return nil
 		})
+		chaos := Chaos{
+			Timer: Periodic{
+				Period:   time.Minute,
+				DownTime: time.Minute,
+			},
+			Target:       func() nodeListOption { return c.Node(1 + rand.Intn(nodes)) },
+			Stopper:      time.After(24 * time.Hour),
+			DrainAndQuit: false,
+		}
+		m.Go(chaos.Runner(c, m))
 		m.Wait()
 	}
 
