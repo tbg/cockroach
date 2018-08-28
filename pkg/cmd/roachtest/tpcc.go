@@ -72,7 +72,7 @@ func registerTPCC(r *registry) {
 		Nodes:  nodes(4),
 		Stable: true, // DO NOT COPY to new tests
 		Run: func(ctx context.Context, t *test, c *cluster) {
-			runTPCC(ctx, t, c, 1, " --wait=false")
+			runTPCC(ctx, t, c, 1, " --wait=false --tolerate-errors")
 		},
 	})
 	r.Add(testSpec{
