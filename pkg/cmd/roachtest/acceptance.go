@@ -53,8 +53,8 @@ func registerAcceptance(r *registry) {
 		tc := tc
 		spec.SubTests = append(spec.SubTests, testSpec{
 			Name:    tc.name,
-			Timeout: 10 * time.Minute,
-			Stable:  true, // DO NOT COPY to new tests
+			Timeout: time.Hour, // HACK
+			Stable:  true,      // DO NOT COPY to new tests
 			Run: func(ctx context.Context, t *test, c *cluster) {
 				c.Wipe(ctx)
 				tc.fn(ctx, t, c)

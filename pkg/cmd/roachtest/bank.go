@@ -21,6 +21,7 @@ import (
 	gosql "database/sql"
 	"fmt"
 	"math/rand"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -39,6 +40,8 @@ const (
 )
 
 type bankClient struct {
+	log *logger
+
 	syncutil.RWMutex
 	db    *gosql.DB
 	count uint64
@@ -93,6 +96,11 @@ func (s *bankState) done(ctx context.Context) bool {
 // It requires that the caller hold the client's write lock.
 func (s *bankState) initClient(ctx context.Context, c *cluster, i int) {
 	s.clients[i-1].db = c.Conn(ctx, i)
+	var err error
+	s.clients[i-1].log, err = c.l.ChildLogger(fmt.Sprintf("client%d", i))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Returns counts from all the clients.
@@ -261,6 +269,12 @@ func (s *bankState) chaosMonkey(
 	}
 }
 
+func stacks() string {
+	buf := make([]byte, 2<<20)
+	buf = buf[:runtime.Stack(buf, true)]
+	return string(buf)
+}
+
 // Wait until all clients have stopped.
 func (s *bankState) waitClientsStop(
 	ctx context.Context, t *test, c *cluster, stallDuration time.Duration,
@@ -288,8 +302,10 @@ func (s *bankState) waitClientsStop(
 				if curRound == prevRound {
 					if timeutil.Now().After(stallTime) {
 						atomic.StoreInt32(&s.stalled, 1)
-						t.Fatalf("stall detected at round %d, no forward progress for %s",
+						fmt.Println(stacks())
+						c.l.Printf("stall detected at round %d, no forward progress for %s\n",
 							curRound, stallDuration)
+						time.Sleep(100 * time.Minute)
 					}
 				} else {
 					prevRound = curRound
@@ -383,8 +399,15 @@ func runBankNodeRestart(ctx context.Context, t *test, c *cluster) {
 	s.initBank(ctx, t, c)
 
 	clientIdx := c.nodes
+	s.clients[0].db = c.Conn(ctx, clientIdx)
+	{
+		var err error
+		s.clients[0].log, err = c.l.ChildLogger("client")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	client := &s.clients[0]
-	client.db = c.Conn(ctx, clientIdx)
 	go s.transferMoney(ctx, c, 1, bankNumAccounts, bankMaxTransfer)
 
 	defer func() {

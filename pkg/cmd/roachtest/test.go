@@ -676,6 +676,7 @@ func (r *registry) run(
 					}
 
 					fmt.Fprintf(r.out, "--- FAIL: %s %s(%s)\n%s", t.Name(), stability, dstr, output)
+					os.Exit(123) // HACK
 					if postIssues && issues.CanPost() && t.spec.Run != nil {
 						authorEmail := getAuthorEmail(failLoc.file, failLoc.line)
 						branch := "<unknown branch>"
