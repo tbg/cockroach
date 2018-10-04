@@ -68,6 +68,7 @@ func TestMatchOrSkip(t *testing.T) {
 
 func TestRegistryRun(t *testing.T) {
 	r := newRegistry()
+	r.config.skipClusterWipeOnTestStart = true
 	r.out = ioutil.Discard
 	r.Add(testSpec{
 		Name:    "pass",
@@ -126,6 +127,7 @@ func TestRegistryStatus(t *testing.T) {
 	cleaningUpRE := regexp.MustCompile(`(?m)^.*status: cleaning up \(.*\)$`)
 
 	r := newRegistry()
+	r.config.skipClusterWipeOnTestStart = true
 	r.out = &buf
 	r.statusInterval = 20 * time.Millisecond
 	r.Add(testSpec{
@@ -179,6 +181,7 @@ func TestRegistryStatusUnknown(t *testing.T) {
 	unknownRE := regexp.MustCompile(`(?m)^.*status: \?\?\? \(.*\)$`)
 
 	r := newRegistry()
+	r.config.skipClusterWipeOnTestStart = true
 	r.out = &buf
 	r.statusInterval = 20 * time.Millisecond
 
@@ -210,6 +213,7 @@ func TestRegistryRunTimeout(t *testing.T) {
 	timeoutRE := regexp.MustCompile(`(?m)^.*test timed out \(.*\)$`)
 
 	r := newRegistry()
+	r.config.skipClusterWipeOnTestStart = true
 	r.out = &buf
 
 	r.Add(testSpec{
@@ -230,9 +234,9 @@ func TestRegistryRunTimeout(t *testing.T) {
 
 func TestRegistryRunClusterExpired(t *testing.T) {
 	defer func(l bool, n string) {
-		local, clusterName = l, n
-	}(local, clusterName)
-	local, clusterName = true, "local"
+		local, clusterNames = l, n
+	}(local, clusterNames)
+	local, clusterNames = true, "local"
 
 	var buf syncedBuffer
 	expiredRE := regexp.MustCompile(`(?m)^.*cluster expired \(.*\)$`)
@@ -240,6 +244,7 @@ func TestRegistryRunClusterExpired(t *testing.T) {
 	r := newRegistry()
 	r.config.skipClusterValidationOnAttach = true
 	r.config.skipClusterStopOnAttach = true
+	r.config.skipClusterWipeOnTestStart = true
 	r.out = &buf
 
 	r.Add(testSpec{
@@ -358,6 +363,7 @@ func TestRegistryMinVersion(t *testing.T) {
 			var buf syncedBuffer
 			var runA, runB bool
 			r := newRegistry()
+			r.config.skipClusterWipeOnTestStart = true
 			r.out = &buf
 			r.Add(testSpec{
 				Name:       "a",

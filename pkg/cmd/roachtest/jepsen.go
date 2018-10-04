@@ -281,9 +281,8 @@ cd /mnt/data1/jepsen/cockroachdb && set -eo pipefail && \
 // !!!
 func registerXXX(r *registry) {
 	spec := testSpec{
-		Name:               "XXX",
-		Nodes:              nodes(1),
-		ClusterReusePolicy: OnlyTagged("xxx"),
+		Name:    "XXX",
+		Cluster: makeClusterSpec(1, OnlyTagged("xxx")),
 		Run: func(ctx context.Context, t *test, c *cluster) {
 			t.l.Printf("!!! in test\n")
 			if rand.Intn(3) == 0 {

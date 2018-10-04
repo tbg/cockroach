@@ -190,10 +190,28 @@ func initBinaries() {
 }
 
 var clusters = map[*cluster]struct{}{}
+
+// savedClusters keeps track of clusters that have been saved for further
+// debugging. Each cluster comes with a message about the test failure causing
+// it to be saved.
+var savedClusters = make(map[*cluster]string)
 var clustersMu syncutil.Mutex
 var interrupted int32
 
-func destroyAllClusters() {
+func saveCluster(c *cluster, msg string) {
+	clustersMu.Lock()
+	savedClusters[c] = msg
+	clustersMu.Unlock()
+}
+func clusterSaved(c *cluster) bool {
+	clustersMu.Lock()
+	defer clustersMu.Unlock()
+	_, ok := savedClusters[c]
+	return ok
+}
+
+func destroyAllClusters(ctx context.Context, l *logger) {
+	l.PrintfCtx(ctx, "destroying all clusters")
 	atomic.StoreInt32(&interrupted, 1)
 
 	// Fire off a goroutine to destroy all of the clusters.
@@ -207,7 +225,9 @@ func destroyAllClusters() {
 		for c := range clusters {
 			go func(c *cluster) {
 				defer wg.Done()
-				c.destroy(context.Background())
+				if !clusterSaved(c) {
+					c.destroy(context.Background(), l)
+				}
 			}(c)
 		}
 		clusters = map[*cluster]struct{}{}
@@ -241,6 +261,9 @@ func unregisterCluster(c *cluster) bool {
 }
 
 func execCmd(ctx context.Context, l *logger, args ...string) error {
+	defer func() {
+		l.PrintfCtx(ctx, "!!! execCmd done. (%s)", args)
+	}()
 	// NB: It is important that this waitgroup Waits after cancel() below.
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -696,6 +719,9 @@ type cluster struct {
 	// cloned or when we attach to an existing roachprod cluster.
 	// If not set, Destroy() only wipes the cluster.
 	owned bool
+	// alloc is optionally set if owned is set. If set, it represents resources in
+	// a resourceGovernor that need to be released when the cluster is destroyed.
+	alloc resourceAllocation
 	// encryptDefault is true if the cluster should default to having encryption
 	// at rest enabled. The default only applies if encryption is not explicitly
 	// enabled or disabled by options passed to Start.
@@ -703,8 +729,10 @@ type cluster struct {
 }
 
 type clusterConfig struct {
-	// name must be empty if localCluster is specified.
-	name  string
+	// !!!
+	// // name must be empty if localCluster is specified.
+	// name string
+	// !!! rename to clusterSpec
 	nodes clusterSpec
 	// artifactsDir is the path where log file will be stored.
 	artifactsDir string
@@ -712,9 +740,54 @@ type clusterConfig struct {
 	teeOpt       teeOptType
 	user         string
 	useIOBarrier bool
+	alloc        resourceAllocation
+}
+
+// clusterFactory is a creator a clusters. It contains a semaphore that can be
+// used to throttle cluster creation because AWS has ridiculous API calls limits.
+type clusterFactory struct {
+	sem          chan struct{}
+	namePrefix   string
+	artifactsDir string
+	counter      uint64 // accessed atomically
+}
+
+func newClusterFactory(
+	concurrentCreations int, user string, clustersID string, artifactsDir string,
+) *clusterFactory {
+	secs := time.Now().Unix()
+	var prefix string
+	if clustersID != "" {
+		prefix = fmt.Sprintf("%s-%s-%d-", user, clustersID, secs)
+	} else {
+		prefix = fmt.Sprintf("%s-%d-", user, secs)
+	}
+	return &clusterFactory{
+		sem:          make(chan struct{}, concurrentCreations),
+		namePrefix:   prefix,
+		artifactsDir: artifactsDir,
+	}
+}
+
+// acquireSem blocks until the semaphore allows a new cluster creation. The
+// returned function needs to be called when cluster creation finished.
+func (f *clusterFactory) acquireSem() func() {
+	f.sem <- struct{}{}
+	return f.releaseSem
+}
+
+func (f *clusterFactory) releaseSem() {
+	<-f.sem
 }
 
 // newCluster creates a new roachprod cluster.
+//
+// l is the logger to be used by the cluster creation operation. The caller
+// retains ownership; newCluster() does not assume anything about l's lifetime
+// and does not set c.l.
+//
+// setStatus is called with status messages indicating the stage of cluster
+// creation.
 //
 // NOTE: setTest() needs to be called before a test can use this cluster.
 //
@@ -726,19 +799,28 @@ type clusterConfig struct {
 // to figure out how to make that work with `roachprod create`. Perhaps one
 // invocation of `roachprod create` per unique node-spec. Are there guarantees
 // we're making here about the mapping of nodeSpecs to node IDs?
-func newCluster(ctx context.Context, l *logger, cfg clusterConfig) (*cluster, error) {
+func (f *clusterFactory) newCluster(
+	ctx context.Context, cfg clusterConfig, setStatus func(string), teeOpt teeOptType,
+) (*cluster, error) {
 	if atomic.LoadInt32(&interrupted) == 1 {
 		return nil, fmt.Errorf("newCluster interrupted")
 	}
 
 	var name string
 	if cfg.localCluster {
-		if cfg.name != "" {
-			log.Fatalf(ctx, "can't specify name %q with local flag", cfg.name)
-		}
+		// !!!
+		// if cfg.name != "" {
+		//   log.Fatalf(ctx, "can't specify name %q with local flag", cfg.name)
+		// }
 		name = "local" // The roachprod tool understands this magic name.
 	} else {
-		name = makeClusterName(cfg.user + "-" + cfg.name)
+		// !!!
+		// if cfg.name == "" {
+		//   log.Fatal(ctx, "cluster name must be specified")
+		// }
+		counter := atomic.AddUint64(&f.counter, 1)
+		name = makeClusterName(
+			fmt.Sprintf("%s-%02d-%s", f.namePrefix, counter, cfg.nodes.String()))
 	}
 
 	if cfg.nodes.NodeCount == 0 {
@@ -752,11 +834,11 @@ func newCluster(ctx context.Context, l *logger, cfg clusterConfig) (*cluster, er
 		name:           name,
 		nodes:          cfg.nodes.NodeCount,
 		status:         func(...interface{}) {},
-		l:              l,
 		destroyed:      make(chan struct{}),
 		expiration:     cfg.nodes.expiration(),
 		owned:          true,
 		encryptDefault: encrypt.asBool(),
+		alloc:          cfg.alloc,
 	}
 	registerCluster(c)
 
@@ -769,9 +851,35 @@ func newCluster(ctx context.Context, l *logger, cfg clusterConfig) (*cluster, er
 		sargs = append(sargs, "--local-ssd-no-ext4-barrier")
 	}
 
+	setStatus("acquring cluster creation semaphore")
+	release := f.acquireSem()
+	defer release()
+	setStatus("roachprod create")
 	c.status("creating cluster")
-	if err := execCmd(ctx, l, sargs...); err != nil {
-		return nil, err
+
+	// Logs for creating a new cluster go to a dedicated log file.
+	logPath := filepath.Join(
+		f.artifactsDir, "cluster-create",
+		strings.Replace(name, "/", "-", -1)+".log")
+	l, err := rootLogger(logPath, teeOpt)
+	if err != nil {
+		log.Fatal(ctx, err)
+	}
+
+	success := false
+	var creationErr error
+	// Attempt to create a cluster several times, cause them clouds are flaky.
+	for i := 0; i < 3; i++ {
+		creationErr = execCmd(ctx, l, sargs...)
+		if err == nil {
+			success = true
+			break
+		}
+		l.PrintfCtx(ctx, "Failed to create cluster. Cleaning up in case it was partially created.")
+		c.Destroy(ctx, l)
+	}
+	if !success {
+		return nil, creationErr
 	}
 
 	c.status("running test")
@@ -818,7 +926,7 @@ func attachToExistingCluster(
 		}
 		if !opt.skipWipe {
 			if clusterWipe {
-				if err := c.WipeE(ctx, c.All()); err != nil {
+				if err := c.WipeE(ctx, l, c.All()); err != nil {
 					return nil, err
 				}
 			} else {
@@ -1072,7 +1180,7 @@ func (c *cluster) FetchCores(ctx context.Context) error {
 	})
 }
 
-func (c *cluster) Destroy(ctx context.Context) {
+func (c *cluster) Destroy(ctx context.Context, l *logger) {
 	if c.nodes == 0 {
 		// No nodes can happen during unit tests and implies nothing to do.
 		return
@@ -1082,33 +1190,34 @@ func (c *cluster) Destroy(ctx context.Context) {
 	// may not exist if the test was interrupted and the teardown machinery is
 	// destroying all clusters. (See destroyAllClusters).
 	if exists := unregisterCluster(c); exists {
-		c.destroy(ctx)
+		c.destroy(ctx, l)
 	}
 	// If the test was interrupted, another goroutine is destroying the cluster
 	// and we need to wait for that to finish before closing the
 	// logger. Otherwise, the destruction can get interrupted due to closing the
 	// stdout/stderr of the roachprod command.
 	<-c.destroyed
-	c.l.close()
+	// !!! c.l.close()
 }
 
-func (c *cluster) destroy(ctx context.Context) {
+func (c *cluster) destroy(ctx context.Context, l *logger) {
 	defer close(c.destroyed)
 
 	if clusterWipe {
 		if c.owned {
 			c.status("destroying cluster")
-			if err := execCmd(ctx, c.l, roachprod, "destroy", c.name); err != nil {
-				c.l.Errorf("%s", err)
+			if err := execCmd(ctx, l, roachprod, "destroy", c.name); err != nil {
+				l.Errorf("%s", err)
 			}
+			c.alloc.Release()
 		} else {
 			c.status("wiping cluster")
-			if err := execCmd(ctx, c.l, roachprod, "wipe", c.name); err != nil {
-				c.l.Errorf("%s", err)
+			if err := execCmd(ctx, l, roachprod, "wipe", c.name); err != nil {
+				l.Errorf("%s", err)
 			}
 		}
 	} else {
-		c.l.Printf("skipping cluster wipe\n")
+		l.Printf("skipping cluster wipe\n")
 	}
 }
 
@@ -1328,7 +1437,7 @@ func (c *cluster) Stop(ctx context.Context, opts ...option) {
 
 // WipeE wipes a subset of the nodes in a cluster. See cluster.Start() for a
 // description of the nodes parameter.
-func (c *cluster) WipeE(ctx context.Context, opts ...option) error {
+func (c *cluster) WipeE(ctx context.Context, l *logger, opts ...option) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -1337,7 +1446,7 @@ func (c *cluster) WipeE(ctx context.Context, opts ...option) error {
 	}
 	c.status("wiping cluster")
 	defer c.status()
-	return execCmd(ctx, c.l, roachprod, "wipe", c.makeNodes(opts...))
+	return execCmd(ctx, l, roachprod, "wipe", c.makeNodes(opts...))
 }
 
 // Wipe is like WipeE, except instead of returning an error, it does
@@ -1347,7 +1456,7 @@ func (c *cluster) Wipe(ctx context.Context, opts ...option) {
 		// If the test has failed, don't try to limp along.
 		return
 	}
-	if err := c.WipeE(ctx, opts...); err != nil {
+	if err := c.WipeE(ctx, c.l, opts...); err != nil {
 		c.t.Fatal(err)
 	}
 }
