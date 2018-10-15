@@ -12,6 +12,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+// +build ignore
+
 package cli
 
 import (
@@ -19,9 +21,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/cockroachdb/cockroach/pkg/server/serverpb"
+	"github.com/spf13/cobra"
 )
 
 var initCmd = &cobra.Command{

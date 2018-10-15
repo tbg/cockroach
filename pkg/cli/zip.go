@@ -13,6 +13,8 @@
 // permissions and limitations under the License. See the AUTHORS file
 // for names of contributors.
 
+// +build ignore
+
 package cli
 
 import (
@@ -25,11 +27,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-
 	"github.com/cockroachdb/cockroach/pkg/server/serverpb"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 var debugZipCmd = &cobra.Command{

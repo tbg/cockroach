@@ -12,6 +12,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+// +build ignore
+
 package cli
 
 import (
@@ -19,12 +21,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
-
-	"github.com/cockroachdb/cockroach/pkg/workload"
-
-	// Register the relevant examples
+	"github.com/cockroachdb/cockroach/pkg/workload" // Register the relevant examples
 	_ "github.com/cockroachdb/cockroach/pkg/workload/examples"
+	"github.com/spf13/cobra"
 )
 
 var genExamplesCmd = &cobra.Command{

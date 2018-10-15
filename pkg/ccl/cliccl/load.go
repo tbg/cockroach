@@ -16,34 +16,12 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/ccl/backupccl"
 	"github.com/cockroachdb/cockroach/pkg/ccl/storageccl"
-	"github.com/cockroachdb/cockroach/pkg/cli"
 	"github.com/cockroachdb/cockroach/pkg/settings/cluster"
 	"github.com/cockroachdb/cockroach/pkg/util/humanizeutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
-
-func init() {
-	loadShowCmd := &cobra.Command{
-		Use:   "show <basepath>",
-		Short: "show backups",
-		Long:  "Shows information about a SQL backup.",
-		RunE:  cli.MaybeDecorateGRPCError(runLoadShow),
-	}
-
-	loadCmds := &cobra.Command{
-		Use:   "load [command]",
-		Short: "loading commands",
-		Long:  `Commands for bulk loading external files.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Usage()
-		},
-	}
-	cli.AddCmd(loadCmds)
-	loadCmds.AddCommand(loadShowCmd)
-}
 
 func runLoadShow(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {

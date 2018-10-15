@@ -12,6 +12,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+// +build ignore
+
 package cli
 
 // TestingReset resets global mutable state so that Run can be called multiple

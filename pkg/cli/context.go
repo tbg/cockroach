@@ -12,6 +12,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+// +build ignore
+
 package cli
 
 import (
@@ -19,9 +21,6 @@ import (
 	"net/url"
 	"os"
 	"time"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
 	"github.com/cockroachdb/cockroach/pkg/server"
@@ -31,6 +30,8 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/storage/engine"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	isatty "github.com/mattn/go-isatty"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // serverCfg is used as the client-side copy of default server

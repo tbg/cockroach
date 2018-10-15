@@ -12,16 +12,17 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+// +build ignore
+
 package cli
 
 import (
 	"os"
 
-	"github.com/lib/pq"
-	"github.com/spf13/cobra"
-
 	"github.com/cockroachdb/cockroach/pkg/security"
 	"github.com/cockroachdb/cockroach/pkg/sql/pgwire/pgerror"
+	"github.com/lib/pq"
+	"github.com/spf13/cobra"
 )
 
 var password bool

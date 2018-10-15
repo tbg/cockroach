@@ -12,7 +12,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-// +build !windows
+// +build ignore
 
 package cli
 
@@ -22,11 +22,10 @@ import (
 	"os/signal"
 	"strings"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/cockroachdb/cockroach/pkg/cli/cliflags"
 	"github.com/cockroachdb/cockroach/pkg/util/sdnotify"
 	"github.com/cockroachdb/cockroach/pkg/util/sysutil"
+	"golang.org/x/sys/unix"
 )
 
 // drainSignals are the signals that will cause the server to drain and exit.
