@@ -1,11 +1,5 @@
 package main
 
-import (
-	"os/exec"
-
-	_ "github.com/cockroachdb/cockroach/pkg/storage/engine"
-)
-
 // #cgo CPPFLAGS: -I../../../c-deps/libroach/include
 // #cgo LDFLAGS: -ljemalloc
 // #cgo LDFLAGS: -lroach
@@ -14,17 +8,25 @@ import (
 // #cgo LDFLAGS: -lrocksdb
 // #cgo LDFLAGS: -lsnappy
 // #cgo LDFLAGS: -lcryptopp
-// #cgo linux LDFLAGS: -lrt -lpthread
-// #cgo windows LDFLAGS: -lshlwapi -lrpcrt4
 //
 // #include <stdlib.h>
-// #include <libroach.h>
 // #include <libroachccl.h>
 import "C"
+import "os/exec"
 
 func main() {
 	_ = C.DBOpenHookCCL
 
+	// passes
+	// #include <stdio.h>
+	// void myprint(char* s) {
+	//	printf("%s\n", s);
+	// }
+	//	C.myprint(C.CString("hi\n"))
+
+	//	fmt.Printf("hi") // passes
+
+	// boom:
 	cmd := exec.Command("echo")
 	cmd.Run()
 
