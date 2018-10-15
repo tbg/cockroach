@@ -8,20 +8,12 @@
 
 package engineccl
 
-import (
-	"github.com/cockroachdb/cockroach/pkg/storage/engine"
-)
-
 // TODO(tamird): why does rocksdb not link jemalloc,snappy statically?
 
 // #cgo CPPFLAGS: -I../../../../c-deps/libroach/include
 // #cgo LDFLAGS: -ljemalloc
 // #cgo LDFLAGS: -lroachccl
-// #cgo LDFLAGS: -lroach
-// #cgo LDFLAGS: -lprotobuf
 // #cgo LDFLAGS: -lrocksdb
-// #cgo LDFLAGS: -lsnappy
-// #cgo LDFLAGS: -lcryptopp
 // #cgo linux LDFLAGS: -lrt -lpthread
 // #cgo windows LDFLAGS: -lshlwapi -lrpcrt4
 //
@@ -30,5 +22,4 @@ import (
 import "C"
 
 func init() {
-	engine.SetRocksDBOpenHook(C.DBOpenHookCCL)
 }
