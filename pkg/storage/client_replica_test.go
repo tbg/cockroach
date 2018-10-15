@@ -849,6 +849,7 @@ func TestRangeTransferLeaseExpirationBased(t *testing.T) {
 		renewalErrCh := make(chan error)
 		go func() {
 			lease, _ := l.replica1.GetLease()
+			log.Info(ctx, "forcing lease extension of %v", lease)
 			renewalErrCh <- l.forceLeaseExtension(1, lease)
 		}()
 
