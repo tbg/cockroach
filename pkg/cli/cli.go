@@ -16,9 +16,7 @@ package cli
 
 import (
 	"context"
-	"os"
 
-	_ "github.com/benesch/cgosymbolizer" // calls runtime.SetCgoTraceback on import
 	gopsnet "github.com/shirou/gopsutil/net"
 )
 
@@ -26,9 +24,5 @@ import (
 // to be the body of an action package main `main` func elsewhere. It is
 // abstracted for reuse by duplicated `main` funcs in different distributions.
 func Main() {
-	_, err := gopsnet.IOCountersWithContext(context.TODO(), true)
-	if err != nil {
-		os.Exit(1)
-	}
-	os.Exit(0)
+	_, _ = gopsnet.IOCountersWithContext(context.TODO(), true)
 }
