@@ -1,21 +1,15 @@
 package main
 
 // #cgo CPPFLAGS: -I../../../c-deps/libroach/include
-// #cgo LDFLAGS: -ljemalloc
-// #cgo LDFLAGS: -lroach
-// #cgo LDFLAGS: -lroachccl
-// #cgo LDFLAGS: -lprotobuf
-// #cgo LDFLAGS: -lrocksdb
-// #cgo LDFLAGS: -lsnappy
-// #cgo LDFLAGS: -lcryptopp
-//
-// #include <stdlib.h>
-// #include <libroachccl.h>
+// #cgo CPPFLAGS: -I.
+// #cgo CPPFLAGS: -I../../../c-deps
+// #include <foo.h>
 import "C"
 import "os/exec"
 
 func main() {
-	_ = C.DBOpenHookCCL
+	//_ = C.DBOpenHookCCL
+	_ = C.FooAESNI
 
 	// passes
 	// #include <stdio.h>
