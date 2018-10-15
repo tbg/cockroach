@@ -1,10 +1,9 @@
 package main
 
 import (
-	"context" // _ "github.com/cockroachdb/cockroach/pkg/ccl" // ccl init hooks
+	"os/exec"
 
 	_ "github.com/cockroachdb/cockroach/pkg/storage/engine"
-	gopsnet "github.com/shirou/gopsutil/net"
 )
 
 // #cgo CPPFLAGS: -I../../../c-deps/libroach/include
@@ -24,6 +23,11 @@ import (
 import "C"
 
 func main() {
-	C.DBSetOpenHook(C.DBOpenHookCCL)
-	_, _ = gopsnet.IOCountersWithContext(context.TODO(), true)
+	_ = C.DBOpenHookCCL
+
+	cmd := exec.Command("echo")
+	cmd.Run()
+
+	// C.DBSetOpenHook(C.DBOpenHookCCL)
+	//	_, _ = net.IOCountersWithContext(context.TODO(), true)
 }
