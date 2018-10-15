@@ -16,19 +16,10 @@ package cli
 
 import (
 	"context"
-	_ "fmt"
 	"os"
-	_ "strings"
-	_ "text/tabwriter"
 
 	_ "github.com/benesch/cgosymbolizer" // calls runtime.SetCgoTraceback on import
-	_ "github.com/cockroachdb/cockroach/pkg/build"
-	_ "github.com/cockroachdb/cockroach/pkg/util/log"
-	_ "github.com/cockroachdb/cockroach/pkg/workload/bank" // intentionally not all the workloads in pkg/ccl/workloadccl/allccl
-	_ "github.com/cockroachdb/cockroach/pkg/workload/examples"
-	_ "github.com/cockroachdb/cockroach/pkg/workload/tpcc"
 	gopsnet "github.com/shirou/gopsutil/net"
-	_ "github.com/spf13/cobra"
 )
 
 // Main is the entry point for the cli, with a single line calling it intended
