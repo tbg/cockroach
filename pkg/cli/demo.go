@@ -20,10 +20,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
 	"github.com/cockroachdb/cockroach/pkg/base"
 	"github.com/cockroachdb/cockroach/pkg/config"
 	"github.com/cockroachdb/cockroach/pkg/security"
@@ -32,6 +28,9 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/log/logflags"
 	"github.com/cockroachdb/cockroach/pkg/workload"
+	"github.com/gogo/protobuf/proto"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var demoCmd = &cobra.Command{
@@ -162,8 +161,6 @@ func runDemo(cmd *cobra.Command, gen workload.Generator) error {
 		return checkAndMaybeShout(err)
 	}
 
-	checkInteractive()
-
 	if cliCtx.isInteractive {
 		fmt.Printf(`#
 # Welcome to the CockroachDB demo database!
@@ -179,5 +176,5 @@ func runDemo(cmd *cobra.Command, gen workload.Generator) error {
 	conn := makeSQLConn(connURL)
 	defer conn.Close()
 
-	return runClient(cmd, conn)
+	return nil
 }

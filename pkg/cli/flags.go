@@ -21,15 +21,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
 	"github.com/cockroachdb/cockroach/pkg/base"
 	"github.com/cockroachdb/cockroach/pkg/cli/cliflags"
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/log/logflags"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // special global variables used by flag variable definitions below.
@@ -392,7 +391,6 @@ func init() {
 		dumpCmd,
 		genHAProxyCmd,
 		quitCmd,
-		sqlShellCmd,
 		/* StartCmd is covered above */
 	}
 	clientCmds = append(clientCmds, userCmds...)
@@ -443,7 +441,7 @@ func init() {
 	StringFlag(zf, &zoneCtx.zoneConfig, cliflags.ZoneConfig, zoneCtx.zoneConfig)
 	BoolFlag(zf, &zoneCtx.zoneDisableReplication, cliflags.ZoneDisableReplication, zoneCtx.zoneDisableReplication)
 
-	for _, cmd := range append([]*cobra.Command{sqlShellCmd, demoCmd}, demoCmd.Commands()...) {
+	for _, cmd := range append([]*cobra.Command{demoCmd}, demoCmd.Commands()...) {
 		f := cmd.Flags()
 		VarFlag(f, &sqlCtx.setStmts, cliflags.Set)
 		VarFlag(f, &sqlCtx.execStmts, cliflags.Execute)
@@ -454,7 +452,7 @@ func init() {
 	StringFlag(dumpCmd.Flags(), &dumpCtx.asOf, cliflags.DumpTime, dumpCtx.asOf)
 
 	// Commands that establish a SQL connection.
-	sqlCmds := []*cobra.Command{sqlShellCmd, dumpCmd, demoCmd}
+	sqlCmds := []*cobra.Command{dumpCmd, demoCmd}
 	sqlCmds = append(sqlCmds, zoneCmds...)
 	sqlCmds = append(sqlCmds, userCmds...)
 	for _, cmd := range sqlCmds {
@@ -464,10 +462,6 @@ func init() {
 		if cmd != demoCmd {
 			VarFlag(f, urlParser{cmd, &cliCtx, false /* strictSSL */}, cliflags.URL)
 			StringFlag(f, &cliCtx.sqlConnUser, cliflags.User, cliCtx.sqlConnUser)
-		}
-
-		if cmd == sqlShellCmd {
-			StringFlag(f, &cliCtx.sqlConnDBName, cliflags.Database, cliCtx.sqlConnDBName)
 		}
 	}
 
@@ -482,7 +476,7 @@ func init() {
 	}
 
 	// Commands that print tables.
-	tableOutputCommands := append([]*cobra.Command{sqlShellCmd, genSettingsListCmd, demoCmd},
+	tableOutputCommands := append([]*cobra.Command{genSettingsListCmd, demoCmd},
 		demoCmd.Commands()...)
 	tableOutputCommands = append(tableOutputCommands, userCmds...)
 	tableOutputCommands = append(tableOutputCommands, nodeCmds...)
