@@ -131,7 +131,6 @@ type worker struct {
 	// txs maps 1-to-1 with config.txInfos.
 	txs       []tpccTx
 	hists     *workload.Histograms
-	idx       int
 	warehouse int
 
 	deckPerm []int
@@ -143,14 +142,12 @@ func newWorker(
 	config *tpcc,
 	mcp *workload.MultiConnPool,
 	hists *workload.Histograms,
-	workerIdx int,
 	warehouse int,
 ) (*worker, error) {
 	w := &worker{
 		config:    config,
 		txs:       make([]tpccTx, len(config.txInfos)),
 		hists:     hists,
-		idx:       workerIdx,
 		warehouse: warehouse,
 		deckPerm:  append([]int(nil), config.deck...),
 		permIdx:   len(config.deck),
