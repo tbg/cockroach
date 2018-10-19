@@ -3781,8 +3781,6 @@ func (s *Store) HandleRaftResponse(ctx context.Context, resp *RaftMessageRespons
 
 			if _, err := s.replicaGCQueue.Add(repl, replicaGCPriorityRemoved); err != nil {
 				log.Errorf(ctx, "unable to add to replica GC queue: %s", err)
-			} else {
-				log.Infof(ctx, "added to replica GC queue (peer suggestion)")
 			}
 		case *roachpb.RaftGroupDeletedError:
 			if replErr != nil {
@@ -3800,8 +3798,6 @@ func (s *Store) HandleRaftResponse(ctx context.Context, resp *RaftMessageRespons
 			// proper check.
 			if _, err := s.replicaGCQueue.Add(repl, replicaGCPriorityDefault); err != nil {
 				log.Errorf(ctx, "unable to add to replica GC queue: %s", err)
-			} else {
-				log.Infof(ctx, "added to replica GC queue (contacted deleted peer)")
 			}
 		case *roachpb.StoreNotFoundError:
 			log.Warningf(ctx, "raft error: node %d claims to not contain store %d for replica %s: %s",
