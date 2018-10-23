@@ -410,7 +410,7 @@ func loadTPCCBench(
 	case singlePartitionedLoadgen:
 		t.l.Printf("splitting, scattering, and partitioning\n")
 		partArgs = fmt.Sprintf(`--partitions=%d`, b.partitions())
-		rebalanceWait = time.Duration(b.LoadWarehouses/50) * time.Minute
+		rebalanceWait = 5 * time.Minute // HACK // time.Duration(b.LoadWarehouses/50) * time.Minute
 	case multiLoadgen:
 		t.l.Printf("splitting, scattering, and partitioning\n")
 		partArgs = fmt.Sprintf(`--partitions=%d --zones="%s" --partition-affinity=0`,
@@ -420,7 +420,7 @@ func loadTPCCBench(
 		panic("unexpected")
 	}
 
-	t.l.Printf("waiting %v for rebalancing\n", rebalanceWait)
+	t.WorkerStatus(fmt.Sprintf("waiting %s for rebalancing", rebalanceWait))
 	_, err := db.ExecContext(ctx, `SET CLUSTER SETTING kv.snapshot_rebalance.max_rate='64MiB'`)
 	if err != nil {
 		return err
@@ -434,6 +434,27 @@ func loadTPCCBench(
 		b.LoadWarehouses, rebalanceWait, partArgs, roachNodes)
 	if out, err := c.RunWithBuffer(ctx, c.l, loadNode, cmd); err != nil {
 		return errors.Wrapf(err, "failed with output %q", string(out))
+	}
+
+	t.WorkerStatus("waiting for replicate queue activity to cease")
+	defer t.WorkerStatus()
+	var initialPending float64
+	for {
+		var pending float64
+		if err := db.QueryRowContext(ctx,
+			`SELECT value FROM crdb_internal.node_metrics WHERE name = 'queue.replicate.pending'`,
+		).Scan(&pending); err != nil {
+			return err
+		}
+		if pending < 10 {
+			// Let's call it done.
+			break
+		}
+		if initialPending == 0 {
+			initialPending = pending
+		}
+		t.WorkerProgress(1 - initialPending/pending)
+		time.Sleep(time.Second)
 	}
 
 	_, err = db.ExecContext(ctx, `SET CLUSTER SETTING kv.snapshot_rebalance.max_rate='2MiB'`)
