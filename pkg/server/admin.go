@@ -643,11 +643,13 @@ func (s *adminServer) tableStatsForSpan(
 	// for all ranges (including range1, which is not only gossiped but also
 	// persisted in meta1).
 	startMetaKey := keys.RangeMetaKey(startKey)
+	var assert bool
 	if bytes.Equal(startMetaKey, roachpb.RKeyMin) {
 		// This is the special case described above. The following key instructs
 		// the code below to scan all of the addressing, i.e. grab all of the
 		// descriptors including that for r1.
 		startMetaKey = keys.RangeMetaKey(keys.MustAddr(keys.Meta2Prefix))
+		assert = true
 	}
 
 	rangeDescKVs, err := s.server.db.Scan(ctx, startMetaKey, keys.RangeMetaKey(endKey), 0)
@@ -664,9 +666,16 @@ func (s *adminServer) tableStatsForSpan(
 		if err := kv.Value.GetProto(&rng); err != nil {
 			return nil, s.serverError(err)
 		}
+		if rng.RangeID == 1 {
+			assert = true
+		}
 		for _, repl := range rng.Replicas {
 			nodeIDs[repl.NodeID] = struct{}{}
 		}
+	}
+
+	if !assert {
+		return nil, errors.Errorf("the code tobias wrote doesn't actually do what he said :see_no_evil:")
 	}
 
 	// Construct TableStatsResponse by sending an RPC to every node involved.
