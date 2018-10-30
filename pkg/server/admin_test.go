@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cockroachdb/cockroach/pkg/keys"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -38,6 +37,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/config"
 	"github.com/cockroachdb/cockroach/pkg/jobs"
 	"github.com/cockroachdb/cockroach/pkg/jobs/jobspb"
+	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/security"
 	"github.com/cockroachdb/cockroach/pkg/server/debug"
@@ -354,16 +354,16 @@ func TestAdminAPINonTableStats(t *testing.T) {
 	s := testCluster.Server(0)
 
 	// skipping TableStatsResponse.Stats comparison, since it includes data which aren't consistent (time, bytes)
-	expectedResponse := serverpb.NonTableStatsResponse {
-		TimeSeriesStats: &serverpb.TableStatsResponse {
-			RangeCount: 1,
+	expectedResponse := serverpb.NonTableStatsResponse{
+		TimeSeriesStats: &serverpb.TableStatsResponse{
+			RangeCount:   1,
 			ReplicaCount: 3,
-			NodeCount: 3,
+			NodeCount:    3,
 		},
-		InternalUseStats: &serverpb.TableStatsResponse {
-			RangeCount: 4,
+		InternalUseStats: &serverpb.TableStatsResponse{
+			RangeCount:   4,
 			ReplicaCount: 12,
-			NodeCount: 6,
+			NodeCount:    6,
 		},
 	}
 
@@ -1590,13 +1590,9 @@ func Test_tableStatsforSpan_throwsErrorForLocalMax(t *testing.T) {
 		Key:    keys.LocalMax,
 		EndKey: keys.SystemPrefix,
 	}
-	expectedErrorMsg := "start key in [/Min,/Meta2/System/\"\") must be greater than LocalMax"
 
 	_, err := adminServer.tableStatsForSpan(context.Background(), underTest)
-	if err == nil {
-		t.Fatalf("Expected .tableStatsForSpan to throw error for %s", underTest.Key)
-	}
-	if fmt.Sprintf("%s", err) != expectedErrorMsg {
-		t.Fatalf("Expected error %s, actual error %s", expectedErrorMsg, err)
+	if err != nil {
+		t.Fatal(err)
 	}
 }

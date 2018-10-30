@@ -24,8 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/cockroach/pkg/storage/storagepb"
-
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -48,6 +46,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/cockroachdb/cockroach/pkg/sql/sqlbase"
 	"github.com/cockroachdb/cockroach/pkg/storage"
+	"github.com/cockroachdb/cockroach/pkg/storage/storagepb"
 	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/mon"
@@ -577,7 +576,7 @@ func (s *adminServer) TableStats(
 func (s *adminServer) NonTableStats(
 	ctx context.Context, req *serverpb.NonTableStatsRequest,
 ) (*serverpb.NonTableStatsResponse, error) {
-	nonTableSpans := []roachpb.Span {
+	nonTableSpans := []roachpb.Span{
 		//TODO(celia) - we should probably also include stats for the [/Min, /System) span, but
 		//    we currently get stats from .Scan() which gets RangeDescriptors from Meta2.
 		// 		This won't work for [/Min, /Meta2), since this keyspace comes before Meta2 [and
@@ -610,9 +609,9 @@ func (s *adminServer) NonTableStats(
 			if response.InternalUseStats == nil {
 				response.InternalUseStats = nonTableStats
 			} else {
-				response.InternalUseStats.RangeCount           += nonTableStats.RangeCount
-				response.InternalUseStats.ReplicaCount         += nonTableStats.ReplicaCount
-				response.InternalUseStats.NodeCount            += nonTableStats.NodeCount
+				response.InternalUseStats.RangeCount += nonTableStats.RangeCount
+				response.InternalUseStats.ReplicaCount += nonTableStats.ReplicaCount
+				response.InternalUseStats.NodeCount += nonTableStats.NodeCount
 				response.InternalUseStats.ApproximateDiskBytes += nonTableStats.ApproximateDiskBytes
 				response.InternalUseStats.Stats.Add(
 					nonTableStats.Stats)
@@ -637,15 +636,28 @@ func (s *adminServer) tableStatsForSpan(
 	}
 
 	// Get current range descriptors for table. This is done by scanning over
-	// meta2 keys for the range.
-	rangeDescKVs, err := s.server.db.Scan(ctx, keys.RangeMetaKey(startKey), keys.RangeMetaKey(endKey), 0)
+	// meta2 keys for the range. A special case occurs if we wish to include
+	// the meta1 key range itself, in which case we'll get KeyMin back and that
+	// cannot be scanned (due to range-local addressing confusion). This is
+	// handled appropriately by adjusting the bounds to grab the descriptors
+	// for all ranges (including range1, which is not only gossiped but also
+	// persisted in meta1).
+	startMetaKey := keys.RangeMetaKey(startKey)
+	if bytes.Equal(startMetaKey, roachpb.RKeyMin) {
+		// This is the special case described above. The following key instructs
+		// the code below to scan all of the addressing, i.e. grab all of the
+		// descriptors including that for r1.
+		startMetaKey = keys.RangeMetaKey(keys.MustAddr(keys.Meta2Prefix))
+	}
+
+	rangeDescKVs, err := s.server.db.Scan(ctx, startMetaKey, keys.RangeMetaKey(endKey), 0)
 	if err != nil {
 		//TODO(celia) - put back s.serverError(err) once LocalMax error is solved
 		//return nil, s.serverError(err)
 		return nil, err
 	}
 
-	// Extract a list of node IDs from the response.
+	// This map will store the nodes we need to fan out to.
 	nodeIDs := make(map[roachpb.NodeID]struct{})
 	for _, kv := range rangeDescKVs {
 		var rng roachpb.RangeDescriptor
