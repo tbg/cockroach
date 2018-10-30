@@ -640,7 +640,9 @@ func (s *adminServer) tableStatsForSpan(
 	// meta2 keys for the range.
 	rangeDescKVs, err := s.server.db.Scan(ctx, keys.RangeMetaKey(startKey), keys.RangeMetaKey(endKey), 0)
 	if err != nil {
-		return nil, s.serverError(err)
+		//TODO(celia) - put back s.serverError(err) once LocalMax error is solved
+		//return nil, s.serverError(err)
+		return nil, err
 	}
 
 	// Extract a list of node IDs from the response.

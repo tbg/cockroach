@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cockroachdb/cockroach/pkg/keys"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -1575,5 +1576,27 @@ func TestEnqueueRange(t *testing.T) {
 				t.Fatalf("unexpected error type: %+v", err)
 			}
 		})
+	}
+}
+
+func Test_tableStatsforSpan_throwsErrorForLocalMax(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+	testCluster := serverutils.StartTestCluster(t, 3, base.TestClusterArgs{})
+	defer testCluster.Stopper().Stop(context.Background())
+	firstServer := testCluster.Server(0)
+	adminServer := firstServer.(*TestServer).Server.admin
+
+	underTest := roachpb.Span{
+		Key:    keys.LocalMax,
+		EndKey: keys.SystemPrefix,
+	}
+	expectedErrorMsg := "start key in [/Min,/Meta2/System/\"\") must be greater than LocalMax"
+
+	_, err := adminServer.tableStatsForSpan(context.Background(), underTest)
+	if err == nil {
+		t.Fatalf("Expected .tableStatsForSpan to throw error for %s", underTest.Key)
+	}
+	if fmt.Sprintf("%s", err) != expectedErrorMsg {
+		t.Fatalf("Expected error %s, actual error %s", expectedErrorMsg, err)
 	}
 }
