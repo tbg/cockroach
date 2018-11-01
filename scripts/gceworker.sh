@@ -72,7 +72,7 @@ case "${cmd}" in
     exit ${status}
     ;;
     ssh)
-    gcloud compute ssh "${NAME}" --ssh-flag="-A" "$@"
+    gcloud compute ssh "${NAME}" --ssh-flag="-A -L 26258:localhost:26258" "$@"
     ;;
     mosh)
     # An alternative solution would be to run gcloud compute config-ssh after
