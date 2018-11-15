@@ -349,6 +349,7 @@ func (rs *storeReplicaVisitor) EstimatedCount() int {
 type raftRequestInfo struct {
 	req        *RaftMessageRequest
 	respStream RaftMessageResponseStream
+	enqueued   time.Time
 }
 
 type raftRequestQueue struct {
@@ -3305,12 +3306,14 @@ func (s *Store) HandleRaftUncoalescedRequest(
 		q.Unlock()
 		// TODO(peter): Return an error indicating the request was dropped. Note
 		// that dropping the request is safe. Raft will retry.
+		log.Warningf(ctx, "dropping request to r%d", req.RangeID)
 		s.metrics.RaftRcvdMsgDropped.Inc(1)
 		return nil
 	}
 	q.infos = append(q.infos, raftRequestInfo{
 		req:        req,
 		respStream: respStream,
+		enqueued:   timeutil.Now(),
 	})
 	q.Unlock()
 
@@ -3690,6 +3693,9 @@ func (s *Store) processRequestQueue(ctx context.Context, rangeID roachpb.RangeID
 					if _, expl, err := r.handleRaftReadyRaftMuLocked(noSnap); err != nil {
 						fatalOnRaftReadyErr(ctx, expl, err)
 					}
+				}
+				if elapsed := timeutil.Since(info.enqueued); elapsed > time.Second {
+					log.Warningf(ctx, "TSX info took %.2f from receiving to processing", elapsed.Seconds())
 				}
 				return pErr
 			})
