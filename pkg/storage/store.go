@@ -2240,6 +2240,7 @@ func splitPostApply(
 		// some tests rely on this (e.g. server.TestNodeStatusWritten).
 		r.store.enqueueRaftUpdateCheck(rightRng.RangeID)
 	}
+	log.Infof(ctx, "TSX splittrigger completed")
 }
 
 // SplitRange shortens the original range to accommodate the new range. The new
