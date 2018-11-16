@@ -5287,7 +5287,17 @@ func (r *Replica) sendRaftMessage(ctx context.Context, msg raftpb.Message) {
 
 	// Raft-initiated snapshots are handled by the Raft snapshot queue.
 	if msg.Type == raftpb.MsgSnap {
-		log.Warningf(ctx, "TSX sending snap to r%d/%d", r.RangeID, msg.To)
+		log.Warningf(ctx, "TSX sending snap to r%d/%d (%v)", r.RangeID, msg.To, r.Desc().Replicas)
+		r.mu.RLock()
+		raftStatus := r.raftStatusRLocked()
+		r.mu.RUnlock()
+
+		if raftStatus != nil {
+			for replicaID, pr := range raftStatus.Progress {
+				log.Infof(ctx, "r%d/%d progress: %s", r.RangeID, replicaID, pr.String())
+			}
+		}
+
 		if _, err := r.store.raftSnapshotQueue.Add(r, raftSnapshotPriority); err != nil {
 			log.Errorf(ctx, "unable to add replica to Raft repair queue: %s", err)
 		}
