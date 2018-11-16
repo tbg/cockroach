@@ -106,7 +106,7 @@ func (r *raftLogger) Panicf(format string, v ...interface{}) {
 }
 
 func verboseRaftLoggingEnabled() bool {
-	return log.V(5)
+	return true || log.V(5) // HACK
 }
 
 func logRaftReady(ctx context.Context, ready raft.Ready) {
