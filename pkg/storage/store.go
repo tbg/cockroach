@@ -3391,7 +3391,7 @@ func (s *Store) processRaftRequestWithReplica(
 	}
 
 	if req.Message.Type == raftpb.MsgAppResp && req.Message.Reject {
-		log.Infof(ctx, "rejection from r%d/%d at index %d (hint %d)", r.RangeID, req.Message.From, req.Message.RejectHint)
+		log.Infof(ctx, "rejection from r%d/%d at index %d (hint %d)", r.RangeID, req.Message.From, req.Message.Index, req.Message.RejectHint)
 	}
 
 	if err := r.stepRaftGroup(req); err != nil {
