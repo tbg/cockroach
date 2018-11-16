@@ -414,7 +414,7 @@ func (t *RaftTransport) Stop(storeID roachpb.StoreID) {
 // to be sent.
 func (t *RaftTransport) processQueue(
 	nodeID roachpb.NodeID,
-	ch chan *RaftMessageRequest,
+	ch chan wrappedReq,
 	stats *raftTransportStats,
 	stream MultiRaft_RaftMessageBatchClient,
 ) error {
@@ -462,23 +462,38 @@ func (t *RaftTransport) processQueue(
 		case err := <-errCh:
 			return err
 		case req := <-ch:
-			batch.Requests = append(batch.Requests, *req)
+			batch.Requests = append(batch.Requests, *req.r)
 
 			// Pull off as many queued requests as possible.
 			//
 			// TODO(peter): Think about limiting the size of the batch we send.
+			ts := timeutil.Now()
 			for done := false; !done; {
 				select {
 				case req = <-ch:
-					batch.Requests = append(batch.Requests, *req)
+					batch.Requests = append(batch.Requests, *req.r)
+					if req.t.Before(ts) {
+						// Track earliest request seen.
+						ts = req.t
+					}
 				default:
 					done = true
 				}
 			}
 
+			if elapsed := timeutil.Since(ts); elapsed > time.Second {
+				log.Warningf(context.TODO(), "TSX msg to r%d/%d took %.2f to pre-send", req.r.RangeID, req.r.Message.To, elapsed.Seconds())
+			}
+
+			tBegin := timeutil.Now()
 			err := stream.Send(batch)
+			if elapsed := timeutil.Since(tBegin); elapsed > time.Second {
+				log.Warningf(context.TODO(), "TSX %d msgs to r%d/%d took %.2f to transmit", len(batch.Requests), req.r.RangeID, req.r.Message.To, elapsed.Seconds())
+			}
+
 			batch.Requests = batch.Requests[:0]
 
+			// TODO(tschottdorf): not len(batch.Requests)?
 			atomic.AddInt64(&stats.clientSent, 1)
 			if err != nil {
 				return err
@@ -487,15 +502,20 @@ func (t *RaftTransport) processQueue(
 	}
 }
 
+type wrappedReq struct {
+	t time.Time
+	r *RaftMessageRequest
+}
+
 // getQueue returns the queue for the specified node ID and a boolean
 // indicating whether the queue already exists (true) or was created (false).
-func (t *RaftTransport) getQueue(nodeID roachpb.NodeID) (chan *RaftMessageRequest, bool) {
+func (t *RaftTransport) getQueue(nodeID roachpb.NodeID) (chan wrappedReq, bool) {
 	value, ok := t.queues.Load(int64(nodeID))
 	if !ok {
-		ch := make(chan *RaftMessageRequest, raftSendBufferSize)
+		ch := make(chan wrappedReq, raftSendBufferSize)
 		value, ok = t.queues.LoadOrStore(int64(nodeID), unsafe.Pointer(&ch))
 	}
-	return *(*chan *RaftMessageRequest)(value), ok
+	return *(*chan wrappedReq)(value), ok
 }
 
 // SendAsync sends a message to the recipient specified in the request. It
@@ -522,6 +542,7 @@ func (t *RaftTransport) SendAsync(req *RaftMessageRequest) (sent bool) {
 	}
 
 	if !t.dialer.GetCircuitBreaker(toNodeID).Ready() {
+		log.Warningf(ctx, "dropping Raft message to r%d/%d due to circuit breaker", req.RangeID, req.Message.To)
 		return false
 	}
 
@@ -535,7 +556,7 @@ func (t *RaftTransport) SendAsync(req *RaftMessageRequest) (sent bool) {
 	}
 
 	select {
-	case ch <- req:
+	case ch <- wrappedReq{timeutil.Now(), req}:
 		l := int32(len(ch))
 		if v := atomic.LoadInt32(&stats.queueMax); v < l {
 			atomic.CompareAndSwapInt32(&stats.queueMax, v, l)
