@@ -25,6 +25,7 @@ roachprod sql tobias-test:1 <<EOF
 RESTORE csv.bank FROM
 'gs://cockroach-fixtures/workload/bank/version=1.0.0,payload-bytes=10240,ranges=0,rows=500000,seed=1/bank'
 WITH into_db = 'csv';
+select name, value from crdb_internal.node_metrics where name like '%raftsn%' order by name desc;
 EOF
 
 #roachprod sql tobias-test:1 <<EOF
