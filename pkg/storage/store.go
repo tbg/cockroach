@@ -2242,6 +2242,15 @@ func splitPostApply(
 		r.store.enqueueRaftUpdateCheck(rightRng.RangeID)
 	}
 	log.Infof(ctx, "TSX splittrigger completed")
+	r.mu.RLock()
+	raftStatus := r.raftStatusRLocked()
+	r.mu.RUnlock()
+
+	if raftStatus != nil {
+		for replicaID, pr := range raftStatus.Progress {
+			log.Infof(ctx, "r%d/%d progress: %s", r.RangeID, replicaID, pr)
+		}
+	}
 }
 
 // SplitRange shortens the original range to accommodate the new range. The new
