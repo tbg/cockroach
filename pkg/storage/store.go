@@ -2248,7 +2248,7 @@ func splitPostApply(
 
 	if raftStatus != nil {
 		for replicaID, pr := range raftStatus.Progress {
-			log.Infof(ctx, "r%d/%d progress: %s", r.RangeID, replicaID, pr)
+			log.Infof(ctx, "r%d/%d progress: %s", r.RangeID, replicaID, pr.String())
 		}
 	}
 }
@@ -3388,6 +3388,10 @@ func (s *Store) processRaftRequestWithReplica(
 			"cannot recreate replica that is not a member of its range (StoreID %s not found in r%d)",
 			r.store.StoreID(), req.RangeID,
 		)
+	}
+
+	if req.Message.Type == raftpb.MsgAppResp && req.Message.Reject {
+		log.Infof(ctx, "rejection from r%d/%d at index %d (hint %d)", r.RangeID, req.Message.From, req.Message.RejectHint)
 	}
 
 	if err := r.stepRaftGroup(req); err != nil {
