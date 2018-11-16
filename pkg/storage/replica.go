@@ -5208,12 +5208,17 @@ func (r *Replica) maybeDropMsgAppResp(ctx context.Context, msg raftpb.Message) b
 	}
 
 	if ticks > r.store.cfg.RaftPostSplitSuppressSnapshotTicks {
+		// TODO(tschottdorf): wouldn't this better live on the leaseholder replica?
+		// It can check whether the LHS that would apply the split trigger is actually
+		// on the node as it has almost certainly applied the split trigger on its
+		// local replica. This allows permanently suppressing these snapshots
 		log.Infof(
 			ctx,
 			"allowing MsgAppResp for uninitialized replica (%d > %d ticks)",
 			ticks,
 			r.store.cfg.RaftPostSplitSuppressSnapshotTicks,
 		)
+
 		return false
 	}
 

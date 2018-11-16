@@ -325,10 +325,12 @@ func computeTruncateDecision(input truncateDecisionInput) truncateDecision {
 		// snapshots with overlapping bounds that put significant stress on the
 		// Raft snapshot queue.
 		probing := (progress.RecentActive && progress.State == raft.ProgressStateProbe)
-		if probing && decision.NewFirstIndex > decision.Input.FirstIndex {
+		// NB: we use >= in the branches below so that the reasons get updated.
+		// This results in more reasonable logging.
+		if probing && decision.NewFirstIndex >= decision.Input.FirstIndex {
 			decision.NewFirstIndex = decision.Input.FirstIndex
 			decision.ChosenVia = truncatableIndexChosenViaProbingFollower
-		} else if !input.LogTooLarge() && decision.NewFirstIndex > progress.Match {
+		} else if !input.LogTooLarge() && decision.NewFirstIndex >= progress.Match {
 			decision.NewFirstIndex = progress.Match
 			decision.ChosenVia = truncatableIndexChosenViaFollowers
 		}
