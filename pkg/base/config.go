@@ -119,7 +119,7 @@ var (
 		"COCKROACH_RAFT_MAX_INFLIGHT_MSGS", 64)
 
 	defaultRaftPostSplitSuppressSnapshotTicks = envutil.EnvOrDefaultInt(
-		"COCKROACH_RAFT_POST_SPLIT_SUPPRESS_SNAPSHOT_TICKS", 20)
+		"COCKROACH_RAFT_POST_SPLIT_SUPPRESS_SNAPSHOT_TICKS", 100)
 )
 
 type lazyHTTPClient struct {
