@@ -579,6 +579,7 @@ OR
 		t.Fatal(err)
 	}
 
+	time.Sleep(5 * time.Second)
 	checkNoSnaps("after")
 }
 
