@@ -5181,9 +5181,21 @@ func (r *Replica) sendRaftMessages(ctx context.Context, messages []raftpb.Messag
 				drop = true
 			}
 
-			if r.maybeDropMsgAppResp(ctx, message) {
-				drop = true
+			if message.Reject && message.RejectHint == 0 {
+				// Raft handles a RejectHint of zero poorly: it assumes there's
+				// no hint. But at the same time raft will always correctly
+				// populate the hint.
+				//
+				// As a workaround, send a hint of 1 instead. Our Raft logs
+				// never have any index below ten, so a RejectHint of one is a
+				// is a guaranteed snapshot.
+				//
+				// TODO(tschottdorf): fix this in Raft.
+				message.RejectHint = 1
 			}
+			//if r.maybeDropMsgAppResp(ctx, message) {
+			//	drop = true
+			//}
 		}
 		if !drop {
 			r.sendRaftMessage(ctx, message)
