@@ -528,7 +528,11 @@ func TestSplitTriggerRaftSnapshotRace(t *testing.T) {
 		// Running 100 splits is overkill in race builds.
 		numSplits = 10
 	}
-	perm := rand.Perm(numSplits)
+	//perm := rand.Perm(numSplits)
+	perm := make([]int, numSplits)
+	for i := range perm {
+		perm[i] = i
+	}
 	idx := int32(-1) // accessed atomically
 
 	checkNoSnaps := func(when string) {
