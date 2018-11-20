@@ -515,11 +515,13 @@ func TestSplitTriggerRaftSnapshotRace(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 
 	ctx := context.Background()
-	const numNodes = 3
+	const numNodes = 5
 	var args base.TestClusterArgs
 	args.ServerArgs.Knobs.Store = &storage.StoreTestingKnobs{DisableMergeQueue: true}
 	tc := testcluster.StartTestCluster(t, numNodes, args)
 	defer tc.Stopper().Stop(ctx)
+
+	tc.WaitForFullReplication()
 
 	numSplits := 100
 	if util.RaceEnabled {
@@ -553,8 +555,19 @@ OR
 	checkNoSnaps("before")
 
 	doSplit := func(ctx context.Context) error {
-		_, _, err := tc.SplitRange(
-			[]byte(fmt.Sprintf("key-%d", perm[atomic.AddInt32(&idx, 1)])))
+		n := perm[atomic.AddInt32(&idx, 1)]
+		key := roachpb.Key(fmt.Sprintf("key-%d", n))
+		scatterReq := &roachpb.AdminScatterRequest{}
+		scatterReq.Key = key
+		scatterReq.EndKey = roachpb.Key(fmt.Sprintf("key-%d", n+1))
+		// scatterReq.RandomizeLeases = true
+		if _, pErr := client.SendWrapped(ctx, tc.Servers[rand.Intn(numNodes)].DB().NonTransactionalSender(), scatterReq); pErr != nil {
+			log.Warning(ctx, pErr)
+		}
+		_, _, err := tc.SplitRange(key)
+		if _, pErr := client.SendWrapped(ctx, tc.Servers[rand.Intn(numNodes)].DB().NonTransactionalSender(), scatterReq); pErr != nil {
+			log.Warning(ctx, pErr)
+		}
 		return err
 	}
 
