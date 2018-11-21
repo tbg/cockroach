@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.etcd.io/etcd/raft"
 	"go.etcd.io/etcd/raft/raftpb"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
@@ -42,6 +43,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
 	"github.com/cockroachdb/cockroach/pkg/util/retry"
+	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 )
 
 // evaluateCommand delegates to the eval method for the given
@@ -302,6 +304,43 @@ func (r *Replica) adminSplitWithDescriptor(
 		leftDesc.IncrementGeneration()
 	}
 	leftDesc.EndKey = splitKey
+
+	for i := 0; i < 10; i++ {
+		raftStatus := r.RaftStatus()
+
+		if raftStatus != nil {
+			r.mu.RLock()
+			updateRaftProgressFromActivity(
+				ctx, raftStatus.Progress, r.descRLocked().Replicas, r.mu.lastUpdateTimes, timeutil.Now(),
+			)
+			r.mu.RUnlock()
+
+			done := true
+			for replicaID, pr := range raftStatus.Progress {
+				if replicaID == raftStatus.Lead {
+					// TODO(tschottdorf): remove this once we have picked up
+					// https://github.com/etcd-io/etcd/pull/10279
+					continue
+				}
+
+				if !pr.RecentActive {
+					continue
+				}
+				if pr.State != raft.ProgressStateReplicate {
+					log.Infof(ctx, "delaying split; replica r%d/%d not caught up: %+v", r.RangeID, replicaID, pr)
+					done = false
+				}
+			}
+			if done {
+				break
+			}
+		} else {
+			// TODO(tschottdorf): this would happen until the bitter end if we're not the Raft leader.
+			log.Infof(ctx, "delaying split: no Raft status")
+		}
+
+		time.Sleep(time.Second)
+	}
 
 	log.Infof(ctx, "initiating a split of this range at key %s [r%d]",
 		splitKey, rightDesc.RangeID)
