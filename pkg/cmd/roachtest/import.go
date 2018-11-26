@@ -78,7 +78,7 @@ func registerImportTPCH(r *registry) {
 	} {
 		r.Add(testSpec{
 			Name:    fmt.Sprintf(`import/tpch/nodes=%d`, item.nodes),
-			Nodes:   nodes(item.nodes),
+			Nodes:   nodes(item.nodes, cpu(32)),
 			Timeout: item.timeout,
 			Stable:  true, // DO NOT COPY to new tests
 			Run: func(ctx context.Context, t *test, c *cluster) {
