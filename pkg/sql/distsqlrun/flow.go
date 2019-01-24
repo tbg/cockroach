@@ -102,7 +102,7 @@ type FlowCtx struct {
 
 	// BulkAdder is used by backfill/bulk-ingestion processors to ingest large
 	// amounts of data in bulk as SSTs.
-	BullkAdder storagebase.BulkAdderFactory
+	BulkAdder storagebase.BulkAdderFactory
 
 	// diskMonitor is used to monitor temporary storage disk usage.
 	diskMonitor *mon.BytesMonitor

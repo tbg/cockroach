@@ -125,10 +125,11 @@ func (ib *indexBackfiller) runChunk(
 	// TODO(dt): Skip bulk-adder if there are too few entries for SST overhead.
 	enabled := backfill.BulkWriteIndex.Get(&ib.flowCtx.Settings.SV)
 	if enabled {
+		log.Infof(ctx, "bulk index add")
 		sort.Slice(entries, func(i, j int) bool {
 			return entries[i].Key.Compare(entries[j].Key) < 0
 		})
-		adder, err := ib.flowCtx.BullkAdder(ctx, ib.flowCtx.ClientDB, 32<<10, readAsOf)
+		adder, err := ib.flowCtx.BulkAdder(ctx, ib.flowCtx.ClientDB, 32<<10, readAsOf)
 		if err != nil {
 			return nil, err
 		}
