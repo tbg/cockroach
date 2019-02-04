@@ -56,6 +56,7 @@ func makeScrubTPCCTest(
 		Nodes: nodes(numNodes),
 		Run: func(ctx context.Context, t *test, c *cluster) {
 			runTPCC(ctx, t, c, tpccOptions{
+				ZFS:        true,
 				Warehouses: warehouses,
 				Extra:      "--wait=false --tolerate-errors",
 				During: func(ctx context.Context) error {
