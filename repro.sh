@@ -32,7 +32,7 @@ SET CLUSTER SETTING kv.range_split.by_load_enabled = false;
 fi
 
 sleep 5
-./bin/workload run tpcc --expensive-checks --scatter --warehouses $warehouses --ramp 30s --wait=false --tolerate-errors --duration=24h postgres://root@localhost:262{57,59,61,63}?sslmode=disable --histograms tpcc.json &
+./bin/workload run tpcc --expensive-checks --scatter --warehouses $warehouses --ramp 30s --wait=false --tolerate-errors --duration=24h postgres://root@localhost:262{57,58,59,60}?sslmode=disable --histograms tpcc.json &
 
 sleep 5
 
