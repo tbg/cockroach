@@ -24,6 +24,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
@@ -119,11 +120,13 @@ func (m *ManualClock) Set(nanos int64) {
 	atomic.StoreInt64(&m.nanos, nanos)
 }
 
+var clockOffset = envutil.EnvOrDefaultDuration("COCKROACH_FAKE_OFFSET", 0)
+
 // UnixNano returns the local machine's physical nanosecond
 // unix epoch timestamp as a convenience to create a HLC via
 // c := hlc.NewClock(hlc.UnixNano, ...).
 func UnixNano() int64 {
-	return timeutil.Now().UnixNano()
+	return timeutil.Now().UnixNano() + clockOffset.Nanoseconds()
 }
 
 // NewClock creates a new hybrid logical clock associated with the given
