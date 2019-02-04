@@ -47,5 +47,7 @@ SET CLUSTER SETTING kv.range_merge.queue_enabled = true;
 ALTER TABLE tpcc.warehouse SCATTER;
 "
 	./cockroach sql --insecure < check*.sql
+	# HACK
+	exit 0
 	sleep 30
 done;
