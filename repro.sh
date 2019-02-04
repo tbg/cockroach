@@ -13,7 +13,7 @@ fi
 make build bin/workload
 
 for i in $(seq 0 3); do
-	COCKROACH_FAKE_OFFSET=$(((i%2) * 100))./cockroach start --insecure --port $((26257+i)) --http-port $((8080+i)) --store cockroach-data/$i --join :26257 2> /dev/null &
+	COCKROACH_FAKE_OFFSET=$(((i%2) * 100)) ./cockroach start --insecure --port $((26257+i)) --http-port $((8080+i)) --store cockroach-data/$i --join :26257 2> /dev/null &
 done
 
 warehouses=100
