@@ -32,7 +32,7 @@ SET CLUSTER SETTING kv.range_split.by_load_enabled = false;
 fi
 
 sleep 5
-./bin/workload run tpcc --expensive-checks --scatter --warehouses $warehouses --ramp 30s --wait=false --tolerate-errors --duration=24h 'postgres://root@localhost:26257?sslmode=disable' > tpcc.log  &
+./bin/workload run tpcc --expensive-checks --scatter --warehouses $warehouses --ramp 30s --wait=false --tolerate-errors --duration=24h 'postgres://root@localhost:26257?sslmode=disable' &
 
 while true; do
 #ALTER TABLE tpcc.district SPLIT AT SELECT i FROM generate_series(1, $((10*warehouses-1))) AS g(i);
