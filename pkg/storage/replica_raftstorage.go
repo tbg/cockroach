@@ -489,14 +489,16 @@ type IncomingSnapshot struct {
 	LogEntries [][]byte
 	// The replica state at the time the snapshot was generated (never nil).
 	State *storagepb.ReplicaState
-	// When true, this snapshot contains a legacy replicated TruncatedState,
-	// meaning that the recipient must not write the new, unreplicated
-	// TruncatedState. It will be upgraded during the next log truncation
-	// (assuming cluster version is bumped at that point).
 	//
+	// When true, this snapshot contains an unreplicated TruncatedState. When
+	// false, the TruncatedState is replicated (see the reference below) and the
+	// recipient must avoid also writing the unreplicated TruncatedState. The
+	// migration to an unreplicated TruncatedState will be carried out during
+	// the next log truncation (assuming cluster version is bumped at that
+	// point).
 	// See the comment on VersionUnreplicatedRaftTruncatedState for details.
-	UsesLegacyTruncatedState bool
-	snapType                 string
+	UsesUnreplicatedTruncatedState bool
+	snapType                       string
 }
 
 // snapshot creates an OutgoingSnapshot containing a rocksdb snapshot for the
@@ -868,7 +870,7 @@ func (r *Replica) applySnapshot(
 	distinctBatch := batch.Distinct()
 	stats.batch = timeutil.Now()
 
-	if !inSnap.UsesLegacyTruncatedState {
+	if inSnap.UsesUnreplicatedTruncatedState {
 		// We're using the unreplicated truncated state, which we need to
 		// manually persist to disk. If we're not taking this branch, the
 		// snapshot contains a legacy TruncatedState and we don't need to do

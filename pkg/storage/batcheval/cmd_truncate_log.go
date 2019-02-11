@@ -103,9 +103,10 @@ func TruncateLog(
 	// Compute the number of bytes freed by this truncation. Note that this will
 	// only make sense for the leaseholder as we base this off its own first
 	// index (other replicas may have other first indexes assuming we're not
-	// still using the legacy truncated state key). On followers, this can in
-	// principle be off either way, though in practice we expect followers to
-	// have shorter logs than the leaseholder (see #34287).
+	// still using the legacy truncated state key). In principle, this could be
+	// off either way, though in practice we don't expect followers to have
+	// a first index smaller than the leaseholder's (see #34287), and most of
+	// the time everyone's first index should be the same.
 	start := engine.MakeMVCCMetadataKey(keys.RaftLogKey(rangeID, firstIndex))
 	end := engine.MakeMVCCMetadataKey(keys.RaftLogKey(rangeID, args.Index))
 
