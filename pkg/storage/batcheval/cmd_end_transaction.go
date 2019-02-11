@@ -920,16 +920,18 @@ func splitTrigger(
 		// legacy key as well.
 		//
 		// See VersionUnreplicatedRaftTruncatedState.
-		useLegacyTruncatedState, err := engine.MVCCGetProto(
+		truncStateType := stateloader.UseUnreplicatedTruncatedState
+		if found, err := engine.MVCCGetProto(
 			ctx,
 			batch,
 			keys.RaftTruncatedStateLegacyKey(rec.GetRangeID()),
 			hlc.Timestamp{},
 			nil,
 			engine.MVCCGetOptions{},
-		)
-		if err != nil {
+		); err != nil {
 			return enginepb.MVCCStats{}, result.Result{}, errors.Wrap(err, "unable to load legacy truncated state")
+		} else if found {
+			truncStateType = stateloader.UseReplicatedTruncatedState
 		}
 
 		// Writing the initial state is subtle since this also seeds the Raft
@@ -965,7 +967,7 @@ func splitTrigger(
 			ctx, batch, rightMS, split.RightDesc,
 			rightLease, *gcThreshold, *txnSpanGCThreshold,
 			rec.ClusterSettings().Version.Version().Version,
-			useLegacyTruncatedState,
+			truncStateType,
 		)
 		if err != nil {
 			return enginepb.MVCCStats{}, result.Result{}, errors.Wrap(err, "unable to write initial Replica state")

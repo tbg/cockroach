@@ -1348,7 +1348,7 @@ func splitTestRange(store *Store, key, splitKey roachpb.RKey, t *testing.T) *Rep
 		context.Background(), store.engine, enginepb.MVCCStats{},
 		*desc, roachpb.Lease{}, hlc.Timestamp{}, hlc.Timestamp{},
 		store.ClusterSettings().Version.Version().Version,
-		false, // use new unreplicated truncated state
+		stateloader.UseUnreplicatedTruncatedState,
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -2779,7 +2779,7 @@ func TestStoreRemovePlaceholderOnRaftIgnored(t *testing.T) {
 		ctx, s.Engine(), enginepb.MVCCStats{}, *repl1.Desc(),
 		roachpb.Lease{}, hlc.Timestamp{}, hlc.Timestamp{},
 		s.ClusterSettings().Version.Version().Version,
-		false, // use new unreplicated truncated state
+		stateloader.UseUnreplicatedTruncatedState,
 	); err != nil {
 		t.Fatal(err)
 	}

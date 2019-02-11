@@ -257,7 +257,7 @@ func (tc *testContext) StartWithStoreConfig(t testing.TB, stopper *stop.Stopper,
 				hlc.Timestamp{},
 				hlc.Timestamp{},
 				bootstrapVersion.Version,
-				false, // use the new unreplicated truncated state
+				stateloader.UseUnreplicatedTruncatedState,
 			); err != nil {
 				t.Fatal(err)
 			}
@@ -9832,7 +9832,7 @@ func TestReplicaBootstrapRangeAppliedStateKey(t *testing.T) {
 			repl.mu.Lock()
 			if _, err := repl.mu.stateLoader.Save(
 				ctx, tc.engine, repl.mu.state,
-				false, // use unreplicated Raft truncation key
+				stateloader.UseUnreplicatedTruncatedState,
 			); err != nil {
 				t.Fatalf("could not save ReplicaState: %v", err)
 			}

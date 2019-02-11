@@ -114,6 +114,17 @@ func (rsl StateLoader) Load(
 	return s, nil
 }
 
+// TruncatedStateType determines whether to use a replicated (legacy) or an
+// unreplicated TruncatedState. See VersionUnreplicatedRaftTruncatedStateKey.
+type TruncatedStateType int
+
+const (
+	// UseReplicatedTruncatedState means use the legacy (replicated) key.
+	UseReplicatedTruncatedState TruncatedStateType = iota
+	// UseReplicatedTruncatedState means use the new (unreplicated) key.
+	UseUnreplicatedTruncatedState
+)
+
 // Save persists the given ReplicaState to disk. It assumes that the contained
 // Stats are up-to-date and returns the stats which result from writing the
 // updated State.
@@ -129,7 +140,7 @@ func (rsl StateLoader) Save(
 	ctx context.Context,
 	eng engine.ReadWriter,
 	state storagepb.ReplicaState,
-	useLegacyTruncatedState bool, // see VersionUnreplicatedRaftTruncatedState
+	truncStateType TruncatedStateType,
 ) (enginepb.MVCCStats, error) {
 	ms := state.Stats
 	if err := rsl.SetLease(ctx, eng, ms, *state.Lease); err != nil {
@@ -141,7 +152,7 @@ func (rsl StateLoader) Save(
 	if err := rsl.SetTxnSpanGCThreshold(ctx, eng, ms, state.TxnSpanGCThreshold); err != nil {
 		return enginepb.MVCCStats{}, err
 	}
-	if useLegacyTruncatedState {
+	if truncStateType == UseReplicatedTruncatedState {
 		if err := rsl.SetLegacyRaftTruncatedState(ctx, eng, ms, state.TruncatedState); err != nil {
 			return enginepb.MVCCStats{}, err
 		}
