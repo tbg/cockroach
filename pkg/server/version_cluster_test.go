@@ -205,7 +205,6 @@ func TestClusterVersionUnreplicatedRaftTruncatedState(t *testing.T) {
 	oldVersion := cluster.VersionByKey(cluster.VersionUnreplicatedRaftTruncatedState - 1)
 	oldVersionS := oldVersion.String()
 	newVersionS := cluster.VersionByKey(cluster.VersionUnreplicatedRaftTruncatedState).String()
-	_ = newVersionS
 
 	// Four node cluster in which two nodes support newVersion (i.e. would in
 	// principle upgrade to it) but one doesn't, so the cluster stays at oldVersion.
@@ -239,7 +238,6 @@ ALTER TABLE kv SPLIT AT SELECT i FROM generate_series(1, 9) AS g(i);
 	}
 
 	scatter := func() {
-		return // HACK
 		t.Helper()
 		if _, err := tc.ServerConn(0).Exec(
 			`ALTER TABLE kv EXPERIMENTAL_RELOCATE SELECT ARRAY[i%$1+1], i FROM generate_series(0, 9) AS g(i)`, len(versions),
