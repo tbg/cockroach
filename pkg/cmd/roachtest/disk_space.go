@@ -317,6 +317,10 @@ func registerDiskUsage(r *registry) {
 		}
 		r.Add(
 			testSpec{
+				// NB: these tests tend to fail under nobarrier because the workload
+				// they run becomes faster.
+				UseIOBarrier: true,
+
 				Name:       fmt.Sprintf("disk_space/tc=%s", testCase.name),
 				Cluster:    makeClusterSpec(numNodes),
 				MinVersion: "v2.1.0", // cockroach debug ballast
