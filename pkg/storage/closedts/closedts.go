@@ -124,12 +124,10 @@ type Producer interface {
 //    resulting entries to all of its subscribers.
 // 3. it accepts notifications from other nodes, passing these updates through
 //    to its local storage, so that
-// 4. the CanServe method determines via the the underlying storage whether a
-//    given read can be satisfied via follower reads.
-// 5. the MaxClosed method determines via the underlying storage what the maximum
+// 4. the MaxClosed method determines via the underlying storage what the maximum
 //    closed timestamp is for the specified LAI.
-//    TODO(tschottdorf): This is already adding some cruft to this nice interface.
-//    CanServe and MaxClosed are almost identical.
+// 5. it receives notifications about closed timestamps that obstructed foreground
+//    traffic via RequestBackoff().
 //
 // Note that a Provider has no duty to immediately persist the local closed
 // timestamps to the underlying storage.
@@ -139,6 +137,17 @@ type Provider interface {
 	Start()
 	CanServe(roachpb.NodeID, hlc.Timestamp, roachpb.RangeID, ctpb.Epoch, ctpb.LAI) bool
 	MaxClosed(roachpb.NodeID, roachpb.RangeID, ctpb.Epoch, ctpb.LAI) hlc.Timestamp
+	// RequestBackoff lets consumers of MaxClosed provide feedback to the
+	// consumer about the rate at which timestamps are closed out. Supplied to
+	// RequestBackoff is a timestamp which a consumers would like to still be
+	// available at the time of the call. For example, if at t=1000 a consumer
+	// receives MaxClosed=500 but would in fact have liked to write at t=400, it
+	// will call RequestBackoff(400). The Provider may then adjust its effective
+	// target duration so that it trails real time by a duration of 600
+	// (=1000-400).
+	// These calls are advisory; the Provider is free to react to them as deemed
+	// useful, including not at all.
+	RequestBackoff(hlc.Timestamp)
 }
 
 // A ClientRegistry is the client component of the follower reads subsystem. It

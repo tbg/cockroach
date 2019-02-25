@@ -187,6 +187,7 @@ func (r *Replica) applyTimestampCache(
 	ctx context.Context, ba *roachpb.BatchRequest, minReadTS hlc.Timestamp,
 ) (bool, *roachpb.Error) {
 	var bumped bool
+	var fwdViaClosedTimestamp bool
 	for _, union := range ba.Requests {
 		args := union.GetInner()
 		if roachpb.ConsultsTimestampCache(args) {
@@ -195,12 +196,16 @@ func (r *Replica) applyTimestampCache(
 			// Forward the timestamp if there's been a more recent read (by someone else).
 			rTS, rTxnID := r.store.tsCache.GetMaxRead(header.Key, header.EndKey)
 			if rTS.Forward(minReadTS) {
+				fwdViaClosedTimestamp = true
 				rTxnID = uuid.Nil
 			}
 			if ba.Txn != nil {
 				if ba.Txn.ID != rTxnID {
 					nextTS := rTS.Next()
 					if ba.Txn.Timestamp.Less(nextTS) {
+						if fwdViaClosedTimestamp {
+							r.store.cfg.ClosedTimestamp.Provider.RequestBackoff(ba.Txn.Timestamp)
+						}
 						txn := ba.Txn.Clone()
 						bumped = txn.Timestamp.Forward(nextTS) || bumped
 						ba.Txn = &txn

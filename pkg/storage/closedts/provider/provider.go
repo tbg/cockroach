@@ -62,6 +62,8 @@ type Provider struct {
 		// needs to be acquired.
 		subscribers []*subscriber
 		draining    bool // tell subscribers to terminate
+
+		minRequestedBackoff hlc.Timestamp
 	}
 
 	everyClockLog log.EveryN
@@ -107,6 +109,15 @@ func (p *Provider) drain() {
 	}
 }
 
+// RequestBackoff implements closedts.Provider.
+func (p *Provider) RequestBackoff(ts hlc.Timestamp) {
+	p.mu.Lock()
+	if p.mu.minRequestedBackoff == (hlc.Timestamp{}) || ts.Less(p.mu.minRequestedBackoff) {
+		p.mu.minRequestedBackoff = ts
+	}
+	p.mu.Unlock()
+}
+
 func (p *Provider) runCloser(ctx context.Context) {
 	// The loop below signals the subscribers, so when it exits it needs to do
 	// extra work to help the subscribers terminate.
@@ -119,13 +130,15 @@ func (p *Provider) runCloser(ctx context.Context) {
 	ch := p.Notify(p.cfg.NodeID)
 	defer close(ch)
 
+	cfgTargetDuration := func() time.Duration { return closedts.TargetDuration.Get(&p.cfg.Settings.SV) }
+	effectiveTargetDuration := cfgTargetDuration()
+
 	var t timeutil.Timer
 	defer t.Stop()
 	var lastEpoch ctpb.Epoch
 	for {
 		closeFraction := closedts.CloseFraction.Get(&p.cfg.Settings.SV)
-		targetDuration := float64(closedts.TargetDuration.Get(&p.cfg.Settings.SV))
-		t.Reset(time.Duration(closeFraction * targetDuration))
+		t.Reset(time.Duration(closeFraction * float64(effectiveTargetDuration)))
 
 		select {
 		case <-p.cfg.Stopper.ShouldQuiesce():
@@ -138,7 +151,37 @@ func (p *Provider) runCloser(ctx context.Context) {
 
 		next, epoch, err := p.cfg.Clock(p.cfg.NodeID)
 
-		next.WallTime -= int64(targetDuration)
+		minTargetDuration := cfgTargetDuration()
+		maxTargetDuration := time.Duration(closedts.MaxBackoffMultiple.Get(&p.cfg.Settings.SV)) * minTargetDuration
+
+		p.mu.Lock()
+		minRequestedBackoff := p.mu.minRequestedBackoff
+		p.mu.minRequestedBackoff = hlc.Timestamp{}
+		p.mu.Unlock()
+
+		requestedTargetDuration := minTargetDuration
+		if minRequestedBackoff != (hlc.Timestamp{}) && minRequestedBackoff.Less(next) {
+			requestedTargetDuration = time.Duration(next.WallTime - minRequestedBackoff.WallTime)
+		}
+
+		oldEffectiveTargetDuration := effectiveTargetDuration
+		if requestedTargetDuration > effectiveTargetDuration {
+			effectiveTargetDuration = requestedTargetDuration
+		} else if requestedTargetDuration < effectiveTargetDuration {
+			effectiveTargetDuration -= minTargetDuration
+		}
+
+		if oldEffectiveTargetDuration != effectiveTargetDuration {
+			log.Warningf(ctx, "effective target duration: %.2fs -> %2fs", oldEffectiveTargetDuration.Seconds(), effectiveTargetDuration.Seconds())
+		}
+
+		if effectiveTargetDuration < minTargetDuration {
+			effectiveTargetDuration = minTargetDuration
+		} else if effectiveTargetDuration > maxTargetDuration {
+			effectiveTargetDuration = maxTargetDuration
+		}
+
+		next.WallTime -= int64(effectiveTargetDuration)
 		if err != nil {
 			if p.everyClockLog.ShouldLog() {
 				log.Warningf(ctx, "unable to move closed timestamp forward: %s", err)
@@ -146,30 +189,28 @@ func (p *Provider) runCloser(ctx context.Context) {
 			// Broadcast even if nothing new was queued, so that the subscribers
 			// loop to check their client's context.
 			p.mu.Broadcast()
-		} else {
-			closed, m := p.cfg.Close(next)
-			if log.V(1) {
-				log.Infof(ctx, "closed ts=%s with %+v, next closed timestamp should be %s", closed, m, next)
-			}
-			entry := ctpb.Entry{
-				Epoch:           lastEpoch,
-				ClosedTimestamp: closed,
-				MLAI:            m,
-			}
-			// TODO(tschottdorf): this one-off between the epoch is awkward. Clock() gives us the epoch for `next`
-			// but the entry wants the epoch for the current closed timestamp. Better to pass both into Close and
-			// to get both back from it as well.
-			lastEpoch = epoch
-
-			// Simulate a subscription to the local node, so that the new information
-			// is added to the storage (and thus becomes available to future subscribers
-			// as well, not only to existing ones). The other end of the chan will Broadcast().
-			//
-			// TODO(tschottdorf): the transport should ignore connection requests from
-			// the node to itself. Those connections would pointlessly loop this around
-			// once more.
-			ch <- entry
+			continue
 		}
+		closed, m := p.cfg.Close(next)
+		if log.V(0) {
+			log.Infof(ctx, "closed ts=%s with %+v, next closed timestamp should be %s", closed, m, next)
+		}
+		entry := ctpb.Entry{
+			Epoch:           lastEpoch,
+			ClosedTimestamp: closed,
+			MLAI:            m,
+		}
+
+		// Simulate a subscription to the local node, so that the new information
+		// is added to the storage (and thus becomes available to future subscribers
+		// as well, not only to existing ones). The other end of the chan will Broadcast().
+		//
+		// TODO(tschottdorf): the transport should ignore connection requests from
+		// the node to itself. Those connections would pointlessly loop this around
+		// once more.
+		ch <- entry
+
+		lastEpoch = epoch
 	}
 }
 

@@ -24,8 +24,35 @@ import (
 // TargetDuration is the follower reads closed timestamp update target duration.
 var TargetDuration = settings.RegisterNonNegativeDurationSetting(
 	"kv.closed_timestamp.target_duration",
-	"if nonzero, attempt to provide closed timestamp notifications for timestamps trailing cluster time by approximately this duration",
-	30*time.Second,
+	"if nonzero, attempt to provide closed timestamp notifications for timestamps trailing "+
+		"cluster time by approximately this duration, backing off as necessary up to a factor "+
+		"of kv.closed_timestamp.max_backoff_multiple to avoid starving long-running transactions",
+	time.Second,
+)
+
+// MaxBackoffMultiple multiplied by TargetDuration is the longest transaction
+// duration that will be respected by closed timestamps. Whenever closing out a
+// timestamp fails due to a still-ongoing tracked operation, the next Close will
+// be delayed more (unless the multiple is already that specified above).
+// Whenever closing out works without an intermittent forced noop-close, the
+// effective target duration becomes more aggressive.
+//
+// The effect of this mechanism is roughly that the closed timestamp period
+// hovers around the duration of the longest transaction (or the maximum
+// duration tolerated, whichever is smaller), which most importantly allows
+// any long-running transaction to finish if it is prepared to retry.
+var MaxBackoffMultiple = settings.RegisterValidatedIntSetting(
+	"kv.closed_timestamp.max_backoff_multiple",
+	"the maximum factor by which to delay closed timestamps (applied against "+
+		"kv.closed_timestamp.target_duration) in order to allow long-running transactions "+
+		"to finish",
+	30,
+	func(i int64) error {
+		if i < 1 {
+			return errors.New("backoff multipler must be positive")
+		}
+		return nil
+	},
 )
 
 // CloseFraction is the fraction of TargetDuration determining how often closed
