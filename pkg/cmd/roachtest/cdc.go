@@ -65,7 +65,7 @@ func cdcBasicTest(ctx context.Context, t *test, c *cluster, args cdcTestArgs) {
 	c.Start(ctx, t, crdbNodes)
 
 	db := c.Conn(ctx, 1)
-	defer stopFeeds(db)
+	// defer stopFeeds(db)
 	if _, err := db.Exec(
 		`SET CLUSTER SETTING kv.rangefeed.enabled = $1`, args.rangefeed,
 	); err != nil {
@@ -724,6 +724,7 @@ func (lv *latencyVerifier) pollLatency(
 			lv.logger.Printf("unexpected status: %s, error: %s", info.status, info.errMsg)
 			return errors.Errorf(`unexpected status: %s`, info.status)
 		}
+		lv.logger.Printf("progress: %+v", info)
 		lv.noteHighwater(info.highwaterTime)
 	}
 }
