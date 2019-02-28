@@ -1273,9 +1273,12 @@ func (r *Replica) adminScatter(
 	// transferring the lease prevents any further action on this node.
 	var allowLeaseTransfer bool
 	canTransferLease := func() bool { return allowLeaseTransfer }
+	log.Infof(ctx, "scatter %s", r)
+	defer log.Infof(ctx, "done scatter %s", r)
 	for re := retry.StartWithCtx(ctx, retryOpts); re.Next(); {
 		requeue, err := rq.processOneChange(ctx, r, sysCfg, canTransferLease, false /* dryRun */)
 		if err != nil {
+			log.Infof(ctx, "scatter %s: %v", r, err)
 			if IsRetryableReplicationError(err) {
 				continue
 			}

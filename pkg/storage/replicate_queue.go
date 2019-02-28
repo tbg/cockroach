@@ -538,6 +538,7 @@ func (rq *replicateQueue) processOneChange(
 					dryRun:                   dryRun,
 				},
 			)
+			log.Infof(ctx, "lease transfer attempt: %t %v", transferred, err)
 			if err != nil {
 				return false, err
 			}
