@@ -467,7 +467,7 @@ func registerCDC(r *registry) {
 			cdcBasicTest(ctx, t, c, cdcTestArgs{
 				workloadType:             tpccWorkloadType,
 				tpccWarehouseCount:       100,
-				workloadDuration:         "30m",
+				workloadDuration:         "12h",
 				initialScan:              true,
 				rangefeed:                true,
 				cloudStorageSink:         true,
