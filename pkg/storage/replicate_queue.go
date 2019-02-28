@@ -254,7 +254,7 @@ func (rq *replicateQueue) process(
 	// reservation could not be made with the selected target.
 	for r := retry.StartWithCtx(ctx, retryOpts); r.Next(); {
 		if requeue, err := rq.processOneChange(ctx, repl, sysCfg, rq.canTransferLease, false /* dryRun */); err != nil {
-			if IsSnapshotError(err) {
+			if IsRetryableReplicationError(err) {
 				// If ChangeReplicas failed because the preemptive snapshot failed, we
 				// log the error but then return success indicating we should retry the
 				// operation. The most likely causes of the preemptive snapshot failing are

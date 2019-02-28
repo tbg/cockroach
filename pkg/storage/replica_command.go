@@ -587,8 +587,17 @@ func waitForReplicasInit(
 	})
 }
 
+type candidateStoresThrottledError struct {
+	// NB: don't implement Cause() on this type without also updating IsRetryableReplicationError.
+	cause error
+}
+
+func (e *candidateStoresThrottledError) Error() string {
+	return e.cause.Error()
+}
+
 type snapshotError struct {
-	// NB: don't implement Cause() on this type without also updating IsSnapshotError.
+	// NB: don't implement Cause() on this type without also updating IsRetryableReplicationError.
 	cause error
 }
 
@@ -596,11 +605,16 @@ func (s *snapshotError) Error() string {
 	return fmt.Sprintf("snapshot failed: %s", s.cause.Error())
 }
 
-// IsSnapshotError returns true iff the error indicates a preemptive
-// snapshot failed.
-func IsSnapshotError(err error) bool {
+// IsRetryableReplicationError returns true iff the error indicates that something
+// went wrong in a replication change that can be retried and should eventually
+// succeed. Prime examples are refused preemptive snapshots or inability to find
+// a target store due to store pool throttling.
+func IsRetryableReplicationError(err error) bool {
 	return causer.Visit(err, func(err error) bool {
-		_, ok := errors.Cause(err).(*snapshotError)
+		if _, ok := errors.Cause(err).(*snapshotError); ok {
+			return true
+		}
+		_, ok := errors.Cause(err).(*candidateStoresThrottledError)
 		return ok
 	})
 }
@@ -1251,7 +1265,7 @@ func (r *Replica) adminScatter(
 		InitialBackoff: 50 * time.Millisecond,
 		MaxBackoff:     1 * time.Second,
 		Multiplier:     2,
-		MaxRetries:     5,
+		MaxRetries:     25,
 	}
 
 	// Loop until the replicate queue decides there is nothing left to do for the
@@ -1262,7 +1276,7 @@ func (r *Replica) adminScatter(
 	for re := retry.StartWithCtx(ctx, retryOpts); re.Next(); {
 		requeue, err := rq.processOneChange(ctx, r, sysCfg, canTransferLease, false /* dryRun */)
 		if err != nil {
-			if IsSnapshotError(err) {
+			if IsRetryableReplicationError(err) {
 				continue
 			}
 			break

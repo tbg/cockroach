@@ -2570,7 +2570,7 @@ func TestRemovePlaceholderRace(t *testing.T) {
 					storagepb.ReasonUnknown,
 					"",
 				); err != nil {
-					if storage.IsSnapshotError(err) {
+					if storage.IsRetryableReplicationError(err) {
 						continue
 					} else {
 						t.Fatal(err)
@@ -3736,7 +3736,7 @@ func TestFailedPreemptiveSnapshot(t *testing.T) {
 		"",
 	); !testutils.IsError(err, expErr) {
 		t.Fatalf("expected %s; got %v", expErr, err)
-	} else if !storage.IsSnapshotError(err) {
+	} else if !storage.IsRetryableReplicationError(err) {
 		t.Fatalf("expected preemptive snapshot failed error; got %T: %v", err, err)
 	}
 }
