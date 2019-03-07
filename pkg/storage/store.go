@@ -51,6 +51,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/storage/stateloader"
 	"github.com/cockroachdb/cockroach/pkg/storage/tscache"
 	"github.com/cockroachdb/cockroach/pkg/storage/txnwait"
+	"github.com/cockroachdb/cockroach/pkg/util"
 	"github.com/cockroachdb/cockroach/pkg/util/contextutil"
 	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
@@ -103,7 +104,15 @@ var changeTypeInternalToRaft = map[roachpb.ReplicaChangeType]raftpb.ConfChangeTy
 }
 
 var storeSchedulerConcurrency = envutil.EnvOrDefaultInt(
-	"COCKROACH_SCHEDULER_CONCURRENCY", 8*runtime.NumCPU())
+	"COCKROACH_SCHEDULER_CONCURRENCY", func() int {
+		n := 8 * runtime.NumCPU()
+		if util.RaceEnabled {
+			if n > 4 {
+				n = 4
+			}
+		}
+		return n
+	}())
 
 var logSSTInfoTicks = envutil.EnvOrDefaultInt(
 	"COCKROACH_LOG_SST_INFO_TICKS_INTERVAL", 60,
