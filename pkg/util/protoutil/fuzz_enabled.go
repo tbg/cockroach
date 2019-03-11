@@ -16,4 +16,4 @@
 
 package protoutil
 
-const fuzzEnabled = true
+const fuzzEnabled = false // hack

@@ -101,7 +101,7 @@ func (tr raceTransport) SendNext(
 func GRPCTransportFactory(
 	opts SendOptions, nodeDialer *nodedialer.Dialer, replicas ReplicaSlice,
 ) (Transport, error) {
-	if atomic.AddInt32(&running, 1) <= 1 {
+	if false && atomic.AddInt32(&running, 1) <= 1 {
 		// NB: We can't use Stopper.RunWorker because doing so would race with
 		// calling Stopper.Stop.
 		if err := nodeDialer.Stopper().RunAsyncTask(
@@ -161,5 +161,6 @@ func GRPCTransportFactory(
 	if err != nil {
 		return nil, err
 	}
-	return &raceTransport{Transport: t}, nil
+	return t, nil
+	// return &raceTransport{Transport: t}, nil
 }
