@@ -170,6 +170,7 @@ func evaluateBatch(
 	if ba.Txn != nil {
 		txnShallow := *ba.Txn
 		ba.Txn = &txnShallow
+		ba.Txn.ObservedTimestamps = nil
 
 		// Check whether this transaction has been aborted, if applicable.
 		// This applies to writes that leave intents (the use of the

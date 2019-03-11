@@ -2825,6 +2825,7 @@ func (s *Store) Send(
 		// this node, in which case the following is a no-op).
 		if _, ok := ba.Txn.GetObservedTimestamp(ba.Replica.NodeID); !ok {
 			shallowTxn := *ba.Txn
+			shallowTxn.ObservedTimestamps = nil
 			shallowTxn.UpdateObservedTimestamp(ba.Replica.NodeID, now)
 			ba.Txn = &shallowTxn
 		}
