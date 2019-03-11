@@ -157,6 +157,9 @@ func (gt *grpcTransport) maybeResurrectRetryablesLocked() bool {
 }
 
 func withMarshalingDebugging(ctx context.Context, ba roachpb.BatchRequest, f func()) {
+	f()
+	return // hack
+
 	nPre := ba.Size()
 	defer func() {
 		nPost := ba.Size()

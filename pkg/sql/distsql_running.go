@@ -42,7 +42,7 @@ import (
 // To allow queries to send out flow RPCs in parallel, we use a pool of workers
 // that can issue the RPCs on behalf of the running code. The pool is shared by
 // multiple queries.
-const numRunners = 16
+const numRunners = 2 // HACK
 
 const clientRejectedMsg string = "client rejected when attempting to run DistSQL plan"
 
