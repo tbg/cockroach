@@ -232,6 +232,9 @@ func (db *DB) StoreData(ctx context.Context, r Resolution, data []tspb.TimeSerie
 	return nil
 }
 
+var n int
+var t int
+
 func (db *DB) tryStoreData(ctx context.Context, r Resolution, data []tspb.TimeSeriesData) error {
 	var kvs []roachpb.KeyValue
 	var totalSizeOfKvs int64
@@ -259,8 +262,13 @@ func (db *DB) tryStoreData(ctx context.Context, r Resolution, data []tspb.TimeSe
 		}
 	}
 
+	n += len(kvs)
 	if err := db.storeKvs(ctx, kvs); err != nil {
 		return err
+	}
+	if n/10000 > t {
+		t = n / 10000
+		log.Infof(ctx, "stored %d ts writes in total", n)
 	}
 
 	db.metrics.WriteSamples.Inc(totalSamples)
