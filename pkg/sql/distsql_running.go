@@ -35,6 +35,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/mon"
 	"github.com/cockroachdb/cockroach/pkg/util/tracing"
+	"github.com/cockroachdb/cockroach/pkg/util/uuid"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 )
@@ -472,6 +473,11 @@ func (r *DistSQLReceiver) Push(
 	row sqlbase.EncDatumRow, meta *distsqlrun.ProducerMetadata,
 ) distsqlrun.ConsumerStatus {
 	if meta != nil {
+		id := uuid.Nil
+		if r.txn != nil {
+			id = r.txn.ID()
+		}
+		log.Infof(context.TODO(), "TSX meta for %s: %+v", id, meta)
 		if meta.TxnCoordMeta != nil {
 			if r.txn != nil {
 				if r.txn.ID() == meta.TxnCoordMeta.Txn.ID {
@@ -502,6 +508,8 @@ func (r *DistSQLReceiver) Push(
 					}
 				}
 				r.resultWriter.SetError(meta.Err)
+			} else {
+				log.Infof(context.TODO(), "TSX discarding %+v", meta.Err)
 			}
 		}
 		if len(meta.Ranges) > 0 {
