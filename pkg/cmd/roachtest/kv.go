@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/cockroach/pkg/server"
 	"github.com/cockroachdb/cockroach/pkg/ts/tspb"
 	"github.com/cockroachdb/cockroach/pkg/util/httputil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
@@ -340,7 +339,7 @@ func registerKVGracefulDraining(r *registry) {
 				StartNanos: now.Add(-runDuration).UnixNano(),
 				EndNanos:   now.UnixNano(),
 				// Check the performance in each timeseries sample interval.
-				SampleNanos: server.DefaultMetricsSampleInterval.Nanoseconds(),
+				SampleNanos: 10 * time.Second.Nanoseconds(),
 				Queries: []tspb.Query{
 					{
 						Name:             "cr.node.sql.query.count",
