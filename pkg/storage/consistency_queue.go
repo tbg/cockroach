@@ -54,6 +54,7 @@ func newConsistencyQueue(store *Store, gossip *gossip.Gossip) *consistencyQueue 
 		"consistencyChecker", q, store, gossip,
 		queueConfig{
 			maxSize:              defaultQueueMaxSize,
+			maxConcurrency:       4, // !!!
 			needsLease:           true,
 			needsSystemConfig:    false,
 			acceptsUnsplitRanges: true,

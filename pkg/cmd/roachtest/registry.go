@@ -40,6 +40,7 @@ func registerTests(r *registry) {
 	registerGossip(r)
 	registerHibernate(r)
 	registerHotSpotSplits(r)
+	registerImportGeo(r)
 	registerImportTPCC(r)
 	registerImportTPCH(r)
 	registerInterleaved(r)

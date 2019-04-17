@@ -189,3 +189,28 @@ func registerImportTPCH(r *registry) {
 		})
 	}
 }
+
+func registerImportGeo(r *registry) {
+	r.Add(testSpec{
+		Name: "import-geo",
+		Cluster: makeClusterSpec(
+			8, cpu(4), geo(), zones("europe-west1-b,europe-west4-b,asia-east1-b,us-west1-b")),
+		Run: func(ctx context.Context, t *test, c *cluster) {
+			c.Put(ctx, cockroach, "./cockroach")
+			c.Put(ctx, workload, "./workload", c.All())
+			c.Start(ctx, t)
+
+			conn := c.Conn(ctx, 1)
+			if _, err := conn.Exec(`
+					SET CLUSTER SETTING server.consistency_check.interval = '1m';
+				`); err != nil {
+				t.Fatal(err)
+			}
+
+			t.Status("importing TPCC fixture")
+			warehouses := 4000
+			c.Run(ctx, c.Node(1), fmt.Sprintf(
+				"./workload fixtures import tpcc --warehouses=%d --scatter --fks=false {pgurl:1}", warehouses))
+		},
+	})
+}
