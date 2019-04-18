@@ -207,10 +207,22 @@ func registerImportGeo(r *registry) {
 				t.Fatal(err)
 			}
 
-			t.Status("importing TPCC fixture")
-			warehouses := 4000
-			c.Run(ctx, c.Node(1), fmt.Sprintf(
-				"./workload fixtures import tpcc --warehouses=%d --scatter --fks=false {pgurl:1}", warehouses))
+			m := newMonitor(ctx, c)
+
+			m.Go(func(ctx context.Context) error {
+				warehouses := 4000
+				return c.RunE(ctx, c.Node(1), fmt.Sprintf(
+					"./workload fixtures import tpcc --warehouses=%d --scatter --fks=false {pgurl:1}", warehouses))
+			})
+
+			if err := m.WaitE(); err != nil {
+				// If we get an error, there was hopefully an inconsistency, so
+				// stop the cluster to preserve state (the checkpoints aren't
+				// enough to restart the cluster because they're only from some
+				// nodes).
+				c.Stop(ctx)
+				t.Fatal(err)
+			}
 		},
 	})
 }
