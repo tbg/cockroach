@@ -2018,7 +2018,7 @@ func (r *Replica) processRaftCommand(
 
 	// When set to true, recomputes the stats for the LHS and RHS of splits and
 	// makes sure that they agree with the state's range stats.
-	const expensiveSplitAssertion = false
+	const expensiveSplitAssertion = true
 
 	if expensiveSplitAssertion && raftCmd.ReplicatedEvalResult.Split != nil {
 		split := raftCmd.ReplicatedEvalResult.Split
