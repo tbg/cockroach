@@ -2039,11 +2039,18 @@ func (r *Replica) processRaftCommand(
 			log.Fatal(ctx, err)
 		}
 
+		fatal := false
 		if diff := pretty.Diff(lhsStatsMS, lhsComputedMS); len(diff) > 0 {
-			log.Fatalf(ctx, "LHS split stats divergence: diff(claimed, computed) = %s", pretty.Diff(lhsStatsMS, lhsComputedMS))
+			log.Errorf(ctx, "LHS split stats divergence: diff(claimed, computed) = %s", pretty.Diff(lhsStatsMS, lhsComputedMS))
+			fatal = true
 		}
 		if diff := pretty.Diff(rhsStatsMS, rhsComputedMS); len(diff) > 0 {
-			log.Fatalf(ctx, "RHS split stats divergence diff(claimed, computed) = %s", pretty.Diff(rhsStatsMS, rhsComputedMS))
+			log.Errorf(ctx, "RHS split stats divergence diff(claimed, computed) = %s", pretty.Diff(rhsStatsMS, rhsComputedMS))
+			fatal = true
+		}
+
+		if fatal {
+			log.Fatalf(ctx, "^-- see above")
 		}
 	}
 
