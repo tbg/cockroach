@@ -220,6 +220,10 @@ func registerImportGeo(r *registry) {
 				// stop the cluster to preserve state (the checkpoints aren't
 				// enough to restart the cluster because they're only from some
 				// nodes).
+				//
+				// If an assertion fired, give the other nodes time to also run
+				// into the same assertion. It'll be helpful to know that.
+				time.Sleep(5 * time.Second)
 				c.Stop(ctx)
 				t.Fatal(err)
 			}
