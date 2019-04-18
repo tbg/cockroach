@@ -503,6 +503,8 @@ func (rlq *raftLogQueue) shouldQueue(
 func (rlq *raftLogQueue) shouldQueueImpl(
 	ctx context.Context, decision truncateDecision,
 ) (shouldQ bool, recomputeRaftLogSize bool, priority float64) {
+	return false, false, 0.0 // HACK
+
 	if decision.ShouldTruncate() {
 		return true, !decision.Input.LogSizeTrusted, float64(decision.Input.LogSize)
 	}
@@ -526,6 +528,8 @@ func (rlq *raftLogQueue) shouldQueueImpl(
 // leader and if the total number of the range's raft log's stale entries
 // exceeds RaftLogQueueStaleThreshold.
 func (rlq *raftLogQueue) process(ctx context.Context, r *Replica, _ *config.SystemConfig) error {
+	return nil // HACK
+
 	decision, err := newTruncateDecision(ctx, r)
 	if err != nil {
 		return err
