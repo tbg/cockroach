@@ -1670,7 +1670,6 @@ func TestUnspecifiedPrimaryKey(t *testing.T) {
 // running after the original job-coordinator node is shut down.
 func TestChangefeedNodeShutdown(t *testing.T) {
 	defer leaktest.AfterTest(t)()
-	t.Skip("#32232")
 
 	defer func(oldInterval time.Duration) {
 		jobs.DefaultAdoptInterval = oldInterval
