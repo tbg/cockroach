@@ -1,7 +1,7 @@
 **/.DS_Store
 **/*.toolbox/.project
 **/*.toolbox/.settings
-**/*.toolbox/model
+**/*.toolbox/[Mm]odel*
 **/*.toolbox/*aux
 **/*.toolbox/*.log
 **/*.toolbox/*.pdf
