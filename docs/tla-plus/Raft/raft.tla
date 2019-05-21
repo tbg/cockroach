@@ -6,8 +6,7 @@ PT == INSTANCE PT
 
 CONSTANTS
     \* How many terms to simulate (i.e. when to stop exploring)
-    NumElections,
-    MaxLogIndex, \* TBD
+    MaxTerm,
     \* Model set of peers, for example {p1,p2,p3,p4}
     Peers,
     \* Seq of conf changes, for example << <<{p1,p2,p3}, {}>>, <<{p1,p2}, {}>>
@@ -25,7 +24,7 @@ CONSTANTS
     MsgApp,
     MsgAppResp
 
-Terms == 0..NumElections
+Terms == 0..MaxTerm
 Votes == Peers \union {NULL}
 Roles == {Leader, Candidate, Follower}
 
@@ -33,7 +32,18 @@ TypeMsgAppInvariant == [
             type:  {MsgApp},
             from:  Peers,
             term:  Terms,
-            index: 1..Len(Cfgs)
+            logTerm: Terms,
+            logIndex: 1..(1+Len(Cfgs)),
+            cfg: [ 1..2 -> SUBSET Peers ],
+            committed: 1..(1+Len(Cfgs))
+        ]
+
+TypeMsgAppRespInvariant == [
+            type:  {MsgAppResp, MsgVoteResp},
+            from:  Peers,
+            to:    Peers,
+            term:  Terms,
+            index: 1..(1+Len(Cfgs))
         ]
 
 TypeMsgVoteInvariant == [
@@ -41,23 +51,24 @@ TypeMsgVoteInvariant == [
             from:  Peers,
             term:  Terms,
             logTerm: Terms,
-            logIndex: 1..Len(Cfgs)
+            logIndex: 1..(1+Len(Cfgs))
         ]
 
-TypeMsgUnicastInvariant == [
+TypeMsgVoteRespInvariant == [
             type:  {MsgAppResp, MsgVoteResp},
             from:  Peers,
             to:    Peers,
-            term:  Terms,
-            index: 1..Len(Cfgs)
+            term:  Terms
         ]
 
 TypeInflightInvariant == SUBSET UNION {
         TypeMsgAppInvariant,
         TypeMsgVoteInvariant,
-        TypeMsgUnicastInvariant
+        TypeMsgAppRespInvariant,
+        TypeMsgVoteRespInvariant
     }
 
+MaxLogIndex == 1 + Len(Cfgs) \* initial log index plus number of possible proposals
 LogEntries == [ term: Terms, cfg: PT!Range(Cfgs) \union {NULL} ]
 Logs == UNION { PT!TupleOf(LogEntries, n) : n \in 1..MaxLogIndex }
 TypeGlobalStateInvariant == 
@@ -208,20 +219,20 @@ Reacting to unicast messages, i.e. being asked to vote or to append an entry.
 HandleVoteReq(state, msg) ==
     LET
         rej == \/ msg.term /= state.term
-              \/ state.vote \notin {NULL, msg.from}
+               \/ state.vote \notin {NULL, msg.from}
         resp == [ type |-> MsgVoteResp,
                 from |-> state.self,
                 to |-> msg.from,
                 term |-> state.term ]
     IN IF ~rej THEN
-        Send([ vote |-> msg.from ] @@ state, msg)
+        Send([ vote |-> msg.from ] @@ state, resp)
     ELSE state
 
 \* Handle an updated commit index communicated to a peer by a leader.
 \* This simply ratchets the commit index up.
 MaybeCommit(state, idx) ==
-    IF state.commit < idx THEN
-        [ commit |-> idx ] @@ state
+    IF state.committed < idx THEN
+        [ committed |-> idx ] @@ state
     ELSE state
 
 \* React to an append request (assuming that any term bumps are already
@@ -230,7 +241,7 @@ MaybeCommit(state, idx) ==
 \* lapping uncommitted tail as necessary). An ack is sent on success.
 HandleAppend(oldstate, msg) ==
     LET
-        state == MaybeCommit(oldstate, msg.commit)
+        state == MaybeCommit(oldstate, msg.committed)
         \* Entry to be overwritten (may not exist).
         exEnt == EntryAtOrNull(state.log, msg.logIndex)
         ent == [term |-> msg.term, cfg |-> msg.cfg]
@@ -300,7 +311,6 @@ variable
     \* (but don't right now).
     p_committed = [ p \in Peers |-> FirstEntry.term ];
     p_role = [ p \in Peers |-> Follower ];
-    election_quota = NumElections;
 
 define
 
@@ -358,8 +368,8 @@ macro RunOnce()
 begin
     with state = State(self) do
             either
-                await election_quota > 0;
-                election_quota := election_quota - 1;
+                \* Don't allow entering any term > MaxTerm.
+                await state.term < MaxTerm;
                 ApplyState(BecomeCandidate(state))
             or
                 await state.role = Candidate;
@@ -387,22 +397,33 @@ end macro;
 
 fair process peer \in Peers
 begin
-  Loop:
-    while \/ Len(cfgs) > 0
-          \/ \E p, q \in Peers: State(p).committed < State(q).committed
-    do
-        RunOnce();
+Loop:
+    while State(self).term <= MaxTerm do
+        either
+            RunOnce();
+        or
+            \* If the election for MaxTerm ends in a stalemate, all nodes
+            \* may end up in MaxTerm without any possible state transitions
+            \* (since we don't allow campaigning past MaxTerm) which leads
+            \* to stuttering. Allow peers to bail at this point to avoid
+            \* this (while at the same time making sure we never get stuck
+            \* in any earlier term).
+            await State(self).term = MaxTerm;
+            goto Exit;
+        end either;
     end while;
     assert FALSE;
     assert Len(cfgs) = 0;
     assert \A p \in Peers: /\ State(p).committed = Len(State(p).log)
                            /\ Len(State(p).log) = Len(Cfgs)+4;
+Exit:
+    skip;
 end process;
 
 end algorithm; *)
 \* BEGIN TRANSLATION
 VARIABLES inflight, cfgs, p_log, p_term, p_vote, p_cfg, p_committed, p_role, 
-          election_quota, pc
+          pc
 
 (* define statement *)
 GlobalState == [
@@ -443,7 +464,7 @@ CommittedEntriesWereProposed == TRUE
 
 
 vars == << inflight, cfgs, p_log, p_term, p_vote, p_cfg, p_committed, p_role, 
-           election_quota, pc >>
+           pc >>
 
 ProcSet == (Peers)
 
@@ -456,88 +477,92 @@ Init == (* Global variables *)
         /\ p_cfg = [ p \in Peers |-> InitialConfig ]
         /\ p_committed = [ p \in Peers |-> FirstEntry.term ]
         /\ p_role = [ p \in Peers |-> Follower ]
-        /\ election_quota = NumElections
         /\ pc = [self \in ProcSet |-> "Loop"]
 
 Loop(self) == /\ pc[self] = "Loop"
-              /\ IF \/ Len(cfgs) > 0
-                    \/ \E p, q \in Peers: State(p).committed < State(q).committed
-                    THEN /\ LET state == State(self) IN
-                              \/ /\ election_quota > 0
-                                 /\ election_quota' = election_quota - 1
-                                 /\ Assert(DOMAIN (BecomeCandidate(state)) = DOMAIN State(self), 
-                                           "Failure of assertion at line 347, column 5 of macro called at line 394, column 9.")
-                                 /\ p_log' = [p_log EXCEPT ![self] = (BecomeCandidate(state)).log]
-                                 /\ p_term' = [p_term EXCEPT ![self] = (BecomeCandidate(state)).term]
-                                 /\ p_vote' = [p_vote EXCEPT ![self] = (BecomeCandidate(state)).vote]
-                                 /\ p_cfg' = [p_cfg EXCEPT ![self] = (BecomeCandidate(state)).cfg]
-                                 /\ p_committed' = [p_committed EXCEPT ![self] = (BecomeCandidate(state)).committed]
-                                 /\ p_role' = [p_role EXCEPT ![self] = (BecomeCandidate(state)).role]
-                                 /\ inflight' = (BecomeCandidate(state)).inflight
-                                 /\ cfgs' = cfgs
-                              \/ /\ state.role = Candidate
-                                 /\ Assert(DOMAIN (MaybeBecomeLeader(state)) = DOMAIN State(self), 
-                                           "Failure of assertion at line 347, column 5 of macro called at line 394, column 9.")
-                                 /\ p_log' = [p_log EXCEPT ![self] = (MaybeBecomeLeader(state)).log]
-                                 /\ p_term' = [p_term EXCEPT ![self] = (MaybeBecomeLeader(state)).term]
-                                 /\ p_vote' = [p_vote EXCEPT ![self] = (MaybeBecomeLeader(state)).vote]
-                                 /\ p_cfg' = [p_cfg EXCEPT ![self] = (MaybeBecomeLeader(state)).cfg]
-                                 /\ p_committed' = [p_committed EXCEPT ![self] = (MaybeBecomeLeader(state)).committed]
-                                 /\ p_role' = [p_role EXCEPT ![self] = (MaybeBecomeLeader(state)).role]
-                                 /\ inflight' = (MaybeBecomeLeader(state)).inflight
-                                 /\ UNCHANGED <<cfgs, election_quota>>
-                              \/ /\ /\ state.role = Leader
-                                    /\ Len(cfgs) > 0
-                                 /\ LET nextCfg == Head(cfgs) IN
-                                      /\ cfgs' = Tail(cfgs)
-                                      /\ Assert(DOMAIN (ProposeConfChange(state, nextCfg)) = DOMAIN State(self), 
-                                                "Failure of assertion at line 347, column 5 of macro called at line 394, column 9.")
-                                      /\ p_log' = [p_log EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).log]
-                                      /\ p_term' = [p_term EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).term]
-                                      /\ p_vote' = [p_vote EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).vote]
-                                      /\ p_cfg' = [p_cfg EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).cfg]
-                                      /\ p_committed' = [p_committed EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).committed]
-                                      /\ p_role' = [p_role EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).role]
-                                      /\ inflight' = (ProposeConfChange(state, nextCfg)).inflight
-                                 /\ UNCHANGED election_quota
-                              \/ /\ /\ state.role = Leader
-                                    /\ LastIndex(state.log) > state.committed
-                                 /\ \E idx \in state.committed+1..LastIndex(state.log):
-                                      /\ Assert(DOMAIN (MaybeMarkCommitted(state, idx)) = DOMAIN State(self), 
-                                                "Failure of assertion at line 347, column 5 of macro called at line 394, column 9.")
-                                      /\ p_log' = [p_log EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).log]
-                                      /\ p_term' = [p_term EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).term]
-                                      /\ p_vote' = [p_vote EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).vote]
-                                      /\ p_cfg' = [p_cfg EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).cfg]
-                                      /\ p_committed' = [p_committed EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).committed]
-                                      /\ p_role' = [p_role EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).role]
-                                      /\ inflight' = (MaybeMarkCommitted(state, idx)).inflight
-                                 /\ UNCHANGED <<cfgs, election_quota>>
-                              \/ /\ \E msg \in state.inflight:
-                                      /\ Assert(DOMAIN (HandleReq(MaybeBecomeFollower(state, msg.term), msg)) = DOMAIN State(self), 
-                                                "Failure of assertion at line 347, column 5 of macro called at line 394, column 9.")
-                                      /\ p_log' = [p_log EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).log]
-                                      /\ p_term' = [p_term EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).term]
-                                      /\ p_vote' = [p_vote EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).vote]
-                                      /\ p_cfg' = [p_cfg EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).cfg]
-                                      /\ p_committed' = [p_committed EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).committed]
-                                      /\ p_role' = [p_role EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).role]
-                                      /\ inflight' = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).inflight
-                                 /\ UNCHANGED <<cfgs, election_quota>>
-                         /\ pc' = [pc EXCEPT ![self] = "Loop"]
+              /\ IF State(self).term <= MaxTerm
+                    THEN /\ \/ /\ LET state == State(self) IN
+                                    \/ /\ state.term < MaxTerm
+                                       /\ Assert(DOMAIN (BecomeCandidate(state)) = DOMAIN State(self), 
+                                                 "Failure of assertion at line 357, column 5 of macro called at line 403, column 13.")
+                                       /\ p_log' = [p_log EXCEPT ![self] = (BecomeCandidate(state)).log]
+                                       /\ p_term' = [p_term EXCEPT ![self] = (BecomeCandidate(state)).term]
+                                       /\ p_vote' = [p_vote EXCEPT ![self] = (BecomeCandidate(state)).vote]
+                                       /\ p_cfg' = [p_cfg EXCEPT ![self] = (BecomeCandidate(state)).cfg]
+                                       /\ p_committed' = [p_committed EXCEPT ![self] = (BecomeCandidate(state)).committed]
+                                       /\ p_role' = [p_role EXCEPT ![self] = (BecomeCandidate(state)).role]
+                                       /\ inflight' = (BecomeCandidate(state)).inflight
+                                       /\ cfgs' = cfgs
+                                    \/ /\ state.role = Candidate
+                                       /\ Assert(DOMAIN (MaybeBecomeLeader(state)) = DOMAIN State(self), 
+                                                 "Failure of assertion at line 357, column 5 of macro called at line 403, column 13.")
+                                       /\ p_log' = [p_log EXCEPT ![self] = (MaybeBecomeLeader(state)).log]
+                                       /\ p_term' = [p_term EXCEPT ![self] = (MaybeBecomeLeader(state)).term]
+                                       /\ p_vote' = [p_vote EXCEPT ![self] = (MaybeBecomeLeader(state)).vote]
+                                       /\ p_cfg' = [p_cfg EXCEPT ![self] = (MaybeBecomeLeader(state)).cfg]
+                                       /\ p_committed' = [p_committed EXCEPT ![self] = (MaybeBecomeLeader(state)).committed]
+                                       /\ p_role' = [p_role EXCEPT ![self] = (MaybeBecomeLeader(state)).role]
+                                       /\ inflight' = (MaybeBecomeLeader(state)).inflight
+                                       /\ cfgs' = cfgs
+                                    \/ /\ /\ state.role = Leader
+                                          /\ Len(cfgs) > 0
+                                       /\ LET nextCfg == Head(cfgs) IN
+                                            /\ cfgs' = Tail(cfgs)
+                                            /\ Assert(DOMAIN (ProposeConfChange(state, nextCfg)) = DOMAIN State(self), 
+                                                      "Failure of assertion at line 357, column 5 of macro called at line 403, column 13.")
+                                            /\ p_log' = [p_log EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).log]
+                                            /\ p_term' = [p_term EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).term]
+                                            /\ p_vote' = [p_vote EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).vote]
+                                            /\ p_cfg' = [p_cfg EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).cfg]
+                                            /\ p_committed' = [p_committed EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).committed]
+                                            /\ p_role' = [p_role EXCEPT ![self] = (ProposeConfChange(state, nextCfg)).role]
+                                            /\ inflight' = (ProposeConfChange(state, nextCfg)).inflight
+                                    \/ /\ /\ state.role = Leader
+                                          /\ LastIndex(state.log) > state.committed
+                                       /\ \E idx \in state.committed+1..LastIndex(state.log):
+                                            /\ Assert(DOMAIN (MaybeMarkCommitted(state, idx)) = DOMAIN State(self), 
+                                                      "Failure of assertion at line 357, column 5 of macro called at line 403, column 13.")
+                                            /\ p_log' = [p_log EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).log]
+                                            /\ p_term' = [p_term EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).term]
+                                            /\ p_vote' = [p_vote EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).vote]
+                                            /\ p_cfg' = [p_cfg EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).cfg]
+                                            /\ p_committed' = [p_committed EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).committed]
+                                            /\ p_role' = [p_role EXCEPT ![self] = (MaybeMarkCommitted(state, idx)).role]
+                                            /\ inflight' = (MaybeMarkCommitted(state, idx)).inflight
+                                       /\ cfgs' = cfgs
+                                    \/ /\ \E msg \in state.inflight:
+                                            /\ Assert(DOMAIN (HandleReq(MaybeBecomeFollower(state, msg.term), msg)) = DOMAIN State(self), 
+                                                      "Failure of assertion at line 357, column 5 of macro called at line 403, column 13.")
+                                            /\ p_log' = [p_log EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).log]
+                                            /\ p_term' = [p_term EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).term]
+                                            /\ p_vote' = [p_vote EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).vote]
+                                            /\ p_cfg' = [p_cfg EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).cfg]
+                                            /\ p_committed' = [p_committed EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).committed]
+                                            /\ p_role' = [p_role EXCEPT ![self] = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).role]
+                                            /\ inflight' = (HandleReq(MaybeBecomeFollower(state, msg.term), msg)).inflight
+                                       /\ cfgs' = cfgs
+                               /\ pc' = [pc EXCEPT ![self] = "Loop"]
+                            \/ /\ State(self).term = MaxTerm
+                               /\ pc' = [pc EXCEPT ![self] = "Exit"]
+                               /\ UNCHANGED <<inflight, cfgs, p_log, p_term, p_vote, p_cfg, p_committed, p_role>>
                     ELSE /\ Assert(FALSE, 
-                                   "Failure of assertion at line 396, column 5.")
+                                   "Failure of assertion at line 415, column 5.")
                          /\ Assert(Len(cfgs) = 0, 
-                                   "Failure of assertion at line 397, column 5.")
+                                   "Failure of assertion at line 416, column 5.")
                          /\ Assert(\A p \in Peers: /\ State(p).committed = Len(State(p).log)
                                                    /\ Len(State(p).log) = Len(Cfgs)+4, 
-                                   "Failure of assertion at line 398, column 5.")
-                         /\ pc' = [pc EXCEPT ![self] = "Done"]
+                                   "Failure of assertion at line 417, column 5.")
+                         /\ pc' = [pc EXCEPT ![self] = "Exit"]
                          /\ UNCHANGED << inflight, cfgs, p_log, p_term, p_vote, 
-                                         p_cfg, p_committed, p_role, 
-                                         election_quota >>
+                                         p_cfg, p_committed, p_role >>
 
-peer(self) == Loop(self)
+Exit(self) == /\ pc[self] = "Exit"
+              /\ TRUE
+              /\ pc' = [pc EXCEPT ![self] = "Done"]
+              /\ UNCHANGED << inflight, cfgs, p_log, p_term, p_vote, p_cfg, 
+                              p_committed, p_role >>
+
+peer(self) == Loop(self) \/ Exit(self)
 
 Next == (\E self \in Peers: peer(self))
            \/ (* Disjunct to prevent deadlock on termination *)
@@ -552,5 +577,5 @@ Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 
 =============================================================================
 \* Modification History
-\* Last modified Mon May 20 17:06:35 CEST 2019 by tschottdorf
+\* Last modified Mon May 20 21:04:52 CEST 2019 by tschottdorf
 \* Created Mon Apr 29 13:11:24 CEST 2019 by tschottdorf

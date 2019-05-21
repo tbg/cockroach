@@ -6,7 +6,7 @@
 <intAttribute key="dfidDepth" value="100"/>
 <booleanAttribute key="dfidMode" value="false"/>
 <intAttribute key="distributedFPSetCount" value="0"/>
-<stringAttribute key="distributedNetworkInterface" value="192.168.178.33"/>
+<stringAttribute key="distributedNetworkInterface" value="192.168.178.21"/>
 <intAttribute key="distributedNodesCount" value="1"/>
 <stringAttribute key="distributedTLC" value="off"/>
 <stringAttribute key="distributedTLCVMArgs" value=""/>
@@ -19,7 +19,7 @@
 <stringAttribute key="modelBehaviorNext" value=""/>
 <stringAttribute key="modelBehaviorSpec" value="Spec"/>
 <intAttribute key="modelBehaviorSpecType" value="1"/>
-<stringAttribute key="modelBehaviorVars" value="cfgs, p_log, pc, election_quota, inflight, p_vote, p_committed, p_term, p_role, p_cfg"/>
+<stringAttribute key="modelBehaviorVars" value="cfgs, p_log, pc, inflight, p_vote, p_committed, p_term, p_role, p_cfg"/>
 <stringAttribute key="modelComments" value=""/>
 <booleanAttribute key="modelCorrectnessCheckDeadlock" value="true"/>
 <listAttribute key="modelCorrectnessInvariants">
@@ -43,8 +43,7 @@
 <listEntry value="MsgAppResp;;MsgAppResp;1;0"/>
 <listEntry value="MsgApp;;MsgApp;1;0"/>
 <listEntry value="MsgVote;;MsgVote;1;0"/>
-<listEntry value="MaxLogIndex;;3;0;0"/>
-<listEntry value="NumElections;;3;0;0"/>
+<listEntry value="MaxTerm;;3;0;0"/>
 </listAttribute>
 <stringAttribute key="modelParameterContraint" value=""/>
 <listAttribute key="modelParameterDefinitions"/>
@@ -58,7 +57,12 @@
 <intAttribute key="simuSeed" value="-1"/>
 <stringAttribute key="specName" value="raft"/>
 <listAttribute key="traceExploreExpressions">
-<listEntry value="1log[p2]"/>
+<listEntry value="0log[p2]"/>
+<listEntry value="0MaybeBecomeLeader(State(p4))"/>
+<listEntry value="0AcksFor(p4, 3, Inflight(State(p4), MsgVoteResp))"/>
+<listEntry value="0Inflight(State(p4), MsgVoteResp)"/>
+<listEntry value="0LET&#10;&#9;msg == [term |-&gt; 3, type |-&gt; MsgVote, from |-&gt; p4, logTerm |-&gt; 1, logIndex |-&gt; 1]&#10;&#9;state == State(p4)&#10;&#9;rej == \/ msg.term /= state.term&#10;               \/ state.vote \notin {NULL, msg.from}&#10;     IN rej"/>
+<listEntry value="1[ type |-&gt; MsgApp,&#10;    from |-&gt; p1,&#10;    term |-&gt; 2,&#10;    logTerm |-&gt; 1,&#10;    logIndex |-&gt; 1,&#10;    cfg |-&gt; &lt;&lt;{p1, p2, p3}, {}&gt;&gt;,&#10;    committed |-&gt; 1 ] \in TypeMsgAppInvariant"/>
 </listAttribute>
 <stringAttribute key="view" value=""/>
 <booleanAttribute key="visualizeStateGraph" value="false"/>
