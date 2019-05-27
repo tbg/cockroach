@@ -983,6 +983,13 @@ func (c *cluster) CopyRoachprodState(ctx context.Context) error {
 	dest := filepath.Join(c.t.ArtifactsDir(), roachprodStateName)
 	cmd := exec.CommandContext(ctx, "cp", "-r", src, dest)
 	output, err := cmd.CombinedOutput()
+
+	if err == nil {
+		// Whenever debug output has been copied to artifacts, nuke the debug output.
+		// Otherwise we amass lots of stuff over time.
+		_ = os.RemoveAll(filepath.Join(src, "debug"))
+	}
+
 	return errors.Wrapf(err, "command %q failed: output: %v", cmd.Args, string(output))
 }
 

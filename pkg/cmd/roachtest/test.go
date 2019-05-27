@@ -1191,6 +1191,12 @@ func (r *registry) runAsync(
 
 		defer func() {
 			if t.Failed() {
+				// NB: copy the roachprod state first because it contains verbose
+				// ssh logs and the other commands below would add logs we don't
+				// care about.
+				if err := c.CopyRoachprodState(ctx); err != nil {
+					c.l.Printf("failed to copy roachprod state: %s", err)
+				}
 				if err := c.FetchDebugZip(ctx); err != nil {
 					c.l.Printf("failed to download debug zip: %s", err)
 				}
@@ -1202,9 +1208,6 @@ func (r *registry) runAsync(
 				}
 				if err := c.FetchCores(ctx); err != nil {
 					c.l.Printf("failed to fetch cores: %s", err)
-				}
-				if err := c.CopyRoachprodState(ctx); err != nil {
-					c.l.Printf("failed to copy roachprod state: %s", err)
 				}
 			}
 			// NB: fetch the logs even when we have a debug zip because
