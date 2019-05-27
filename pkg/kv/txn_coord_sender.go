@@ -824,7 +824,7 @@ func (tc *TxnCoordSender) Send(
 		}
 	}
 
-	if tc.mu.txnState == txnPending && tc.mu.txn.Status != roachpb.PENDING {
+	if tc.mu.txnState == txnPending && tc.mu.txn.Status == roachpb.COMMITTED {
 		log.Fatalf(ctx, "TBG txnPending but committed %+v: %s; pErr=%v", req, tc.mu.txn, pErr)
 	}
 
@@ -952,7 +952,7 @@ func (tc *TxnCoordSender) UpdateStateOnRemoteRetryableErr(
 	// handleRetryableErrLocked().
 	if err.Transaction.ID == txnID {
 		// This is where we get a new epoch.
-		if err.Transaction.Status != roachpb.PENDING {
+		if err.Transaction.Status == roachpb.COMMITTED {
 			log.Fatalf(ctx, "TBG feeding finalized txn to txncoordsender in state %s: %s to %s", tc.mu.txnState, tc.mu.txn, &err.Transaction)
 		}
 		tc.mu.txn.Update(&err.Transaction) // TBG ok, added assertion
@@ -1096,7 +1096,7 @@ func (tc *TxnCoordSender) updateStateLocked(
 		// handleRetryableErrLocked().
 		if err.Transaction.ID == ba.Txn.ID {
 			// This is where we get a new epoch.
-			if err.Transaction.Status != roachpb.PENDING {
+			if err.Transaction.Status == roachpb.COMMITTED {
 				log.Fatalf(ctx, "finalized txn got update in txnState %s: %s plus %s", tc.mu.txnState, tc.mu.txn, &err.Transaction)
 			}
 			tc.mu.txn.Update(&err.Transaction) // TBG ok added assertion
