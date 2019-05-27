@@ -119,7 +119,7 @@ type TxnCoordSender struct {
 		// closed is set once this transaction has either committed or rolled back
 		// (including when the heartbeat loop cleans it up asynchronously). If the
 		// client sends anything other than a rollback, it will get an error
-		// (a retryable TransactionAbortedError in case of the async abort).
+		// (a retryable TransactionAbortedError in case of the async abort.
 		closed bool
 
 		// systemConfigTrigger is set to true when modifying keys from the
@@ -667,7 +667,7 @@ func (tc *TxnCoordSender) augmentMetaLocked(ctx context.Context, meta roachpb.Tx
 		// handled by this method.
 		log.Fatalf(ctx, "unexpected non-pending txn in augmentMetaLocked: %s", meta.Txn)
 	}
-	tc.mu.txn.Update(&meta.Txn)
+	tc.mu.txn.Update(&meta.Txn) // TBG ok, meta.Txn is guaranteed PENDING
 	for _, reqInt := range tc.interceptorStack {
 		reqInt.augmentMetaLocked(meta)
 	}
@@ -808,7 +808,8 @@ func (tc *TxnCoordSender) Send(
 
 	// If we succeeded to commit, or we attempted to rollback, we move to
 	// txnFinalized.
-	if req, ok := ba.GetArg(roachpb.EndTransaction); ok {
+	req, ok := ba.GetArg(roachpb.EndTransaction)
+	if ok {
 		etReq := req.(*roachpb.EndTransactionRequest)
 		if etReq.Commit {
 			if pErr == nil {
@@ -821,6 +822,10 @@ func (tc *TxnCoordSender) Send(
 			tc.mu.txnState = txnFinalized
 			tc.cleanupTxnLocked(ctx)
 		}
+	}
+
+	if tc.mu.txnState == txnPending && tc.mu.txn.Status != roachpb.PENDING {
+		log.Fatalf(ctx, "TBG txnPending but committed %+v: %s; pErr=%v", req, tc.mu.txn, pErr)
 	}
 
 	if pErr != nil {
@@ -947,7 +952,11 @@ func (tc *TxnCoordSender) UpdateStateOnRemoteRetryableErr(
 	// handleRetryableErrLocked().
 	if err.Transaction.ID == txnID {
 		// This is where we get a new epoch.
-		tc.mu.txn.Update(&err.Transaction)
+		if err.Transaction.Status != roachpb.PENDING {
+			log.Fatalf(ctx, "TBG feeding finalized txn to txncoordsender in state %s: %s to %s", tc.mu.txnState, tc.mu.txn, &err.Transaction)
+		}
+		tc.mu.txn.Update(&err.Transaction) // TBG ok, added assertion
+
 	}
 	return roachpb.NewError(err)
 }
@@ -1051,7 +1060,7 @@ func (tc *TxnCoordSender) updateStateLocked(
 	// receipt of such an error.
 
 	if pErr == nil {
-		tc.mu.txn.Update(br.Txn)
+		tc.mu.txn.Update(br.Txn) // TBG ok, caller moves txnState under same lock
 		return nil
 	}
 
@@ -1068,7 +1077,7 @@ func (tc *TxnCoordSender) updateStateLocked(
 			tc.mu.storedErr = pErr
 
 			// Cleanup.
-			tc.mu.txn.Update(pErr.GetTxn())
+			tc.mu.txn.Update(pErr.GetTxn()) // TBG ok moved to error state already
 			tc.cleanupTxnLocked(ctx)
 			return pErr
 		}
@@ -1087,7 +1096,10 @@ func (tc *TxnCoordSender) updateStateLocked(
 		// handleRetryableErrLocked().
 		if err.Transaction.ID == ba.Txn.ID {
 			// This is where we get a new epoch.
-			tc.mu.txn.Update(&err.Transaction)
+			if err.Transaction.Status != roachpb.PENDING {
+				log.Fatalf(ctx, "finalized txn got update in txnState %s: %s plus %s", tc.mu.txnState, tc.mu.txn, &err.Transaction)
+			}
+			tc.mu.txn.Update(&err.Transaction) // TBG ok added assertion
 		}
 		return roachpb.NewError(err)
 	}
@@ -1099,7 +1111,7 @@ func (tc *TxnCoordSender) updateStateLocked(
 			PrevError: pErr.String(),
 		})
 		// Cleanup.
-		tc.mu.txn.Update(errTxn)
+		tc.mu.txn.Update(errTxn) // TBG ok, moved to error state already
 		tc.cleanupTxnLocked(ctx)
 	}
 	return pErr
@@ -1205,6 +1217,10 @@ func (tc *TxnCoordSender) ManualRestart(
 	defer tc.mu.Unlock()
 
 	if tc.mu.txnState == txnFinalized {
+		log.Fatalf(ctx, "ManualRestart called on finalized txn: %s", tc.mu.txn)
+	}
+
+	if tc.mu.txn.Status != roachpb.PENDING {
 		log.Fatalf(ctx, "ManualRestart called on finalized txn: %s", tc.mu.txn)
 	}
 

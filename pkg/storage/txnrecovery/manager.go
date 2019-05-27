@@ -151,6 +151,7 @@ func (m *manager) resolveIndeterminateCommitForTxn(
 				return stop.ErrUnavailable
 			}
 
+			log.Infof(ctx, "TBG recovering %s", txn)
 			// We probe to determine whether the transaction is implicitly
 			// committed or not. If not, we prevent it from ever becoming
 			// implicitly committed at this (epoch, timestamp) pair.
@@ -159,6 +160,7 @@ func (m *manager) resolveIndeterminateCommitForTxn(
 				return err
 			}
 			if changedTxn != nil {
+				log.Infof(ctx, "TBG recovering %s: txn changed to %s", txn, changedTxn)
 				resTxn = changedTxn
 				return nil
 			}
@@ -314,6 +316,7 @@ func (m *manager) resolveIndeterminateCommitForTxnRecover(
 		ImplicitlyCommitted: !preventedIntent,
 	})
 
+	log.Infof(ctx, "TBG sending Recover(commit=%t) for %s", !preventedIntent, txn)
 	if err := contextutil.RunWithTimeout(
 		ctx, "recovering from indeterminate commit", defaultTimeout,
 		func(ctx context.Context) error { return m.db.Run(ctx, &b) },
