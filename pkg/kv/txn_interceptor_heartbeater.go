@@ -451,6 +451,9 @@ func (h *txnHeartbeater) heartbeat(ctx context.Context) bool {
 			// be oblivious to parallel commits.
 			respTxn.Status = roachpb.PENDING
 		}
+		if respTxn.Status == roachpb.COMMITTED {
+			log.Infof(ctx, "TBG feeding committed txn:\n new:%v\ncur:%s", respTxn, h.mu.txn)
+		}
 		h.mu.txn.Update(respTxn)
 		if h.mu.txn.Status != roachpb.PENDING {
 			if h.mu.txn.Status == roachpb.ABORTED {
