@@ -244,7 +244,7 @@ func PushTxn(
 	// If the pushed transaction is in the staging state, we can't change its
 	// record without first going through the transaction recovery process and
 	// attempting to finalize it.
-	recoverOnFailedPush := cArgs.EvalCtx.EvalKnobs().RecoverIndeterminateCommitsOnFailedPushes
+	recoverOnFailedPush := true || cArgs.EvalCtx.EvalKnobs().RecoverIndeterminateCommitsOnFailedPushes
 	if reply.PusheeTxn.Status == roachpb.STAGING && (pusherWins || recoverOnFailedPush) {
 		err := roachpb.NewIndeterminateCommitError(reply.PusheeTxn)
 		if log.V(1) {
