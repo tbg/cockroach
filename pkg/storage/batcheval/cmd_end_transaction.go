@@ -210,7 +210,7 @@ func evalEndTransaction(
 		case roachpb.COMMITTED:
 			log.Warningf(ctx, "TBG already committed:\nex: %v\nin: %v", reply.Txn, h.Txn)
 			if args.Commit {
-				log.Fatalf(ctx, "see above")
+				// log.Fatalf(ctx, "see above")
 			}
 			return result.Result{}, roachpb.NewTransactionCommittedStatusError()
 
