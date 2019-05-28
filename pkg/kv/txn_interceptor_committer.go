@@ -179,6 +179,7 @@ func (tc *txnCommitter) SendLocked(
 		// implicitly commit, so interceptors above the txnCommitter in the
 		// stack don't need to be made aware that the record is staging.
 		if txn := pErr.GetTxn(); txn != nil && txn.Status == roachpb.STAGING {
+			log.Infof(ctx, "TBG downgrading staging -> pending\npErr=%v\npErr.txn=%v", pErr, txn)
 			pErr.SetTxn(cloneWithStatus(txn, roachpb.PENDING))
 		}
 		// Same deal with MixedSuccessErrors.
@@ -186,6 +187,7 @@ func (tc *txnCommitter) SendLocked(
 		// are removed.
 		if aPSErr, ok := pErr.GetDetail().(*roachpb.MixedSuccessError); ok {
 			if txn := aPSErr.Wrapped.GetTxn(); txn != nil && txn.Status == roachpb.STAGING {
+				log.Infof(ctx, "TBG downgrading staging -> pending\npErr=%v\npErr.txn=%v", pErr, txn)
 				aPSErr.Wrapped.SetTxn(cloneWithStatus(txn, roachpb.PENDING))
 			}
 		}
