@@ -172,6 +172,7 @@ func (tc *txnCommitter) SendLocked(
 	// sending then re-locks.
 	br, pErr := tc.wrapped.SendLocked(ctx, ba)
 	if pErr != nil {
+		log.Infof(ctx, "TBG err from batch %s: %v", ba.Summary(), pErr)
 		// If the batch resulted in an error but the EndTransaction request
 		// succeeded, staging the transaction record in the process, downgrade
 		// the status back to PENDING. Even though the transaction record may
@@ -192,6 +193,8 @@ func (tc *txnCommitter) SendLocked(
 			}
 		}
 		return nil, pErr
+	} else {
+		log.Infof(ctx, "TBG success from batch %s: %s", ba.Summary(), br.Txn)
 	}
 
 	// Determine next steps based on the status of the transaction.
@@ -364,6 +367,7 @@ func needTxnRetryAfterStaging(br *roachpb.BatchResponse) *roachpb.Error {
 		// other concurrent actor will consider this transaction to
 		// be committed as is.
 		err := roachpb.NewTransactionRetryError(roachpb.RETRY_SERIALIZABLE, "" /* extraMsg */)
+		log.Infof(context.TODO(), "needs retry after staging: %v", br.Txn)
 		txn := cloneWithStatus(br.Txn, roachpb.PENDING)
 		return roachpb.NewErrorWithTxn(err, txn)
 	}
