@@ -807,6 +807,7 @@ func (ctx *Context) grpcDialNodeInternal(target string, remoteNodeID roachpb.Nod
 						if err != nil && !grpcutil.IsClosedConnection(err) {
 							log.Errorf(masterCtx, "removing connection to %s due to error: %s", target, err)
 						}
+						log.Infof(masterCtx, "!!! heartbeat ended with %v", err)
 						ctx.removeConn(conn, thisConnKeys...)
 					})
 				}); err != nil {
