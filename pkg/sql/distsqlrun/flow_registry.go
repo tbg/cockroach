@@ -31,7 +31,7 @@ var errNoInboundStreamConnection = errors.New("no inbound stream connection")
 var settingFlowStreamTimeout = settings.RegisterNonNegativeDurationSetting(
 	"sql.distsql.flow_stream_timeout",
 	"amount of time incoming streams wait for a flow to be set up before erroring out",
-	10*time.Second,
+	5*time.Second,
 )
 
 // expectedConnectionTime is the expected time taken by a flow to connect to its
