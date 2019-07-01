@@ -240,11 +240,11 @@ func (p *planner) dropIndexByName(
 				// We have to explicitly check that the range descriptor's start key
 				// lies within the span of the index since ScanMetaKVs returns all
 				// intersecting spans.
-				if (desc.StickyBit != hlc.Timestamp{}) && span.Key.Compare(desc.StartKey.AsRawKey()) <= 0 {
+				if (desc.GetStickyBit() != hlc.Timestamp{}) && span.Key.Compare(desc.StartKey.AsRawKey()) <= 0 {
 					// Swallow "key is not the start of a range" errors because it would
 					// mean that the sticky bit was removed and merged concurrently. DROP
 					// INDEX should not fail because of this.
-					if err := p.ExecCfg().DB.AdminUnsplit(ctx, desc.StartKey); err != nil && strings.Contains(err.Error(), "is not the start of a range") {
+					if err := p.ExecCfg().DB.AdminUnsplit(ctx, desc.StartKey); err != nil && !strings.Contains(err.Error(), "is not the start of a range") {
 						return err
 					}
 				}

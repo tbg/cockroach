@@ -24,7 +24,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 )
 
-func registerKV(r *registry) {
+func registerKV(r *testRegistry) {
 	type kvOptions struct {
 		nodes       int
 		cpus        int
@@ -32,9 +32,10 @@ func registerKV(r *registry) {
 		batchSize   int
 		blockSize   int
 		encryption  bool
+		sequential  bool
 	}
 	runKV := func(ctx context.Context, t *test, c *cluster, opts kvOptions) {
-		nodes := c.nodes - 1
+		nodes := c.spec.NodeCount - 1
 		c.Put(ctx, cockroach, "./cockroach", c.Range(1, nodes))
 		c.Put(ctx, workload, "./workload", c.Node(nodes+1))
 		c.Start(ctx, t, c.Range(1, nodes), startArgs(fmt.Sprintf("--encrypt=%t", opts.encryption)))
@@ -43,6 +44,7 @@ func registerKV(r *registry) {
 		m := newMonitor(ctx, c, c.Range(1, nodes))
 		m.Go(func(ctx context.Context) error {
 			concurrency := ifLocal("", " --concurrency="+fmt.Sprint(nodes*64))
+			splits := " --splits=1000"
 			duration := " --duration=" + ifLocal("10s", "10m")
 			readPercent := fmt.Sprintf(" --read-percent=%d", opts.readPercent)
 
@@ -57,10 +59,15 @@ func registerKV(r *registry) {
 					opts.blockSize, opts.blockSize)
 			}
 
-			cmd := fmt.Sprintf(
-				"./workload run kv --init --splits=1000 --histograms=logs/stats.json"+
-					concurrency+duration+readPercent+batchSize+blockSize+" {pgurl:1-%d}",
-				nodes)
+			var sequential string
+			if opts.sequential {
+				splits = "" // no splits
+				sequential = " --sequential"
+			}
+
+			cmd := fmt.Sprintf("./workload run kv --init --histograms=logs/stats.json"+
+				concurrency+splits+duration+readPercent+batchSize+blockSize+sequential+
+				" {pgurl:1-%d}", nodes)
 			c.Run(ctx, c.Node(nodes+1), cmd)
 			return nil
 		})
@@ -102,6 +109,10 @@ func registerKV(r *registry) {
 		{nodes: 1, cpus: 8, readPercent: 95, encryption: true},
 		{nodes: 3, cpus: 8, readPercent: 0, encryption: true},
 		{nodes: 3, cpus: 8, readPercent: 95, encryption: true},
+
+		// Configs with a sequential access pattern.
+		{nodes: 3, cpus: 32, readPercent: 0, sequential: true},
+		{nodes: 3, cpus: 32, readPercent: 95, sequential: true},
 	} {
 		opts := opts
 
@@ -117,6 +128,9 @@ func registerKV(r *registry) {
 		}
 		if opts.blockSize != 0 { // support legacy test name which didn't include block size
 			nameParts = append(nameParts, fmt.Sprintf("size=%dkb", opts.blockSize>>10))
+		}
+		if opts.sequential {
+			nameParts = append(nameParts, fmt.Sprintf("seq"))
 		}
 
 		minVersion := "v2.0.0"
@@ -135,7 +149,7 @@ func registerKV(r *registry) {
 	}
 }
 
-func registerKVContention(r *registry) {
+func registerKVContention(r *testRegistry) {
 	const nodes = 4
 	r.Add(testSpec{
 		Name:    fmt.Sprintf("kv/contention/nodes=%d", nodes),
@@ -186,13 +200,13 @@ func registerKVContention(r *registry) {
 	})
 }
 
-func registerKVQuiescenceDead(r *registry) {
+func registerKVQuiescenceDead(r *testRegistry) {
 	r.Add(testSpec{
 		Name:       "kv/quiescence/nodes=3",
 		Cluster:    makeClusterSpec(4),
 		MinVersion: "v2.1.0",
 		Run: func(ctx context.Context, t *test, c *cluster) {
-			nodes := c.nodes - 1
+			nodes := c.spec.NodeCount - 1
 			c.Put(ctx, cockroach, "./cockroach", c.Range(1, nodes))
 			c.Put(ctx, workload, "./workload", c.Node(nodes+1))
 			c.Start(ctx, t, c.Range(1, nodes))
@@ -267,13 +281,13 @@ func registerKVQuiescenceDead(r *registry) {
 	})
 }
 
-func registerKVGracefulDraining(r *registry) {
+func registerKVGracefulDraining(r *testRegistry) {
 	r.Add(testSpec{
 		Skip:    "https://github.com/cockroachdb/cockroach/issues/33501",
 		Name:    "kv/gracefuldraining/nodes=3",
 		Cluster: makeClusterSpec(4),
 		Run: func(ctx context.Context, t *test, c *cluster) {
-			nodes := c.nodes - 1
+			nodes := c.spec.NodeCount - 1
 			c.Put(ctx, cockroach, "./cockroach", c.Range(1, nodes))
 			c.Put(ctx, workload, "./workload", c.Node(nodes+1))
 			c.Start(ctx, t, c.Range(1, nodes))
@@ -378,7 +392,7 @@ func registerKVGracefulDraining(r *registry) {
 	})
 }
 
-func registerKVSplits(r *registry) {
+func registerKVSplits(r *testRegistry) {
 	for _, item := range []struct {
 		quiesce bool
 		splits  int
@@ -401,7 +415,7 @@ func registerKVSplits(r *registry) {
 			Timeout: item.timeout,
 			Cluster: makeClusterSpec(4),
 			Run: func(ctx context.Context, t *test, c *cluster) {
-				nodes := c.nodes - 1
+				nodes := c.spec.NodeCount - 1
 				c.Put(ctx, cockroach, "./cockroach", c.Range(1, nodes))
 				c.Put(ctx, workload, "./workload", c.Node(nodes+1))
 				c.Start(ctx, t, c.Range(1, nodes),
@@ -431,9 +445,9 @@ func registerKVSplits(r *registry) {
 	}
 }
 
-func registerKVScalability(r *registry) {
+func registerKVScalability(r *testRegistry) {
 	runScalability := func(ctx context.Context, t *test, c *cluster, percent int) {
-		nodes := c.nodes - 1
+		nodes := c.spec.NodeCount - 1
 
 		c.Put(ctx, cockroach, "./cockroach", c.Range(1, nodes))
 		c.Put(ctx, workload, "./workload", c.Node(nodes+1))

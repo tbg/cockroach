@@ -378,6 +378,9 @@ type raftRequestInfo struct {
 type raftRequestQueue struct {
 	syncutil.Mutex
 	infos []raftRequestInfo
+	// TODO(nvanbenschoten): consider recycling []raftRequestInfo slices. This
+	// could be done without any new mutex locking by storing two slices here
+	// and swapping them under lock in processRequestQueue.
 }
 
 // A Store maintains a map of ranges by start key. A Store corresponds
@@ -2804,32 +2807,6 @@ func (s *Store) Send(
 		return nil, roachpb.NewError(err)
 	}
 
-	// In 2.1 it was possible for nodes to send PushTxn requests without
-	// properly reflecting the time that they wanted the push to happen
-	// in the batch's header timestamp. Ensure that this timestamp is
-	// sufficiently advanced to prevent lost timestamp cache updates.
-	// TODO(nvanbenschoten): Remove this all in 19.2.
-	if !s.cfg.Settings.Version.IsActive(cluster.VersionPushTxnToInclusive) {
-		for _, union := range ba.Requests {
-			if pushReq, ok := union.GetInner().(*roachpb.PushTxnRequest); ok {
-				ba.Timestamp.Forward(pushReq.DeprecatedNow)
-
-				// While here, correct the request's PushTo arg. Before
-				// VersionPushTxnToInclusive, pushers would provide _their_
-				// timestamp instead of one logical tick past their timestamp
-				// for the PushTo arg. Handle this by bumping the PushTo arg.
-				// We only do this if the InclusivePushTo arg is false, which
-				// allows us to distinguish between 2.1 nodes and 19.1. nodes.
-				// Since we only observe this field when the cluster version
-				// is not active, we don't need to send it or observe it in
-				// 19.2.
-				if !pushReq.InclusivePushTo {
-					pushReq.PushTo = pushReq.PushTo.Next()
-				}
-			}
-		}
-	}
-
 	if s.cfg.TestingKnobs.ClockBeforeSend != nil {
 		s.cfg.TestingKnobs.ClockBeforeSend(s.cfg.Clock, ba)
 	}
@@ -3163,7 +3140,6 @@ func (s *Store) maybeWaitForPushee(
 		// to push a txn which has expired.
 		now := s.Clock().Now()
 		ba.Timestamp.Forward(now)
-		pushReqCopy.DeprecatedNow.Forward(now)
 		ba.Requests = nil
 		ba.Add(&pushReqCopy)
 	} else if ba.IsSingleQueryTxnRequest() {
@@ -3291,9 +3267,16 @@ func (s *Store) HandleRaftUncoalescedRequest(
 		req:        req,
 		respStream: respStream,
 	})
+	first := len(q.infos) == 1
 	q.Unlock()
 
-	s.scheduler.EnqueueRaftRequest(req.RangeID)
+	// processRequestQueue will process all infos in the slice each time it
+	// runs, so we only need to schedule a Raft request event if we added the
+	// first info in the slice. Everyone else can rely on the request that added
+	// the first info already having scheduled a Raft request event.
+	if first {
+		s.scheduler.EnqueueRaftRequest(req.RangeID)
+	}
 	return nil
 }
 

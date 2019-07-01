@@ -371,12 +371,6 @@ func importPlanHook(
 		}
 
 		_, ingestDirectly := opts[importOptionDirectIngest]
-		if ingestDirectly {
-			if !p.ExecCfg().Settings.Version.IsActive(cluster.VersionDirectImport) {
-				return errors.Errorf("Using %q requires all nodes to be upgraded to %s",
-					importOptionDirectIngest, cluster.VersionByKey(cluster.VersionDirectImport))
-			}
-		}
 
 		var tableDetails []jobspb.ImportDetails_Table
 		jobDesc, err := importJobDescription(p, importStmt, nil, files, opts)
@@ -671,9 +665,6 @@ func doDistributedCSVTransform(
 		walltime,
 		sstSize,
 		oversample,
-		func(descs map[sqlbase.ID]*sqlbase.TableDescriptor) (sql.KeyRewriter, error) {
-			return storageccl.MakeKeyRewriter(descs)
-		},
 	); err != nil {
 
 		// Check if this was a context canceled error and restart if it was.

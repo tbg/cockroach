@@ -364,11 +364,11 @@ func (p *planner) initiateDropTable(
 		if err := r.ValueProto(&desc); err != nil {
 			return err
 		}
-		if (desc.StickyBit != hlc.Timestamp{}) {
+		if (desc.GetStickyBit() != hlc.Timestamp{}) {
 			// Swallow "key is not the start of a range" errors because it would mean
 			// that the sticky bit was removed and merged concurrently. DROP TABLE
 			// should not fail because of this.
-			if err := p.ExecCfg().DB.AdminUnsplit(ctx, desc.StartKey); err != nil && strings.Contains(err.Error(), "is not the start of a range") {
+			if err := p.ExecCfg().DB.AdminUnsplit(ctx, desc.StartKey); err != nil && !strings.Contains(err.Error(), "is not the start of a range") {
 				return err
 			}
 		}

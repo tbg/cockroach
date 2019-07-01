@@ -127,10 +127,9 @@ func NewOrderedAggregator(
 			)
 	}
 
-	groupTypes := extractGroupTypes(groupCols, colTypes)
 	aggTypes := extractAggTypes(aggCols, colTypes)
 
-	op, groupCol, err := OrderedDistinctColsToOperators(input, groupCols, groupTypes)
+	op, groupCol, err := OrderedDistinctColsToOperators(input, groupCols, colTypes)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +188,8 @@ func makeAggregateFuncs(
 		case distsqlpb.AggregatorSpec_SUM, distsqlpb.AggregatorSpec_SUM_INT:
 			funcs[i], err = newSumAgg(aggTyps[i][0])
 		case distsqlpb.AggregatorSpec_COUNT_ROWS:
+			funcs[i] = newCountRowAgg()
+		case distsqlpb.AggregatorSpec_COUNT:
 			funcs[i] = newCountAgg()
 		case distsqlpb.AggregatorSpec_MIN:
 			funcs[i], err = newMinAgg(aggTyps[i][0])
@@ -200,7 +201,7 @@ func makeAggregateFuncs(
 
 		// Set the output type of the aggregate.
 		switch aggFns[i] {
-		case distsqlpb.AggregatorSpec_COUNT_ROWS:
+		case distsqlpb.AggregatorSpec_COUNT_ROWS, distsqlpb.AggregatorSpec_COUNT:
 			// TODO(jordan): this is a somewhat of a hack. The aggregate functions
 			// should come with their own output types, somehow.
 			outTyps[i] = types.Int64
@@ -300,19 +301,6 @@ func (a *orderedAggregator) reset() {
 	for _, fn := range a.aggregateFuncs {
 		fn.Reset()
 	}
-}
-
-// extractGroupTypes returns an array representing the type corresponding to
-// each group column. This information is extracted from the group column
-// indices and their corresponding column types.
-func extractGroupTypes(groupCols []uint32, colTypes []types.T) []types.T {
-	groupTyps := make([]types.T, len(groupCols))
-
-	for i, colIdx := range groupCols {
-		groupTyps[i] = colTypes[colIdx]
-	}
-
-	return groupTyps
 }
 
 // extractAggTypes returns a nested array representing the input types
