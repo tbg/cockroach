@@ -75,7 +75,7 @@ func registerRestart(r *testRegistry) {
 		// "cockroach workload is only in 19.1+"
 		MinVersion: "v19.1.0",
 		Run: func(ctx context.Context, t *test, c *cluster) {
-			runRestart(ctx, t, c, 10*time.Minute)
+			runRestart(ctx, t, c, 20*time.Minute)
 		},
 	})
 }
