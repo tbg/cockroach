@@ -13,7 +13,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"go/src/math"
+	"math"
 
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/quotapool"
