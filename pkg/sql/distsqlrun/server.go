@@ -569,6 +569,7 @@ func (ds *ServerImpl) SetupFlow(
 		err = ds.flowScheduler.ScheduleFlow(ctx, f)
 	}
 	if err != nil {
+		log.VEventf(ctx, 1, "error for flow %v: %v", req.Flow.FlowID, err)
 		// We return flow deployment errors in the response so that they are
 		// packaged correctly over the wire. If we return them directly to this
 		// function, they become part of an rpc error.

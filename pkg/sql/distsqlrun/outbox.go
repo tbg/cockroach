@@ -219,6 +219,7 @@ func (m *outbox) mainLoop(ctx context.Context) error {
 		var err error
 		conn, err = m.flowCtx.nodeDialer.Dial(ctx, m.nodeID)
 		if err != nil {
+			log.Infof(ctx, "outbox: error for dial n%d: %v", err, m.nodeID)
 			return err
 		}
 		client := distsqlpb.NewDistSQLClient(conn)

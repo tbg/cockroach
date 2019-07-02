@@ -25,7 +25,7 @@ func runRestart(ctx context.Context, t *test, c *cluster, downDuration time.Dura
 
 	t.Status("installing cockroach")
 	c.Put(ctx, cockroach, "./cockroach", crdbNodes)
-	c.Start(ctx, t, crdbNodes, startArgs(`--args=--vmodule=raft_log_queue=3,outbox=2,server=1`))
+	c.Start(ctx, t, crdbNodes, startArgs(`--args=--vmodule=raft_log_queue=3,outbox=2,server=1,flow_scheduler=2`))
 
 	// We don't really need tpcc, we just need a good amount of traffic and a good
 	// amount of data.
@@ -75,7 +75,7 @@ func registerRestart(r *testRegistry) {
 		// "cockroach workload is only in 19.1+"
 		MinVersion: "v19.1.0",
 		Run: func(ctx context.Context, t *test, c *cluster) {
-			runRestart(ctx, t, c, 20*time.Minute)
+			runRestart(ctx, t, c, 2*time.Minute)
 		},
 	})
 }
