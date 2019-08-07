@@ -53,6 +53,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/trace"
 	"google.golang.org/grpc"
 )
 
@@ -183,6 +184,8 @@ func initMemProfile(ctx context.Context, dir string) {
 		}
 	}()
 }
+
+func init() { trace.DebugUseAfterFinish = true } // HACK
 
 func initCPUProfile(ctx context.Context, dir string) {
 	const cpuprof = "cpuprof."
