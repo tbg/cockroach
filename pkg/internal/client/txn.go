@@ -692,6 +692,7 @@ func (txn *Txn) exec(ctx context.Context, fn func(context.Context, *Txn) error) 
 		// closure. We allow that, as closure might want to run 1PC transactions.
 		if err == nil {
 			if txn.status() != roachpb.COMMITTED {
+				log.Infof(ctx, "TBG committing explicitly, status is %v", txn.status())
 				err = txn.Commit(ctx)
 				log.Eventf(ctx, "client.Txn did AutoCommit. err: %v\n", err)
 				if err != nil {

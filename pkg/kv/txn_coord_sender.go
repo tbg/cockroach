@@ -805,6 +805,7 @@ func (tc *TxnCoordSender) Send(
 		if etReq.Commit {
 			if pErr == nil {
 				log.Infof(ctx, "TBG finalized bc saw commit")
+				debug.PrintStack()
 				tc.mu.txnState = txnFinalized
 				tc.cleanupTxnLocked(ctx)
 				tc.maybeSleepForLinearizable(ctx, br, startNs)
