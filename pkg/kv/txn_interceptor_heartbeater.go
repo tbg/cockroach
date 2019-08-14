@@ -337,6 +337,7 @@ func (h *txnHeartbeater) heartbeat(ctx context.Context) bool {
 		// TODO(nvanbenschoten): Make this the only case where we get back an
 		// Aborted txn.
 		if _, ok := pErr.GetDetail().(*roachpb.TransactionAbortedError); ok {
+			log.Infof(ctx, "TBG heartbeat marking txn as aborted")
 			h.mu.txn.Status = roachpb.ABORTED
 			log.VEventf(ctx, 1, "Heartbeat detected aborted txn. Cleaning up.")
 			h.abortTxnAsyncLocked(ctx)

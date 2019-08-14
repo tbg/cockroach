@@ -298,6 +298,7 @@ func (r *Replica) evaluateWriteBatch(
 
 			// If the end transaction is not committed, clear the batch and mark the status aborted.
 			if !etArg.Commit {
+				log.Infof(ctx, "TBG abort via 1PC")
 				clonedTxn.Status = roachpb.ABORTED
 				batch.Close()
 				batch = r.store.Engine().NewBatch()

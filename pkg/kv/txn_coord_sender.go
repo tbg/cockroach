@@ -1004,6 +1004,7 @@ func (tc *TxnCoordSender) handleRetryableErrLocked(
 	// one.
 	if errTxnID != newTxn.ID {
 		// Remember that this txn is aborted to reject future requests.
+		log.Infof(ctx, "TBG aborting txn due to ID change")
 		tc.mu.txn.Status = roachpb.ABORTED
 		// Abort the old txn. The client is not supposed to use use this
 		// TxnCoordSender any more.

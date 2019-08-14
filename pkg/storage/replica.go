@@ -1675,6 +1675,7 @@ func checkIfTxnAborted(
 		if entry.Priority > newTxn.Priority {
 			newTxn.Priority = entry.Priority
 		}
+		log.Infof(ctx, "TBG aborted via abortspan")
 		newTxn.Status = roachpb.ABORTED
 		return roachpb.NewErrorWithTxn(
 			roachpb.NewTransactionAbortedError(roachpb.ABORT_REASON_ABORT_SPAN), newTxn)
