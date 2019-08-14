@@ -14,7 +14,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/cockroachdb/cockroach/pkg/util/tracing"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
@@ -1259,13 +1261,17 @@ func execChangeReplicasTxn(
 				ChangeReplicasTrigger: crt,
 			},
 		})
-		if err := txn.Run(ctx, b); err != nil {
+		ctxx, get, cancel := tracing.ContextWithRecordingSpan(ctx, "crt")
+		defer cancel()
+		if err := txn.Run(ctxx, b); err != nil {
 			log.Event(ctx, err.Error())
 			log.Infof(ctx, "TBG return with %v", err)
 			return err
 		}
 		if txn := txn.GetTxnCoordMeta(ctx).Txn; txn.Status != roachpb.COMMITTED {
-			return errors.New("boom")
+			rec := get()
+			log.Infof(ctx, "%v", rec)
+			os.Exit(1)
 		}
 		return nil
 	}); err != nil {
