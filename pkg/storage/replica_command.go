@@ -1189,6 +1189,7 @@ func execChangeReplicasTxn(
 
 	descKey := keys.RangeDescriptorKey(desc.StartKey)
 	if err := store.DB().Txn(ctx, func(ctx context.Context, txn *client.Txn) error {
+		ctx = logtags.AddTag(ctx, "crt-txn-epoch", txn.GetTxnCoordMeta(ctx).Txn.Epoch)
 		log.Event(ctx, "attempting txn")
 		txn.SetDebugName(replicaChangeTxnName)
 		dbDescValue, err := conditionalGetDescValueFromDB(ctx, txn, desc)

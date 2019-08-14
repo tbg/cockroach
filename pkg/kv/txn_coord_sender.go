@@ -715,6 +715,7 @@ func (tc *TxnCoordSender) commitReadOnlyTxnLocked(
 		ba.Txn = txn
 		return tc.updateStateLocked(ctx, ba, nil /* br */, pErr)
 	}
+	log.Infof(ctx, "TBG commit read only")
 	tc.mu.txnState = txnFinalized
 	// Mark the transaction as committed so that, in case this commit is done by
 	// the closure passed to db.Txn()), db.Txn() doesn't attempt to commit again.
@@ -803,12 +804,14 @@ func (tc *TxnCoordSender) Send(
 		etReq := req.(*roachpb.EndTransactionRequest)
 		if etReq.Commit {
 			if pErr == nil {
+				log.Infof(ctx, "TBG finalized bc saw commit")
 				tc.mu.txnState = txnFinalized
 				tc.cleanupTxnLocked(ctx)
 				tc.maybeSleepForLinearizable(ctx, br, startNs)
 			}
 		} else {
 			// Rollbacks always move us to txnFinalized.
+			log.Infof(ctx, "TBG finalized bc saw abort")
 			tc.mu.txnState = txnFinalized
 			tc.cleanupTxnLocked(ctx)
 		}
