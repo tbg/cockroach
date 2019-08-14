@@ -15,6 +15,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
 	"sync/atomic"
 
 	"github.com/cockroachdb/cockroach/pkg/keys"
@@ -166,7 +167,9 @@ func EndTransaction(
 			return
 		}
 		if reply.Txn.Status == roachpb.ABORTED && args.Commit {
-			fooErr = errors.New("leaked an error")
+			log.Infof(ctx, "leaked an error")
+			log.Flush()
+			os.Exit(1)
 		}
 	}()
 
