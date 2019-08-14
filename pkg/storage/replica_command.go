@@ -1264,8 +1264,9 @@ func execChangeReplicasTxn(
 			log.Infof(ctx, "TBG return with %v", err)
 			return err
 		}
-
-		log.Infof(ctx, "TBG return without error: %s", txn.GetTxnCoordMeta(ctx).Txn)
+		if txn := txn.GetTxnCoordMeta(ctx).Txn; txn.Status != roachpb.COMMITTED {
+			return errors.New("boom")
+		}
 		return nil
 	}); err != nil {
 		log.Event(ctx, err.Error())
