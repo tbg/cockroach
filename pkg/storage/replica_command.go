@@ -1261,9 +1261,11 @@ func execChangeReplicasTxn(
 		})
 		if err := txn.Run(ctx, b); err != nil {
 			log.Event(ctx, err.Error())
+			log.Infof(ctx, "TBG return with %v", err)
 			return err
 		}
 
+		log.Infof(ctx, "TBG return without error: %s", txn.GetTxnCoordMeta(ctx).Txn)
 		return nil
 	}); err != nil {
 		log.Event(ctx, err.Error())
