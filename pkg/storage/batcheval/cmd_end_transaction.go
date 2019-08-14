@@ -171,6 +171,7 @@ func EndTransaction(
 			log.Flush()
 			os.Exit(1)
 		}
+		log.Eventf(ctx,"reply is %+v", reply)
 	}()
 
 	if err := VerifyTransaction(h, args, roachpb.PENDING, roachpb.STAGING, roachpb.ABORTED); err != nil {
