@@ -154,11 +154,21 @@ func declareKeysEndTransaction(
 // an already rolled-back txn is ok.
 func EndTransaction(
 	ctx context.Context, batch engine.ReadWriter, cArgs CommandArgs, resp roachpb.Response,
-) (result.Result, error) {
+) (result.Result, fooErr error) {
+
 	args := cArgs.Args.(*roachpb.EndTransactionRequest)
 	h := cArgs.Header
 	ms := cArgs.Stats
 	reply := resp.(*roachpb.EndTransactionResponse)
+
+	defer func() {
+		if fooErr != nil {
+			return
+		}
+		if reply.Txn.Status == roachpb.ABORTED && args.Commit {
+			fooErr = errors.New("leaked an error")
+		}
+	}()
 
 	if err := VerifyTransaction(h, args, roachpb.PENDING, roachpb.STAGING, roachpb.ABORTED); err != nil {
 		return result.Result{}, err
