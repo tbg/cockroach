@@ -1270,7 +1270,7 @@ func execChangeReplicasTxn(
 		}
 		if txn := txn.GetTxnCoordMeta(ctx).Txn; txn.Status != roachpb.COMMITTED {
 			rec := get()
-			log.Infof(ctx, "TBG lost error, logs follow")
+			log.Infof(ctx, "TBG lost error (status=%v), logs follow", txn.Status)
 			for _, cur := range rec {
 				for _, l := range cur.Logs {
 					log.Infof(ctx, "%v", l)
