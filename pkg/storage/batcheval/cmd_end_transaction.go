@@ -154,7 +154,7 @@ func declareKeysEndTransaction(
 // an already rolled-back txn is ok.
 func EndTransaction(
 	ctx context.Context, batch engine.ReadWriter, cArgs CommandArgs, resp roachpb.Response,
-) (result.Result, fooErr error) {
+) (_ result.Result, fooErr error) {
 
 	args := cArgs.Args.(*roachpb.EndTransactionRequest)
 	h := cArgs.Header
