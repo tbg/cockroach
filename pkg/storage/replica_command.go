@@ -807,9 +807,6 @@ func IsSnapshotError(err error) bool {
 // leaseholder (which in particular implies that we can never remove all
 // replicas).
 //
-// NB: at the time of writing, atomic replication changes are not implemented
-// yet. Only a single change is supported, everything else returns an error.
-//
 // The returned RangeDescriptor is the new value of the range's descriptor
 // following the successful commit of the transaction.
 //
@@ -857,21 +854,6 @@ func IsSnapshotError(err error) bool {
 //    properly been applied (and we clear the extra replicated state atomically);
 //    ChangeReplicas ensures the final configuration is active before returning.
 //
-//    TODO(tbg): figure out how the "waiting to transition out of the joint config"
-//    will happen. We want Raft to auto-transition out (rather than doing it
-//    manually) because that way we know we'll leave that joint state even if the
-//    coordinator crashes etc. On the other hand, the polling seems a little
-//    difficult to do idiomatically. If many replication changes are carried out
-//    back to back, what do we wait for? We only need to know that some replica
-//    (typically the leader) has transitioned out (i.e. there's no requirement that
-//    the local replica has done so). It seems most straightforward to stash the
-//    joint state in an inline key that can be read through KV (mutated below
-//    Raft), and make sure the generation of the replication change is preserved.
-//    Then we just need to poll that the key goes away or has a larger generation
-//    (indicating that we transitioned out of "our" conf change and into another
-//    joint config driven by someone else). We can avoid the poll in the common
-//    case by proposing an empty entry first.
-//
 // A replica that learns that it was removed will queue itself for replicaGC.
 // Note that a removed replica may never apply the configuration change removing
 // itself and thus this trigger may not fire. This is because said replica may
@@ -895,12 +877,6 @@ func (r *Replica) ChangeReplicas(
 	if desc == nil {
 		// TODO(tbg): is this check just FUD?
 		return nil, errors.Errorf("%s: the current RangeDescriptor must not be nil", r)
-	}
-
-	if len(chgs) != 1 {
-		// TODO(tbg): lift this restriction when atomic membership changes are
-		// plumbed into raft.
-		return nil, errors.Errorf("need exactly one change, got %+v", chgs)
 	}
 
 	if err := validateReplicationChanges(desc, chgs); err != nil {
@@ -937,6 +913,7 @@ func (r *Replica) ChangeReplicas(
 
 	// Catch up any learners, then run the atomic replication change that adds the
 	// final voters and removes any undesirable replicas.
+	prevDescNextReplicaID := desc.NextReplicaID
 	desc, err := r.finalizeChangeReplicas(ctx, desc, priority, reason, details, chgs)
 	if err != nil {
 		if fn := r.store.cfg.TestingKnobs.ReplicaAddSkipLearnerRollback; fn != nil && fn() {
@@ -950,6 +927,29 @@ func (r *Replica) ChangeReplicas(
 			r.tryRollBackLearnerReplica(ctx, r.Desc(), target, reason, details)
 		}
 		return nil, err
+	}
+	// Wait until the joint state is gone (perhaps replaced by someone else's
+	// joint state) so that when we return our caller can rest assured that
+	// *all* of the work was done.
+	//
+	// WIP(tbg): this polling is awkward. We want to send a noop write through
+	// raft as a means of backoff (that's roughly how long we expect to wait),
+	// but I don't think there's an idiomatic way to do so today.
+	if len(chgs) > 1 {
+		var jointDesc roachpb.RangeDescriptor
+		for rt := retry.StartWithCtx(ctx, retry.Options{
+			InitialBackoff: 5 * time.Millisecond,
+			MaxBackoff:     150 * time.Millisecond,
+		}); rt.Next(); {
+			if err := r.store.DB().GetProto(
+				ctx, keys.RangeDescriptorJointKey(desc.StartKey), &jointDesc,
+			); err != nil {
+				return nil, err
+			}
+			if jointDesc.NextReplicaID == 0 || jointDesc.NextReplicaID != prevDescNextReplicaID {
+				return desc, nil
+			}
+		}
 	}
 	return desc, nil
 }
@@ -1023,7 +1023,7 @@ func addLearnerReplicas(
 		replDesc := roachpb.ReplicaDescriptor{
 			NodeID:    target.NodeID,
 			StoreID:   target.StoreID,
-			ReplicaID: desc.NextReplicaID,
+			ReplicaID: newDesc.NextReplicaID,
 			Type:      roachpb.ReplicaTypeLearner(),
 		}
 		newDesc.NextReplicaID++

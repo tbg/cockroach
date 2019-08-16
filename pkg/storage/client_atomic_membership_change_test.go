@@ -12,50 +12,90 @@ package storage_test
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
+	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
+	"github.com/cockroachdb/cockroach/pkg/storage"
+	"github.com/cockroachdb/cockroach/pkg/storage/engine"
 	"github.com/cockroachdb/cockroach/pkg/testutils/testcluster"
+	"github.com/cockroachdb/cockroach/pkg/util/hlc"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
 	"github.com/stretchr/testify/require"
 )
 
-func TestAtomicMembershipChange(t *testing.T) {
+// TestAtomicReplicationChange is a simple smoke test for atomic membership
+// changes.
+func TestAtomicReplicationChange(t *testing.T) {
 	defer leaktest.AfterTest(t)()
-
-	// This is a simple smoke test to spot obvious issues with atomic replica changes.
-	// These aren't implemented at the time of writing. The compound change below is
-	// internally unwound and executed step by step (see executeAdminBatch()).
 	ctx := context.Background()
 
 	args := base.TestClusterArgs{
+		ServerArgs: base.TestServerArgs{
+			Knobs: base.TestingKnobs{
+				Store: &storage.StoreTestingKnobs{},
+			},
+		},
 		ReplicationMode: base.ReplicationManual,
 	}
-	tc := testcluster.StartTestCluster(t, 4, args)
+	tc := testcluster.StartTestCluster(t, 6, args)
 	defer tc.Stopper().Stop(ctx)
 
+	// Create a range and put it on n1, n2, n3. Intentionally do this one at a
+	// time so we're not using atomic replication changes yet.
 	k := tc.ScratchRange(t)
-	expDesc, err := tc.AddReplicas(k, tc.Target(1), tc.Target(2))
+	expDesc, err := tc.AddReplicas(k, tc.Target(1))
+	require.NoError(t, err)
+	expDesc, err = tc.AddReplicas(k, tc.Target(2))
 	require.NoError(t, err)
 
-	// Range is now on s1,s2,s3. "Atomically" add it to s4 while removing from s3.
-	// This isn't really atomic yet.
-
+	// Run a fairly general change.
 	chgs := []roachpb.ReplicationChange{
 		{ChangeType: roachpb.ADD_REPLICA, Target: tc.Target(3)},
+		{ChangeType: roachpb.ADD_REPLICA, Target: tc.Target(5)},
 		{ChangeType: roachpb.REMOVE_REPLICA, Target: tc.Target(2)},
+		{ChangeType: roachpb.ADD_REPLICA, Target: tc.Target(4)},
 	}
-	// TODO(tbg): when 19.2 is out, remove this "feature gate" here and in
-	// AdminChangeReplicas.
-	ctx = context.WithValue(ctx, "testing", "testing")
-	desc, err := tc.Servers[0].DB().AdminChangeReplicas(ctx, k, expDesc, chgs)
+
+	desc, err := tc.Servers[0].DB().AdminChangeReplicas(
+		// TODO(tbg): when 19.2 is out, remove this "feature gate" here and in
+		// AdminChangeReplicas.
+		context.WithValue(ctx, "testing", "testing"),
+		k, expDesc, chgs,
+	)
 	require.NoError(t, err)
+
 	var stores []roachpb.StoreID
 	for _, rDesc := range desc.Replicas().All() {
+		if rDesc.GetType() == roachpb.ReplicaType_LEARNER {
+			t.Fatalf("found a learner: %+v", desc)
+		}
 		stores = append(stores, rDesc.StoreID)
 	}
-	exp := []roachpb.StoreID{1, 2, 4}
-	// TODO(tbg): test more details and scenarios (learners etc).
+	sort.Slice(stores, func(i, j int) bool { return stores[i] < stores[j] })
+	exp := []roachpb.StoreID{1, 2, 4, 5, 6}
 	require.Equal(t, exp, stores)
+
+	descJointKey := keys.RangeDescriptorJointKey(desc.StartKey)
+	for _, idx := range []int{0, 1, 3, 4, 5} {
+		// Verify that all replicas left the joint config automatically (raft does
+		// this and ChangeReplicas blocks until it has).
+		repl, err := tc.Servers[idx].Stores().GetReplicaForRangeID(expDesc.RangeID)
+		require.NoError(t, err)
+		act := repl.RaftStatus().Config.String()
+		exp := "voters=(1 2 4 5 6)"
+		require.Equal(t, exp, act)
+		// Also check that the replicated marker from which the conf state would
+		// be recreated on restart is gone.
+		var desc roachpb.RangeDescriptor
+		ok, err := engine.MVCCGetProto(ctx, repl.Engine(), descJointKey, hlc.Timestamp{}, &desc, engine.MVCCGetOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Fatalf("still have joint descriptor %+v", desc)
+		}
+	}
 }

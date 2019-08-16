@@ -1647,6 +1647,10 @@ func (r *Replica) mergeInProgressRLocked() bool {
 func (r *Replica) getReplicaDescriptorByIDRLocked(
 	replicaID roachpb.ReplicaID, fallback roachpb.ReplicaDescriptor,
 ) (roachpb.ReplicaDescriptor, error) {
+	// TODO(tbg): for atomic membership changes, route to replicas in the
+	// outgoing config, which is now (generally) required to apply commands.
+	// This can also help simple membership changes catch up removed followers
+	// so that they can be gc'ed more efficiently.
 	if repDesc, ok := r.mu.state.Desc.GetReplicaDescriptorByID(replicaID); ok {
 		return repDesc, nil
 	}
