@@ -1326,13 +1326,18 @@ func (crt ChangeReplicasTrigger) String() string {
 		}
 		fmt.Fprintf(&chgS, "%s%s", REMOVE_REPLICA, removed)
 	}
+	if len(added) == 0 && len(removed) == 0 {
+		// TODO(tbg): could list the replicas that will actually leave the
+		// voter set.
+		fmt.Fprintf(&chgS, "LEAVE_JOINT")
+	}
 	fmt.Fprintf(&chgS, ": after=%s next=%d", afterReplicas, nextReplicaID)
 	return chgS.String()
 }
 
 // Added returns the replicas added by this change (if there are any).
 func (crt ChangeReplicasTrigger) Added() []ReplicaDescriptor {
-	if len(crt.InternalAddedReplicas)+len(crt.InternalRemovedReplicas) == 0 && crt.DeprecatedChangeType == ADD_REPLICA {
+	if len(crt.InternalAddedReplicas)+len(crt.InternalRemovedReplicas) == 0 && crt.DeprecatedChangeType == ADD_REPLICA && crt.DeprecatedReplica.NodeID != 0 {
 		return []ReplicaDescriptor{crt.DeprecatedReplica}
 	}
 	return crt.InternalAddedReplicas
@@ -1340,7 +1345,7 @@ func (crt ChangeReplicasTrigger) Added() []ReplicaDescriptor {
 
 // Removed returns the replicas removed by this change (if there are any).
 func (crt ChangeReplicasTrigger) Removed() []ReplicaDescriptor {
-	if len(crt.InternalAddedReplicas)+len(crt.InternalRemovedReplicas) == 0 && crt.DeprecatedChangeType == REMOVE_REPLICA {
+	if len(crt.InternalAddedReplicas)+len(crt.InternalRemovedReplicas) == 0 && crt.DeprecatedChangeType == REMOVE_REPLICA && crt.DeprecatedReplica.NodeID != 0 {
 		return []ReplicaDescriptor{crt.DeprecatedReplica}
 	}
 	return crt.InternalRemovedReplicas

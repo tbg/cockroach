@@ -78,6 +78,12 @@ const (
 
 var testingDisableQuiescence = envutil.EnvOrDefaultBool("COCKROACH_DISABLE_QUIESCENCE", false)
 
+var useAtomicReplicationChanges = settings.RegisterBoolSetting(
+	"kv.atomic_replication_changes.enabled",
+	"use atomic replication changes",
+	true,
+)
+
 var disableSyncRaftLog = settings.RegisterBoolSetting(
 	"kv.raft_log.disable_synchronization_unsafe",
 	"set to true to disable synchronization on Raft log writes to persistent storage. "+
@@ -1312,22 +1318,36 @@ func (r *Replica) executeAdminBatch(
 		resp = &roachpb.AdminTransferLeaseResponse{}
 
 	case *roachpb.AdminChangeReplicasRequest:
-		var err error
-		expDesc := &tArgs.ExpDesc
 		chgs := tArgs.Changes()
-		for i := range chgs {
-			// Update expDesc to the outcome of the previous run to enable detection
-			// of concurrent updates while applying a series of changes.
-			//
-			// TODO(tbg): stop unrolling this once atomic replication changes are
-			// ready. Do any callers prefer unrolling though? We could add a flag.
-			expDesc, err = r.ChangeReplicas(ctx, expDesc, SnapshotRequest_REBALANCE, storagepb.ReasonAdminRequest, "", chgs[i:i+1])
-			if err != nil {
-				break
+
+		// We execute the change serially if we're not allowed to run atomic replication changes
+		// or if that was explicitly disabled. We also unroll if learners are disabled because
+		// that's undertested and the expectation is that learners cannot be disabled in 19.2.
+		st := r.ClusterSettings()
+		unroll := !st.Version.IsActive(cluster.VersionAtomicChangeReplicas) ||
+			!useAtomicReplicationChanges.Get(&st.SV) ||
+			!useLearnerReplicas.Get(&st.SV)
+
+		var expDesc = &tArgs.ExpDesc
+		if !unroll {
+			// Atomic replication change.
+			var err error
+			expDesc, err = r.ChangeReplicas(ctx, expDesc, SnapshotRequest_REBALANCE, storagepb.ReasonAdminRequest, "", chgs)
+			pErr = roachpb.NewError(err)
+
+		} else {
+			// Legacy behavior.
+			for i := range chgs {
+				var err error
+				expDesc, err = r.ChangeReplicas(ctx, expDesc, SnapshotRequest_REBALANCE, storagepb.ReasonAdminRequest, "", chgs[i:i+1])
+				pErr = roachpb.NewError(err)
+
+				if pErr != nil {
+					break
+				}
 			}
 		}
-		pErr = roachpb.NewError(err)
-		if err != nil {
+		if pErr != nil {
 			resp = &roachpb.AdminChangeReplicasResponse{}
 		} else {
 			resp = &roachpb.AdminChangeReplicasResponse{
@@ -1647,12 +1667,15 @@ func (r *Replica) mergeInProgressRLocked() bool {
 func (r *Replica) getReplicaDescriptorByIDRLocked(
 	replicaID roachpb.ReplicaID, fallback roachpb.ReplicaDescriptor,
 ) (roachpb.ReplicaDescriptor, error) {
+	// Try the main (incoming) descriptor first.
 	if repDesc, ok := r.mu.state.Desc.GetReplicaDescriptorByID(replicaID); ok {
 		return repDesc, nil
 	}
+	// If there's a fallback, try that.
 	if fallback.ReplicaID == replicaID {
 		return fallback, nil
 	}
+	// Give up.
 	return roachpb.ReplicaDescriptor{},
 		errors.Errorf("replica %d not present in %v, %v",
 			replicaID, fallback, r.mu.state.Desc.Replicas())

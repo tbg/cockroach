@@ -169,6 +169,7 @@ func calcRangeCounter(
 	// unavailable ranges for each range based on the liveness table.
 	if rangeCounter {
 		liveVoterReplicas := calcLiveVoterReplicas(desc, livenessMap)
+		// TODO(tbg): this is wrong when in joint config.
 		if liveVoterReplicas < desc.Replicas().QuorumSize() {
 			unavailable = true
 		}

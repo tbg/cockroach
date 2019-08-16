@@ -206,6 +206,7 @@ func (rq *replicateQueue) shouldQueue(
 	if action == AllocatorRemoveLearner {
 		return true, priority
 	}
+	// TODO(tbg): when in joint config, make leaving that top priority.
 	voterReplicas := desc.Replicas().Voters()
 
 	if action == AllocatorNoop {
@@ -299,6 +300,8 @@ func (rq *replicateQueue) processOneChange(
 	liveVoterReplicas, deadVoterReplicas := rq.allocator.storePool.liveAndDeadReplicas(
 		desc.RangeID, voterReplicas)
 	{
+		// TODO(tbg): check instead whether liveVoterReplicas can make quorum, i.e.
+		// it's both a quorum of the incoming and outgoing config.
 		quorum := desc.Replicas().QuorumSize()
 		if lr := len(liveVoterReplicas); lr < quorum {
 			return false, newQuorumError(
@@ -704,6 +707,10 @@ func (rq *replicateQueue) findTargetAndTransferLease(
 ) (bool, error) {
 	// Learner replicas aren't allowed to become the leaseholder or raft leader,
 	// so only consider the `Voters` replicas.
+	//
+	// TODO(tbg): don't consider outgoing voters. Also, enforce that they can't
+	// ever receive a lease (because then we can't transition them out easily,
+	// making everything much more complicated).
 	candidates := filterBehindReplicas(repl.RaftStatus(), desc.Replicas().Voters())
 	target := rq.allocator.TransferLeaseTarget(
 		ctx,

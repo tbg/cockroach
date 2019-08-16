@@ -846,6 +846,12 @@ func (sm *replicaStateMachine) ApplySideEffects(
 		log.VEvent(ctx, 2, cmd.localResult.String())
 	}
 
+	var shouldAssert bool
+
+	if cmd.decodedConfChange != nil && cmd.decodedConfChange.cc.AsV2().LeaveJoint() {
+		shouldAssert = true
+	}
+
 	// Handle the ReplicatedEvalResult, executing any side effects of the last
 	// state machine transition.
 	//
@@ -853,7 +859,7 @@ func (sm *replicaStateMachine) ApplySideEffects(
 	// before notifying a potentially waiting client.
 	clearTrivialReplicatedEvalResultFields(cmd.replicatedResult())
 	if !cmd.IsTrivial() {
-		shouldAssert := sm.handleNonTrivialReplicatedEvalResult(ctx, *cmd.replicatedResult())
+		shouldAssert = shouldAssert || sm.handleNonTrivialReplicatedEvalResult(ctx, *cmd.replicatedResult())
 		// NB: Perform state assertion before acknowledging the client.
 		// Some tests (TestRangeStatsInit) assumes that once the store has started
 		// and the first range has a lease that there will not be a later hard-state.
@@ -998,10 +1004,15 @@ func (sm *replicaStateMachine) maybeApplyConfChange(ctx context.Context, cmd *re
 			log.Fatalf(ctx, "unexpected replication change from command %s", &cmd.raftCmd)
 		}
 		return nil
-	case raftpb.EntryConfChange:
+	case raftpb.EntryConfChange, raftpb.EntryConfChangeV2:
 		if cmd.replicatedResult().ChangeReplicas == nil {
-			// The command was rejected.
-			cmd.cc = raftpb.ConfChange{}
+			// The command was rejected or raft is transitioning out of a joint
+			// configuration. In the latter case, there aren't any changes so
+			// leave the command alone (since it originates from raft, we never
+			// reject it). In the former case, make sure the changes are nixed.
+			if len(cmd.cc.AsV2().Changes) > 0 {
+				cmd.cc = raftpb.ConfChange{}
+			}
 		}
 		return sm.r.withRaftGroup(true, func(raftGroup *raft.RawNode) (bool, error) {
 			raftGroup.ApplyConfChange(cmd.cc)

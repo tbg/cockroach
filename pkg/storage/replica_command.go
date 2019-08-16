@@ -515,7 +515,8 @@ func (r *Replica) AdminMerge(
 	ctx context.Context, args roachpb.AdminMergeRequest, reason string,
 ) (roachpb.AdminMergeResponse, *roachpb.Error) {
 	var reply roachpb.AdminMergeResponse
-
+	// TODO(tbg): if desc has outgoing voters, this must fail early (or even better,
+	// transition out first).
 	origLeftDesc := r.Desc()
 	if origLeftDesc.EndKey.Equal(roachpb.RKeyMax) {
 		// Merging the final range doesn't make sense.
@@ -807,9 +808,6 @@ func IsSnapshotError(err error) bool {
 // leaseholder (which in particular implies that we can never remove all
 // replicas).
 //
-// NB: at the time of writing, atomic replication changes are not implemented
-// yet. Only a single change is supported, everything else returns an error.
-//
 // The returned RangeDescriptor is the new value of the range's descriptor
 // following the successful commit of the transaction.
 //
@@ -851,26 +849,11 @@ func IsSnapshotError(err error) bool {
 //    replica sets is required for decision making. Since this joint configuration
 //    is not represented in the RangeDescriptor (which is the source of truth of
 //    the replication configuration), additional information about the joint state
-//    is persisted under RangeDescriptorJointKey, a replicated key located on the
+//    is persisted under RangeDescriptorOutgoingKey, a replicated key located on the
 //    range similar to the range descriptor (but not versioned). Raft will
 //    automatically transition out of this joint configuration as soon as it has
 //    properly been applied (and we clear the extra replicated state atomically);
 //    ChangeReplicas ensures the final configuration is active before returning.
-//
-//    TODO(tbg): figure out how the "waiting to transition out of the joint config"
-//    will happen. We want Raft to auto-transition out (rather than doing it
-//    manually) because that way we know we'll leave that joint state even if the
-//    coordinator crashes etc. On the other hand, the polling seems a little
-//    difficult to do idiomatically. If many replication changes are carried out
-//    back to back, what do we wait for? We only need to know that some replica
-//    (typically the leader) has transitioned out (i.e. there's no requirement that
-//    the local replica has done so). It seems most straightforward to stash the
-//    joint state in an inline key that can be read through KV (mutated below
-//    Raft), and make sure the generation of the replication change is preserved.
-//    Then we just need to poll that the key goes away or has a larger generation
-//    (indicating that we transitioned out of "our" conf change and into another
-//    joint config driven by someone else). We can avoid the poll in the common
-//    case by proposing an empty entry first.
 //
 // A replica that learns that it was removed will queue itself for replicaGC.
 // Note that a removed replica may never apply the configuration change removing
@@ -895,12 +878,6 @@ func (r *Replica) ChangeReplicas(
 	if desc == nil {
 		// TODO(tbg): is this check just FUD?
 		return nil, errors.Errorf("%s: the current RangeDescriptor must not be nil", r)
-	}
-
-	if len(chgs) != 1 {
-		// TODO(tbg): lift this restriction when atomic membership changes are
-		// plumbed into raft.
-		return nil, errors.Errorf("need exactly one change, got %+v", chgs)
 	}
 
 	if err := validateReplicationChanges(desc, chgs); err != nil {
@@ -951,7 +928,35 @@ func (r *Replica) ChangeReplicas(
 		}
 		return nil, err
 	}
-	return desc, nil
+	return r.maybeLeaveAtomicChangeReplicas(ctx, desc)
+}
+
+func (r *Replica) maybeLeaveAtomicChangeReplicas(
+	ctx context.Context, desc *roachpb.RangeDescriptor,
+) (*roachpb.RangeDescriptor, error) {
+	noop := true
+	updatedDesc := *desc
+	updatedDesc.SetReplicas(desc.Replicas().DeepCopy())
+	for _, rDesc := range desc.Replicas().Voters() {
+		if rDesc.GetType() == roachpb.ReplicaType_VOTEROUTGOING {
+			_, ok := updatedDesc.RemoveReplica(rDesc.NodeID, rDesc.StoreID)
+			if !ok {
+				return nil, errors.Errorf("replica %s unexpectedly missing in %s", rDesc, desc)
+			}
+			noop = false
+		}
+	}
+	if noop {
+		return desc, nil
+	}
+	// TODO(tbg): actually pass the removed replicas in here, so that the removal is logged when they
+	// actually get removed (when leaving the joint cfg).
+	if err := execChangeReplicasTxn(
+		ctx, r.store, desc, &updatedDesc, storagepb.ReasonUnknown /* TODO(tbg) */, "TODO(tbg)", nil /* added */, nil, /* removed */
+	); err != nil {
+		return nil, err
+	}
+	return &updatedDesc, nil
 }
 
 func validateReplicationChanges(
@@ -1016,24 +1021,30 @@ func addLearnerReplicas(
 	details string,
 	targets []roachpb.ReplicationTarget,
 ) (*roachpb.RangeDescriptor, error) {
-	newDesc := *desc
-	newDesc.SetReplicas(desc.Replicas().DeepCopy())
-	var added []roachpb.ReplicaDescriptor
+	// TODO(tbg): we could add all learners in one go, but then we'd need to
+	// do it as an atomic replication change (raft doesn't know which config
+	// to apply the delta to, so we might be demoting more than one voter).
 	for _, target := range targets {
+		newDesc := *desc
+		newDesc.SetReplicas(desc.Replicas().DeepCopy())
+		var added []roachpb.ReplicaDescriptor
 		replDesc := roachpb.ReplicaDescriptor{
 			NodeID:    target.NodeID,
 			StoreID:   target.StoreID,
-			ReplicaID: desc.NextReplicaID,
+			ReplicaID: newDesc.NextReplicaID,
 			Type:      roachpb.ReplicaTypeLearner(),
 		}
 		newDesc.NextReplicaID++
 		newDesc.AddReplica(replDesc)
 		added = append(added, replDesc)
+		if err := execChangeReplicasTxn(
+			ctx, store, desc, &newDesc, reason, details, added, nil, /* removed */
+		); err != nil {
+			return nil, err
+		}
+		desc = &newDesc
 	}
-	err := execChangeReplicasTxn(
-		ctx, store, desc, &newDesc, reason, details, added, nil, /* removed */
-	)
-	return &newDesc, err
+	return desc, nil
 }
 
 // finalizeChangeReplicas carries out the atomic membership change that finalizes
@@ -1042,6 +1053,8 @@ func addLearnerReplicas(
 // learners already and will be caught up before being promoted to voters. Any
 // replica removals (from the replication changes) will be processed. All of this
 // occurs in one atomic raft membership change.
+//
+// TODO(tbg): rename to initAtomicReplicationChange or something better.
 func (r *Replica) finalizeChangeReplicas(
 	ctx context.Context,
 	desc *roachpb.RangeDescriptor,
@@ -1111,6 +1124,8 @@ func (r *Replica) finalizeChangeReplicas(
 			return nil, errors.Errorf("target to remove %v not found in %s", target, &updatedDesc)
 		}
 		replsRemoved = append(replsRemoved, rDesc)
+		rDesc.Type = roachpb.ReplicaTypeVoterOutgoing()
+		updatedDesc.AddReplica(rDesc)
 	}
 
 	err := execChangeReplicasTxn(ctx, r.store, desc, &updatedDesc, reason, details, replsAdded, replsRemoved)
@@ -1997,6 +2012,8 @@ func (r *Replica) adminScatter(
 		desc := r.Desc()
 		// Learner replicas aren't allowed to become the leaseholder or raft leader,
 		// so only consider the `Voters` replicas.
+		//
+		// TODO(tbg): no outgoing voters.
 		voterReplicas := desc.Replicas().Voters()
 		newLeaseholderIdx := rand.Intn(len(voterReplicas))
 		targetStoreID := voterReplicas[newLeaseholderIdx].StoreID

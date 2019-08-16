@@ -226,6 +226,8 @@ func (ds *DistSender) singleRangeFeed(
 	// Learner replicas won't serve reads/writes, so send only to the `Voters`
 	// replicas. This is just an optimization to save a network hop, everything
 	// would still work if we had `All` here.
+	//
+	// TODO(tbg): outgoing voters only.
 	replicas := NewReplicaSlice(ds.gossip, desc.Replicas().Voters())
 	replicas.OptimizeReplicaOrder(ds.getNodeDescriptor(), latencyFn)
 	// The RangeFeed is not used for system critical traffic so use a DefaultClass

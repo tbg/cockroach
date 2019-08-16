@@ -22,6 +22,13 @@ func ReplicaTypeVoter() *ReplicaType {
 	return &t
 }
 
+// ReplicaTypeVoterOutgoing returns a ReplicaType_VOTEROUTGOING pointer suitable
+// for use in a nullable proto field.
+func ReplicaTypeVoterOutgoing() *ReplicaType {
+	t := ReplicaType_VOTEROUTGOING
+	return &t
+}
+
 // ReplicaTypeLearner returns a ReplicaType_LEARNER pointer suitable for use in
 // a nullable proto field.
 func ReplicaTypeLearner() *ReplicaType {
@@ -72,12 +79,15 @@ func (d ReplicaDescriptors) All() []ReplicaDescriptor {
 // Voters returns the voter replicas in the set. This may allocate, but it also
 // may return the underlying slice as a performance optimization, so it's not
 // safe to modify the returned value.
+//
+// TODO(tbg): some of the callers don't want outgoing voters, for example the one
+// looking for a lease transfer target. Outgoing voters must not get a lease.
 func (d ReplicaDescriptors) Voters() []ReplicaDescriptor {
 	// Fastpath, most of the time, everything is a voter, so special case that and
 	// save the alloc.
 	fastpath := true
 	for i := range d.wrapped {
-		if d.wrapped[i].GetType() != ReplicaType_VOTER {
+		if typ := d.wrapped[i].GetType(); typ != ReplicaType_VOTER && typ != ReplicaType_VOTEROUTGOING {
 			fastpath = false
 			break
 		}
@@ -87,7 +97,7 @@ func (d ReplicaDescriptors) Voters() []ReplicaDescriptor {
 	}
 	voters := make([]ReplicaDescriptor, 0, len(d.wrapped))
 	for i := range d.wrapped {
-		if d.wrapped[i].GetType() == ReplicaType_VOTER {
+		if typ := d.wrapped[i].GetType(); typ == ReplicaType_VOTER || typ == ReplicaType_VOTEROUTGOING {
 			voters = append(voters, d.wrapped[i])
 		}
 	}
@@ -240,6 +250,9 @@ func (d *ReplicaDescriptors) RemoveReplica(
 
 // QuorumSize returns the number of voter replicas required for quorum in a raft
 // group consisting of this set of replicas.
+//
+// TODO(tbg): if the quorum is joint, there isn't necessarily a right number to
+// return here. Check what callers really want to know.
 func (d ReplicaDescriptors) QuorumSize() int {
 	var numVoters int
 	for i := range d.wrapped {

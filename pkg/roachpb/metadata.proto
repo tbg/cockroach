@@ -48,6 +48,8 @@ enum ReplicaType {
   // short-term transient state: a replica being added and on its way to being a
   // VOTER.
   LEARNER = 1;
+  // ReplicaType_VOTEROUTGOING TODO
+  VOTEROUTGOING = 2;
 }
 
 // ReplicaDescriptor describes a replica location by node ID

@@ -390,6 +390,8 @@ func (sr *StoreRebalancer) chooseLeaseToTransfer(
 		// Check all the other replicas in order of increasing qps. Learner replicas
 		// aren't allowed to become the leaseholder or raft leader, so only consider
 		// the `Voters` replicas.
+		//
+		// TODO(tbg): outgoing voters are not candidates.
 		candidates := desc.Replicas().DeepCopy().Voters()
 		sort.Slice(candidates, func(i, j int) bool {
 			var iQPS, jQPS float64

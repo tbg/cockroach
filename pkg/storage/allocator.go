@@ -340,6 +340,8 @@ func (a *Allocator) ComputeAction(
 		return AllocatorRemoveLearner, removeLearnerReplicaPriority
 	}
 	// computeAction expects to operate only on voters.
+	//
+	// TODO(tbg): properly handle outgoing voters before this call.
 	return a.computeAction(ctx, zone, desc.RangeID, desc.Replicas().Voters())
 }
 
