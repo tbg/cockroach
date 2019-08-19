@@ -202,6 +202,13 @@ func (p *Result) MergeAndDestroy(q Result) error {
 		}
 		q.Replicated.State.Desc = nil
 
+		if p.Replicated.State.DescOutgoing == nil {
+			p.Replicated.State.DescOutgoing = q.Replicated.State.DescOutgoing
+		} else if q.Replicated.State.DescOutgoing != nil {
+			return errors.New("conflicting DescOutgoing")
+		}
+		q.Replicated.State.DescOutgoing = nil
+
 		if p.Replicated.State.Lease == nil {
 			p.Replicated.State.Lease = q.Replicated.State.Lease
 		} else if q.Replicated.State.Lease != nil {

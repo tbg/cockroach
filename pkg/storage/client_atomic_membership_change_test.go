@@ -20,9 +20,11 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/storage"
 	"github.com/cockroachdb/cockroach/pkg/storage/engine"
+	"github.com/cockroachdb/cockroach/pkg/testutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/testcluster"
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,18 +61,24 @@ func TestAtomicReplicationChange(t *testing.T) {
 		{ChangeType: roachpb.ADD_REPLICA, Target: tc.Target(4)},
 	}
 
-	desc, err := tc.Servers[0].DB().AdminChangeReplicas(
-		// TODO(tbg): when 19.2 is out, remove this "feature gate" here and in
-		// AdminChangeReplicas.
-		context.WithValue(ctx, "testing", "testing"),
-		k, expDesc, chgs,
-	)
-	require.NoError(t, err)
+	runChange := func(expDesc roachpb.RangeDescriptor, chgs []roachpb.ReplicationChange) roachpb.RangeDescriptor {
+		t.Helper()
+		desc, err := tc.Servers[0].DB().AdminChangeReplicas(
+			// TODO(tbg): when 19.2 is out, remove this "feature gate" here and in
+			// AdminChangeReplicas.
+			context.WithValue(ctx, "testing", "testing"),
+			k, expDesc, chgs,
+		)
+		require.NoError(t, err)
+		return *desc
+	}
+
+	expDesc = runChange(expDesc, chgs)
 
 	var stores []roachpb.StoreID
-	for _, rDesc := range desc.Replicas().All() {
+	for _, rDesc := range expDesc.Replicas().All() {
 		if rDesc.GetType() == roachpb.ReplicaType_LEARNER {
-			t.Fatalf("found a learner: %+v", desc)
+			t.Fatalf("found a learner: %+v", expDesc)
 		}
 		stores = append(stores, rDesc.StoreID)
 	}
@@ -78,24 +86,40 @@ func TestAtomicReplicationChange(t *testing.T) {
 	exp := []roachpb.StoreID{1, 2, 4, 5, 6}
 	require.Equal(t, exp, stores)
 
-	descJointKey := keys.RangeDescriptorOutgoingKey(desc.StartKey)
-	for _, idx := range []int{0, 1, 3, 4, 5} {
-		// Verify that all replicas left the joint config automatically (raft does
-		// this and ChangeReplicas blocks until it has).
-		repl, err := tc.Servers[idx].Stores().GetReplicaForRangeID(expDesc.RangeID)
-		require.NoError(t, err)
-		act := repl.RaftStatus().Config.String()
-		exp := "voters=(1 2 4 5 6)"
-		require.Equal(t, exp, act)
-		// Also check that the replicated marker from which the conf state would
-		// be recreated on restart is gone.
-		var desc roachpb.RangeDescriptor
-		ok, err := engine.MVCCGetProto(ctx, repl.Engine(), descJointKey, hlc.Timestamp{}, &desc, engine.MVCCGetOptions{})
-		if err != nil {
-			t.Fatal(err)
+	descJointKey := keys.RangeDescriptorOutgoingKey(expDesc.StartKey)
+	// Nodes may apply the change at different times, so we need a retry loop.
+	testutils.SucceedsSoon(t, func() error {
+		for _, idx := range []int{0, 1, 3, 4, 5} {
+			// Verify that all replicas left the joint config automatically (raft does
+			// this and ChangeReplicas blocks until it has).
+			repl, err := tc.Servers[idx].Stores().GetReplicaForRangeID(expDesc.RangeID)
+			require.NoError(t, err)
+			act := repl.RaftStatus().Config.String()
+			exp := "voters=(1 2 4 5 6)"
+			if exp != act {
+				return errors.Errorf("wanted: %s\ngot: %s", exp, act)
+			}
+			// Also check that the replicated marker from which the conf state would
+			// be recreated on restart is gone.
+			var engDesc roachpb.RangeDescriptor
+			ok, err := engine.MVCCGetProto(ctx, repl.Engine(), descJointKey, hlc.Timestamp{}, &engDesc, engine.MVCCGetOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ok {
+				t.Fatalf("still have joint descriptor %+v", engDesc)
+			}
 		}
-		if ok {
-			t.Fatalf("still have joint descriptor %+v", desc)
-		}
+		return nil
+	})
+
+	// Rebalance back down all the way.
+	chgs = []roachpb.ReplicationChange{
+		{ChangeType: roachpb.REMOVE_REPLICA, Target: tc.Target(1)},
+		{ChangeType: roachpb.REMOVE_REPLICA, Target: tc.Target(3)},
+		{ChangeType: roachpb.REMOVE_REPLICA, Target: tc.Target(4)},
+		{ChangeType: roachpb.REMOVE_REPLICA, Target: tc.Target(5)},
 	}
+
+	runChange(expDesc, chgs)
 }

@@ -1098,8 +1098,9 @@ func changeReplicasTrigger(
 	// replication change), we need to atomically persist that so that
 	// .InitialState() can return it. This is necessary since the regular range
 	// descriptor does not carry this information.
+	var oldDesc *roachpb.RangeDescriptor
 	if len(change.Added())+len(change.Removed()) > 1 {
-		oldDesc := rec.Desc()
+		oldDesc = rec.Desc()
 		if err := engine.MVCCPutProto(
 			ctx, batch, ms, keys.RangeDescriptorOutgoingKey(oldDesc.StartKey), hlc.Timestamp{}, nil, oldDesc,
 		); err != nil {
@@ -1136,7 +1137,8 @@ func changeReplicasTrigger(
 	// TODO(tschottdorf): duplication of Desc with the trigger below, should
 	// likely remove it from the trigger.
 	pd.Replicated.State = &storagepb.ReplicaState{
-		Desc: &desc,
+		Desc:         &desc,
+		DescOutgoing: oldDesc,
 	}
 	pd.Replicated.ChangeReplicas = &storagepb.ChangeReplicas{
 		ChangeReplicasTrigger: *change,

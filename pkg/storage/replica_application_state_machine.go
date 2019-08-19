@@ -855,6 +855,16 @@ func (sm *replicaStateMachine) ApplySideEffects(
 		log.VEvent(ctx, 2, cmd.localResult.String())
 	}
 
+	var shouldAssert bool
+
+	if cmd.decodedConfChange != nil && cmd.decodedConfChange.cc.AsV2().LeaveJoint() {
+		sm.r.mu.Lock()
+		sm.r.mu.state.DescOutgoing = nil
+		sm.r.mu.Unlock()
+
+		shouldAssert = true
+	}
+
 	// Handle the ReplicatedEvalResult, executing any side effects of the last
 	// state machine transition.
 	//
@@ -862,7 +872,7 @@ func (sm *replicaStateMachine) ApplySideEffects(
 	// before notifying a potentially waiting client.
 	clearTrivialReplicatedEvalResultFields(cmd.replicatedResult())
 	if !cmd.IsTrivial() {
-		shouldAssert := sm.handleNonTrivialReplicatedEvalResult(ctx, *cmd.replicatedResult())
+		shouldAssert = shouldAssert || sm.handleNonTrivialReplicatedEvalResult(ctx, *cmd.replicatedResult())
 		// NB: Perform state assertion before acknowledging the client.
 		// Some tests (TestRangeStatsInit) assumes that once the store has started
 		// and the first range has a lease that there will not be a later hard-state.
@@ -962,6 +972,11 @@ func (sm *replicaStateMachine) handleNonTrivialReplicatedEvalResult(
 		if newDesc := rResult.State.Desc; newDesc != nil {
 			sm.r.handleDescResult(ctx, newDesc)
 			rResult.State.Desc = nil
+		}
+
+		if newDesc := rResult.State.DescOutgoing; newDesc != nil {
+			sm.r.handleDescOutgoingResult(ctx, newDesc)
+			rResult.State.DescOutgoing = nil
 		}
 
 		if newLease := rResult.State.Lease; newLease != nil {

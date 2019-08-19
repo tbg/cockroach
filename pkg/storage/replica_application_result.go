@@ -246,6 +246,12 @@ func (r *Replica) handleDescResult(ctx context.Context, desc *roachpb.RangeDescr
 	r.setDesc(ctx, desc)
 }
 
+func (r *Replica) handleDescOutgoingResult(ctx context.Context, desc *roachpb.RangeDescriptor) {
+	r.mu.Lock()
+	r.mu.state.DescOutgoing = desc
+	r.mu.Unlock()
+}
+
 func (r *Replica) handleLeaseResult(ctx context.Context, lease *roachpb.Lease) {
 	r.leasePostApply(ctx, *lease, false /* permitJump */)
 }

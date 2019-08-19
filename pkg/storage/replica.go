@@ -81,7 +81,7 @@ var testingDisableQuiescence = envutil.EnvOrDefaultBool("COCKROACH_DISABLE_QUIES
 var useAtomicReplicationChanges = settings.RegisterBoolSetting(
 	"kv.atomic_replication_changes.enabled",
 	"use atomic replication changes",
-	false,
+	true,
 )
 
 var disableSyncRaftLog = settings.RegisterBoolSetting(
@@ -977,6 +977,7 @@ func (r *Replica) assertStateLocked(ctx context.Context, reader engine.Reader) {
 		// TODO(dt): expose properly once #15892 is addressed.
 		log.Errorf(ctx, "on-disk and in-memory state diverged:\n%s", pretty.Diff(diskState, r.mu.state))
 		r.mu.state.Desc, diskState.Desc = nil, nil
+		r.mu.state.DescOutgoing, diskState.DescOutgoing = nil, nil
 		log.Fatal(ctx, log.Safe(
 			fmt.Sprintf("on-disk and in-memory state diverged: %s",
 				pretty.Diff(diskState, r.mu.state)),
