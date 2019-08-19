@@ -69,6 +69,10 @@ func (rsl StateLoader) Load(
 	}
 	s.Lease = &lease
 
+	if s.DescOutgoing, err = rsl.LoadDescOutgoing(ctx, reader, desc); err != nil {
+		return storagepb.ReplicaState{}, err
+	}
+
 	if s.GCThreshold, err = rsl.LoadGCThreshold(ctx, reader); err != nil {
 		return storagepb.ReplicaState{}, err
 	}
@@ -683,15 +687,34 @@ func makeConfState(
 	return cs
 }
 
-// LoadConfState creates the raftpb.ConfState for the given descriptor.
+// LoadDescOutgoing loads the outgoing range descriptor. It returns nil if none
+// was found (the usual case).
+func (rsl StateLoader) LoadDescOutgoing(
+	ctx context.Context, eng engine.Reader, desc *roachpb.RangeDescriptor,
+) (*roachpb.RangeDescriptor, error) {
+	outDesc := &roachpb.RangeDescriptor{}
+	_, err := engine.MVCCGetProto(
+		ctx, eng, keys.RangeDescriptorOutgoingKey(desc.StartKey), hlc.Timestamp{}, outDesc, engine.MVCCGetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if outDesc.RangeID != 0 {
+		return outDesc, nil
+	}
+	return nil, nil
+}
+
+// LoadConfState constructs the raftpb.ConfState for the given descriptor.
 func (rsl StateLoader) LoadConfState(
 	ctx context.Context, eng engine.Reader, desc *roachpb.RangeDescriptor,
 ) (raftpb.ConfState, error) {
-	jointDesc := &roachpb.RangeDescriptor{}
-	_, err := engine.MVCCGetProto(
-		ctx, eng, keys.RangeDescriptorOutgoingKey(desc.StartKey), hlc.Timestamp{}, jointDesc, engine.MVCCGetOptions{})
+	outDesc, err := rsl.LoadDescOutgoing(ctx, eng, desc)
 	if err != nil {
 		return raftpb.ConfState{}, err
 	}
-	return makeConfState(desc.Replicas().All(), jointDesc.Replicas().All()...), nil
+	var outRepls []roachpb.ReplicaDescriptor
+	if outDesc != nil {
+		outRepls = outDesc.Replicas().All()
+	}
+	return makeConfState(desc.Replicas().All(), outRepls...), nil
 }

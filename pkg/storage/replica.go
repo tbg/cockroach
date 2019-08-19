@@ -1667,16 +1667,21 @@ func (r *Replica) mergeInProgressRLocked() bool {
 func (r *Replica) getReplicaDescriptorByIDRLocked(
 	replicaID roachpb.ReplicaID, fallback roachpb.ReplicaDescriptor,
 ) (roachpb.ReplicaDescriptor, error) {
-	// TODO(tbg): for atomic membership changes, route to replicas in the
-	// outgoing config, which is now (generally) required to commit commands.
-	// This can also help simple membership changes catch up removed followers
-	// so that they can be gc'ed more efficiently.
+	// Try the main (incoming) descriptor first.
 	if repDesc, ok := r.mu.state.Desc.GetReplicaDescriptorByID(replicaID); ok {
 		return repDesc, nil
 	}
+	// If in a joint state, try the outgoing descriptor as well.
+	if outDesc := r.mu.state.DescOutgoing; outDesc != nil {
+		if repDesc, ok := outDesc.GetReplicaDescriptorByID(replicaID); ok {
+			return repDesc, nil
+		}
+	}
+	// If there's a fallback, try that.
 	if fallback.ReplicaID == replicaID {
 		return fallback, nil
 	}
+	// Give up.
 	return roachpb.ReplicaDescriptor{},
 		errors.Errorf("replica %d not present in %v, %v",
 			replicaID, fallback, r.mu.state.Desc.Replicas())
