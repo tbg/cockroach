@@ -516,7 +516,7 @@ func (b *replicaAppBatch) stageWriteBatch(ctx context.Context, cmd *replicatedCm
 func (b *replicaAppBatch) runPreApplyTriggers(ctx context.Context, cmd *replicatedCmd) error {
 	if cmd.decodedConfChange != nil && cmd.cc.AsV2().LeaveJoint() {
 		if err := engine.MVCCDelete(
-			ctx, b.batch, &b.stats, keys.RangeDescriptorJointKey(b.r.Desc().StartKey), hlc.Timestamp{}, nil, /* txn */
+			ctx, b.batch, &b.stats, keys.RangeDescriptorOutgoingKey(b.r.Desc().StartKey), hlc.Timestamp{}, nil, /* txn */
 		); err != nil {
 			return err
 		}

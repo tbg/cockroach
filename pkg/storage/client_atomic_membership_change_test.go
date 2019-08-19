@@ -78,7 +78,7 @@ func TestAtomicReplicationChange(t *testing.T) {
 	exp := []roachpb.StoreID{1, 2, 4, 5, 6}
 	require.Equal(t, exp, stores)
 
-	descJointKey := keys.RangeDescriptorJointKey(desc.StartKey)
+	descJointKey := keys.RangeDescriptorOutgoingKey(desc.StartKey)
 	for _, idx := range []int{0, 1, 3, 4, 5} {
 		// Verify that all replicas left the joint config automatically (raft does
 		// this and ChangeReplicas blocks until it has).

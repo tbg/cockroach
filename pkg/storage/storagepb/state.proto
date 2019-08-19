@@ -45,6 +45,7 @@ message ReplicaState {
   // Changes of the descriptor should always go through one of the
   // (*Replica).setDesc* methods.
   roachpb.RangeDescriptor desc = 3;
+  roachpb.RangeDescriptor desc_outgoing = 12;
   // The latest range lease.
   //
   // Note that this message is both sent over the network and used to model

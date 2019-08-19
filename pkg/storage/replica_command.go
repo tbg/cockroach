@@ -848,7 +848,7 @@ func IsSnapshotError(err error) bool {
 //    replica sets is required for decision making. Since this joint configuration
 //    is not represented in the RangeDescriptor (which is the source of truth of
 //    the replication configuration), additional information about the joint state
-//    is persisted under RangeDescriptorJointKey, a replicated key located on the
+//    is persisted under RangeDescriptorOutgoingKey, a replicated key located on the
 //    range similar to the range descriptor (but not versioned). Raft will
 //    automatically transition out of this joint configuration as soon as it has
 //    properly been applied (and we clear the extra replicated state atomically);
@@ -942,7 +942,7 @@ func (r *Replica) ChangeReplicas(
 			MaxBackoff:     150 * time.Millisecond,
 		}); rt.Next(); {
 			if err := r.store.DB().GetProto(
-				ctx, keys.RangeDescriptorJointKey(desc.StartKey), &jointDesc,
+				ctx, keys.RangeDescriptorOutgoingKey(desc.StartKey), &jointDesc,
 			); err != nil {
 				return nil, err
 			}

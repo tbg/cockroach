@@ -689,7 +689,7 @@ func (rsl StateLoader) LoadConfState(
 ) (raftpb.ConfState, error) {
 	jointDesc := &roachpb.RangeDescriptor{}
 	_, err := engine.MVCCGetProto(
-		ctx, eng, keys.RangeDescriptorJointKey(desc.StartKey), hlc.Timestamp{}, jointDesc, engine.MVCCGetOptions{})
+		ctx, eng, keys.RangeDescriptorOutgoingKey(desc.StartKey), hlc.Timestamp{}, jointDesc, engine.MVCCGetOptions{})
 	if err != nil {
 		return raftpb.ConfState{}, err
 	}

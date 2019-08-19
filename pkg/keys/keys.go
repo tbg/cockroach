@@ -401,15 +401,19 @@ func RangeDescriptorKey(key roachpb.RKey) roachpb.Key {
 	return MakeRangeKey(key, LocalRangeDescriptorSuffix, nil)
 }
 
-// RangeDescriptorJointKey returns a range-local key for the "joint descriptor"
-// for the range with specified key. This key is not versioned and it is set if
-// and only if the range is in a joint configuration that it yet has to transition
-// out of.
-func RangeDescriptorJointKey(key roachpb.RKey) roachpb.Key {
-	return MakeRangeKey(key, LocalRangeDescriptorJointSuffix, nil)
+// RangeDescriptorOutgoingKey returns a range-local key that stores the outgoing
+// (as in, soon obsolete) sibling of the range descriptor during atomic
+// replication changes.
+//
+// This key is not versioned and it is set if and only if the range is in a
+// joint configuration that it yet has to transition out of. This key must not
+// be written directly through the KV layer (though it may be read); it is
+// mutated via below-Raft ChangeReplicasTrigger as well as the Raft-initiated
+// transition out of a joint configuration. This implies that writes to this
+// key may not acquire proper latches.
+func RangeDescriptorOutgoingKey(key roachpb.RKey) roachpb.Key {
+	return MakeRangeKey(key, LocalRangeDescriptorOutgoingSuffix, nil)
 }
-
-var _ = RangeDescriptorJointKey // silence unused check
 
 // TransactionKey returns a transaction key based on the provided
 // transaction key and ID. The base key is encoded in order to

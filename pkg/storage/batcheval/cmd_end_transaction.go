@@ -1101,7 +1101,7 @@ func changeReplicasTrigger(
 	if len(change.Added())+len(change.Removed()) > 1 {
 		oldDesc := rec.Desc()
 		if err := engine.MVCCPutProto(
-			ctx, batch, ms, keys.RangeDescriptorJointKey(oldDesc.StartKey), hlc.Timestamp{}, nil, oldDesc,
+			ctx, batch, ms, keys.RangeDescriptorOutgoingKey(oldDesc.StartKey), hlc.Timestamp{}, nil, oldDesc,
 		); err != nil {
 			return result.Result{}, err
 		}
