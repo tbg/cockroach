@@ -1868,7 +1868,7 @@ func runReplicateRestartAfterTruncation(t *testing.T, removeBeforeTruncateAndReA
 
 		_, err := mtc.stores[1].GetReplica(rangeID)
 		if _, ok := err.(*roachpb.RangeNotFoundError); !ok {
-			t.Fatalf("expected replica to be garbage collected")
+			t.Fatalf("expected replica to be garbage collected, got %v %T", err, err)
 		}
 
 		mtc.replicateRange(rangeID, 1)
