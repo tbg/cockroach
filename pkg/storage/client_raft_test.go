@@ -1866,10 +1866,13 @@ func runReplicateRestartAfterTruncation(t *testing.T, removeBeforeTruncateAndReA
 		mtc.manualClock.Increment(int64(storage.ReplicaGCQueueInactivityThreshold + 1))
 		mtc.stores[1].MustForceReplicaGCScanAndProcess()
 
-		_, err := mtc.stores[1].GetReplica(rangeID)
-		if _, ok := err.(*roachpb.RangeNotFoundError); !ok {
-			t.Fatalf("expected replica to be garbage collected, got %v %T", err, err)
-		}
+		testutils.SucceedsSoon(t, func() error {
+			_, err := mtc.stores[1].GetReplica(rangeID)
+			if _, ok := err.(*roachpb.RangeNotFoundError); !ok {
+				return errors.Errorf("expected replica to be garbage collected, got %v %T", err, err)
+			}
+			return nil
+		})
 
 		mtc.replicateRange(rangeID, 1)
 	}
