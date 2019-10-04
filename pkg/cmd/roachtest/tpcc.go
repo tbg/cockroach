@@ -871,6 +871,7 @@ func runTPCCBench(ctx context.Context, t *test, c *cluster, b tpccBenchSpec) {
 		t.l.Printf("------\nMAX WAREHOUSES = %d\n------\n\n", res)
 		ttycolor.Stdout(ttycolor.Reset)
 	}
+	t.Fatal("blowing up on purpose")
 }
 
 func registerTPCCBench(r *testRegistry) {

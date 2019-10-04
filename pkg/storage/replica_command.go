@@ -556,7 +556,7 @@ func (r *Replica) executeAdminCommandWithDescriptor(
 		}
 	}
 	// If we broke out of the loop after MaxRetries, return the last error.
-	return roachpb.NewError(lastErr)
+	return roachpb.NewError(errors.Wrap(lastErr, "giving up"))
 }
 
 // AdminMerge extends this range to subsume the range that comes next
