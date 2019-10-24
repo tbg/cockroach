@@ -1,0 +1,6 @@
+[book]
+authors = ["Tobias Schottdorf"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Optimistic global transactions"
