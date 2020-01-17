@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"sync"
 	"text/template"
@@ -35,8 +36,6 @@ const (
 	teamcityBuildBranchEnv = "TC_BUILD_BRANCH"
 	tagsEnv                = "TAGS"
 	goFlagsEnv             = "GOFLAGS"
-	githubUser             = "cockroachdb"
-	githubRepo             = "cockroach"
 	// CockroachPkgPrefix is the crdb package prefix.
 	CockroachPkgPrefix = "github.com/cockroachdb/cockroach/pkg/"
 	// Based on the following observed API response the maximum here is 1<<16-1.
@@ -46,6 +45,11 @@ const (
 	// 422 Validation Failed [{Resource:Issue Field:body Code:custom Message:body
 	// is too long (maximum is 65536 characters)}]
 	githubIssueBodyMaximumLength = 60000
+)
+
+var (
+	githubUser = "cockroachdb" // changeable for testing
+	githubRepo = "cockroach"   // changeable for testing
 )
 
 func enforceMaxLength(s string) string {
@@ -104,7 +108,16 @@ make stressrace TESTS={{.TestName}} PKG=./pkg/{{shortpkg .PackageName}} TESTTIME
 `
 
 var (
+	// Set of labels attached to created issues.
 	issueLabels = []string{"O-robot", "C-test-failure"}
+	// Label we expect when checking existing issues. Sometimes users open
+	// issues about flakes and don't assign all the labels. We want to at
+	// least require the test-failure label to avoid pathological situations
+	// in which a test name is so generic that it matches lots of random issues.
+	// Note that we'll only post a comment into an existing label if the labels
+	// match 100%, but we also cross-link issues whose labels differ. But we
+	// require that they all have searchLabel as a baseline.
+	searchLabel = issueLabels[1]
 )
 
 // If the assignee would be the key in this map, assign to the value instead.
@@ -290,21 +303,10 @@ func (l *lazy) String() string {
 	return fmt.Sprint(l.s)
 }
 
-func (p *poster) execTemplate(ctx context.Context, tpl string, req PostRequest) (string, error) {
-	tlp, err := template.New("").Funcs(template.FuncMap{
-		"threeticks": func() string { return "```" },
-		"commiturl": func(sha string) string {
-			return fmt.Sprintf("https://github.com/cockroachdb/cockroach/commits/%s", sha)
-		},
-		"shortpkg": func(fullpkg string) string {
-			return strings.TrimPrefix(fullpkg, CockroachPkgPrefix)
-		},
-	}).Parse(tpl)
-	if err != nil {
-		return "", err
-	}
-
-	data := TemplateData{
+func (p *poster) templateData(
+	ctx context.Context, req PostRequest, relatedIssues []github.Issue,
+) TemplateData {
+	return TemplateData{
 		PostRequest:      req,
 		Parameters:       p.parameters(),
 		CondensedMessage: CondensedMessage(req.Message),
@@ -327,6 +329,21 @@ func (p *poster) execTemplate(ctx context.Context, tpl string, req PostRequest) 
 			return handle
 		}},
 	}
+}
+
+func (p *poster) execTemplate(ctx context.Context, tpl string, data TemplateData) (string, error) {
+	tlp, err := template.New("").Funcs(template.FuncMap{
+		"threeticks": func() string { return "```" },
+		"commiturl": func(sha string) string {
+			return fmt.Sprintf("https://github.com/cockroachdb/cockroach/commits/%s", sha)
+		},
+		"shortpkg": func(fullpkg string) string {
+			return strings.TrimPrefix(fullpkg, CockroachPkgPrefix)
+		},
+	}).Parse(tpl)
+	if err != nil {
+		return "", err
+	}
 
 	var buf strings.Builder
 	if err := tlp.Execute(&buf, data); err != nil {
@@ -341,42 +358,74 @@ func (p *poster) post(ctx context.Context, req PostRequest) error {
 		req.Message += fmt.Sprintf("\n\nFailed to find issue assignee: \n%s", err)
 	}
 
-	title, err := p.execTemplate(ctx, req.TitleTemplate, req)
+	title, err := p.execTemplate(ctx, req.TitleTemplate, p.templateData(ctx, req, nil))
 	if err != nil {
 		return err
 	}
 
-	searchQuery := fmt.Sprintf(`"%s" user:%s repo:%s is:open`,
-		title, githubUser, githubRepo)
-	for _, label := range issueLabels {
-		searchQuery = searchQuery + fmt.Sprintf(` label:"%s"`, label)
-	}
+	// Find all issues related to this search. This is basically an attempt to
+	// do an exact match, minus most of the labels. Issues that differ only in
+	// the label are considered "related" and can be used in the issue template
+	// for cross-linking.
+	searchQuery := fmt.Sprintf(
+		`repo:%q user:%q is:issue is:open in:title label:%q sort:created-desc %q`,
+		githubRepo, githubUser, searchLabel, title)
 
-	var foundIssue *int
 	result, _, err := p.searchIssues(ctx, searchQuery, &github.SearchOptions{
 		ListOptions: github.ListOptions{
-			PerPage: 1,
+			PerPage: 20,
 		},
 	})
 	if err != nil {
 		return errors.Wrapf(err, "failed to search GitHub with query %s",
 			github.Stringify(searchQuery))
 	}
-	if *result.Total > 0 {
+
+	// The score increments by one for each label that we would give the issue
+	// if we posted it now but which is not present on the existing issue.
+	//
+	// For example, if the existing issue has C-test-failure, release-19.2, S-2
+	// and we are trying to post O-test-failure, O-robot, release-20.1 then the
+	// score is 2.
+	allLabels := append(issueLabels, req.ExtraLabels...)
+	score := func(iss github.Issue) int {
+		var n int
+		for _, lbl := range allLabels {
+			var found bool
+			for _, cur := range iss.Labels {
+				if lbl == *cur.Name {
+					found = true
+				}
+			}
+			if !found {
+				n++
+			}
+		}
+		return n
+	}
+	sort.Slice(result.Issues, func(i, j int) bool {
+		return score(result.Issues[i]) < score(result.Issues[j])
+	})
+
+	var foundIssue *int
+	relatedIssues := result.Issues
+	if len(result.Issues) > 0 && score(result.Issues[0]) == 0 {
+		// We found an issue whose labels all match, so post a comment into
+		// that one.
 		foundIssue = result.Issues[0].Number
+		relatedIssues = result.Issues[1:]
 	}
 
-	body, err := p.execTemplate(ctx, req.BodyTemplate, req)
+	body, err := p.execTemplate(ctx, req.BodyTemplate, p.templateData(ctx, req, relatedIssues))
 	if err != nil {
 		return err
 	}
 
 	if foundIssue == nil {
-		labels := append(issueLabels, req.ExtraLabels...)
 		issueRequest := github.IssueRequest{
 			Title:     &title,
 			Body:      &body,
-			Labels:    &labels,
+			Labels:    &allLabels,
 			Assignee:  &assignee,
 			Milestone: p.milestone,
 		}
@@ -474,7 +523,18 @@ type PostRequest struct {
 	Artifacts,
 	// The email of the author, used to determine who to assign the issue to.
 	AuthorEmail string
-	// Additional labels that will be added to the issue. The labels must exist.
+	// Additional labels that will be added to the issue. They will be created
+	// as necessary (as a side effect of creating an issue with them).
+	//
+	// TODO(tbg): split this up into labels that are required to be held on an
+	// existing issue to consider it a match, and labels that we'll throw in
+	// during issue creation (but which may be removed later without the desire
+	// to have the issue poster create a duplicate issue). For example, a
+	// release-blocker label could be desirable to add at issue creation, but
+	// this label may be removed if it turns out that the failure does not block
+	// the release. On the other hand, we don't want an issue that has no
+	// release-19.1 label to be used to post a comment that wants a release-19.1
+	// label.
 	ExtraLabels []string
 }
 

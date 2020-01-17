@@ -113,18 +113,27 @@ goroutine 13:
 		},
 	}
 
+	const (
+		foundNoIssue              = "no-issue"
+		foundOnlyMatchingIssue    = "matching-issue"
+		foundOneMismatchingIssue  = "mismatching-issue"
+		foundTwoMismatchingIssues = "mismatching-issues"
+		foundAllIssues            = "several-issues"
+	)
+
 	for _, c := range testCases {
-		for _, foundIssue := range []bool{true, false} {
-			name := c.name
-			if foundIssue {
-				name = name + "-existing-issue"
-			}
+		for _, foundIssue := range []string{
+			foundNoIssue, foundOnlyMatchingIssue, foundOneMismatchingIssue, foundTwoMismatchingIssues, foundAllIssues,
+		} {
+			name := c.name + "-" + foundIssue
 			t.Run(name, func(t *testing.T) {
 				var buf strings.Builder
 				p := &poster{}
 
+				createdIssue := false
 				p.createIssue = func(_ context.Context, owner string, repo string,
 					issue *github.IssueRequest) (*github.Issue, *github.Response, error) {
+					createdIssue = true
 					body := *issue.Body
 					issue.Body = nil
 					_, _ = fmt.Fprintf(&buf, "createIssue owner=%s repo=%s %s:\n", owner, repo, github.Stringify(issue))
@@ -132,24 +141,82 @@ goroutine 13:
 					return &github.Issue{ID: github.Int64(issueID)}, nil, nil
 				}
 
+				matchingIssue := github.Issue{
+					Number: github.Int(issueNumber),
+					Labels: []github.Label{{
+						Name: github.String("C-test-failure"),
+					}, {
+						Name: github.String("O-robot"),
+					}, {
+						Name: github.String("release-0.1"),
+					}},
+				}
+
 				p.searchIssues = func(_ context.Context, query string,
 					opt *github.SearchOptions) (*github.IssuesSearchResult, *github.Response, error) {
 					result := &github.IssuesSearchResult{}
-					total := 0
-					if foundIssue {
-						total = 1
-						result.Issues = []github.Issue{
-							{Number: github.Int(issueNumber)},
-						}
+
+					mismatchingIssue1 := github.Issue{
+						Number: github.Int(issueNumber + 1),
+						Labels: []github.Label{{
+							Name: github.String("C-test-failure"),
+						}, {
+							Name: github.String("O-robot"),
+						}, {
+							Name: github.String("release-0.2"), // here's the mismatch
+						}},
 					}
-					result.Total = &total
+
+					mismatchingIssue2 := github.Issue{
+						Number: github.Int(issueNumber + 2),
+						Labels: []github.Label{{
+							Name: github.String("C-test-failure"),
+						}, {
+							Name: github.String("O-robot"),
+						}, {
+							Name: github.String("release-0.3"), // here's the mismatch
+						},
+							{
+								Name: github.String("release-blocker"), // here's the mismatch
+							},
+						},
+					}
+
+					switch foundIssue {
+					case foundNoIssue:
+					case foundOnlyMatchingIssue:
+						result.Issues = []github.Issue{
+							matchingIssue,
+						}
+					case foundOneMismatchingIssue:
+						result.Issues = []github.Issue{
+							mismatchingIssue2,
+						}
+					case foundTwoMismatchingIssues:
+						result.Issues = []github.Issue{
+							mismatchingIssue1,
+							mismatchingIssue2,
+						}
+					case foundAllIssues:
+						result.Issues = []github.Issue{
+							mismatchingIssue2,
+							matchingIssue,
+							mismatchingIssue1,
+						}
+					default:
+						t.Errorf("unhandled: %s", foundIssue)
+					}
+					result.Total = github.Int(len(result.Issues))
 					_, _ = fmt.Fprintf(&buf, "searchIssue query=%s: result %s\n", query, github.Stringify(result))
 					return result, nil, nil
 				}
 
+				createdComment := false
 				p.createComment = func(
 					_ context.Context, owner string, repo string, number int, comment *github.IssueComment,
 				) (*github.IssueComment, *github.Response, error) {
+					assert.Equal(t, *matchingIssue.Number, number)
+					createdComment = true
 					body := *comment.Body
 					comment.Body = nil
 					_, _ = fmt.Fprintf(&buf, "createComment owner=%s repo=%s issue=%d %s:\n", owner, repo, number, github.Stringify(comment))
@@ -199,6 +266,7 @@ goroutine 13:
 					Message:       c.message,
 					Artifacts:     c.artifacts,
 					AuthorEmail:   c.author,
+					ExtraLabels:   []string{"release-0.1"},
 				}
 				require.NoError(t, p.post(ctx, req))
 				path := filepath.Join("testdata", name+".txt")
@@ -208,14 +276,56 @@ goroutine 13:
 					exp, act := string(b), buf.String()
 					failed = failed || !assert.Equal(t, exp, act)
 				}
-				const rewrite = false
+				const rewrite = true
 				if failed && rewrite {
 					_ = os.MkdirAll(filepath.Dir(path), 0755)
 					require.NoError(t, ioutil.WriteFile(path, []byte(buf.String()), 0644))
 				}
+
+				switch foundIssue {
+				case foundNoIssue, foundOneMismatchingIssue, foundTwoMismatchingIssues:
+					require.True(t, createdIssue)
+					require.False(t, createdComment)
+				case foundOnlyMatchingIssue, foundAllIssues:
+					require.False(t, createdIssue)
+					require.True(t, createdComment)
+				default:
+					t.Errorf("unhandled: %s", foundIssue)
+				}
 			})
 		}
 	}
+}
+
+func TestPostEndToEnd(t *testing.T) {
+	t.Skip("only for manual testing")
+	env := map[string]string{
+		// githubAPITokenEnv must be set in your actual env.
+
+		teamcityVCSNumberEnv: "deadbeef",
+		teamcityServerURLEnv: "https://teamcity.cockroachdb.com",
+		teamcityBuildIDEnv:   "12345",
+		tagsEnv:              "-endtoendenv",
+		goFlagsEnv:           "-somegoflags",
+	}
+	unset := setEnv(env)
+	defer unset()
+
+	// Adjust to your taste. Your token must have access and you must have a fork
+	// of the cockroachdb/cockroach repo.
+	githubUser = "tbg"
+
+	req := PostRequest{
+		TitleTemplate: "test issue 2",
+		BodyTemplate:  "test body",
+		PackageName:   "github.com/cockroachdb/cockroach/pkg/foo/bar",
+		TestName:      "TestFooBarBaz",
+		Message:       "I'm a message",
+		AuthorEmail:   "tobias.schottdorf@gmail.com",
+		ExtraLabels:   []string{"release-1.0", "release-blocker"},
+	}
+
+	require.NoError(t, Post(context.Background(), req))
 }
 
 func TestGetAssignee(t *testing.T) {
