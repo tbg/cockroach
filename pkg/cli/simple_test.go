@@ -14,10 +14,13 @@ import (
 	"context"
 	gosql "database/sql"
 	"net/url"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
+	"github.com/cockroachdb/cockroach/pkg/roachpb"
+	"github.com/cockroachdb/cockroach/pkg/storage"
 	"github.com/cockroachdb/cockroach/pkg/testutils/sqlutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/testcluster"
 	"github.com/cockroachdb/cockroach/pkg/util/contextutil"
@@ -30,7 +33,23 @@ import (
 func TestUnavailableClusterAfterConn(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 	ctx := context.Background()
-	tc := testcluster.StartTestCluster(t, 3, base.TestClusterArgs{})
+	var unavailableCh atomic.Value
+	closedCh := make(chan struct{})
+	close(closedCh)
+	unavailableCh.Store(closedCh)
+	knobs := &storage.StoreTestingKnobs{
+		TestingRequestFilter: func(ctx context.Context, _ roachpb.BatchRequest) *roachpb.Error {
+			select {
+			case <-unavailableCh.Load().(chan struct{}):
+			case <-ctx.Done():
+			}
+			return nil
+		},
+	}
+	// TODO(tbg): doesn't even need a cluster, single server is fine.
+	tc := testcluster.StartTestCluster(t, 1, base.TestClusterArgs{
+		ServerArgs: base.TestServerArgs{Knobs: base.TestingKnobs{Store: knobs}},
+	})
 	defer tc.Stopper().Stop(ctx)
 
 	sqlConn := tc.ServerConn(0)
@@ -40,12 +59,12 @@ func TestUnavailableClusterAfterConn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Stop the server. This should make the system unavailable.
-	tc.StopServer(1)
-	tc.StopServer(2)
+	ch := make(chan struct{})
+	unavailableCh.Store(ch)
+	defer close(ch)
 
 	err := contextutil.RunWithTimeout(ctx, t.Name(), 3*time.Second, func(ctx context.Context) error {
-		_, err := sqlConn.ExecContext(ctx, `SELECT * FROM system.users WHERE username = 'notexistent'`)
+		_, err := sqlConn.ExecContext(ctx, `SET statement_timeout='3s'; SELECT * FROM system.users WHERE username = 'notexistent'`)
 		return err
 	})
 	if _, ok := err.(*contextutil.TimeoutError); !ok {
