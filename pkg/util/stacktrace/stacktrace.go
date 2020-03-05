@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/getsentry/raven-go"
 	sentry "github.com/getsentry/sentry-go"
 )
 
@@ -30,13 +29,11 @@ type StackTrace = sentry.Stacktrace
 // NewStackTrace generates a stacktrace suitable for inclusion in
 // error reports.
 func NewStackTrace(depth int) *StackTrace {
-	const contextLines = 3
-	return raven.NewStacktrace(depth+1, contextLines, crdbPaths)
-}
-
-var crdbPaths = []string{
-	"github.com/cockroachdb/cockroach",
-	"go.etcd.io/etcd/raft",
+	st := sentry.NewStacktrace()
+	st.Frames = st.Frames[depth+1:] // TODO check if this is right
+	// TODO: what are the uints in st.FramesOmitted and do we need to massage
+	// them?
+	return st
 }
 
 // PrintStackTrace produces a human-readable partial representation of
@@ -66,7 +63,7 @@ func EncodeStackTrace(s *StackTrace) (string, error) {
 // object, as a fallback (instead of discarding the stack trace
 // entirely).
 func DecodeStackTrace(s string) (*StackTrace, error) {
-	var st raven.Stacktrace
+	var st sentry.Stacktrace
 	err := json.Unmarshal([]byte(s), &st)
 	return &st, err
 }

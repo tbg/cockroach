@@ -68,6 +68,18 @@ func TestCrashReportingPacket(t *testing.T) {
 		},
 	}
 
+	// TODO: include screenshot of new sentry report to make sure SQL folks and others understand how it works now.
+	// ask someone from sql for a good sentry report to look at
+
+	// TODO remove redact functionality since errors already does it
+	// might want to alias from errors.Safe to log.Safe
+	//
+	// weird thing: log.Safe will become a log.SafeMessenger
+	// objects elsewhere also implement that, need to audit them
+	// iter through reportables, log.Safe(SafeMessage()) for each of them.
+	//
+	// other weird thing: if sth impls causer, rdact calls this
+
 	expectPanic := func(name string) {
 		if r := recover(); r == nil {
 			t.Fatalf("'%s' failed to panic", name)

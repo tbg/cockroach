@@ -17,7 +17,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -30,6 +29,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/sysutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
+	"github.com/cockroachdb/errors/report"
 	sentry "github.com/getsentry/sentry-go"
 	"github.com/pkg/errors"
 )
@@ -113,6 +113,7 @@ func RecoverAndReportNonfatalPanic(ctx context.Context, sv *settings.Values) {
 
 // SafeMessager is implemented by objects which have a way of representing
 // themselves suitably redacted for anonymized reporting.
+// TODO here
 type SafeMessager interface {
 	SafeMessage() string
 }
@@ -127,6 +128,7 @@ type SafeType struct {
 var _ SafeMessager = SafeType{}
 var _ interfaceCauser = SafeType{}
 
+// this is the weirdo
 type interfaceCauser interface {
 	Cause() interface{}
 }
@@ -166,6 +168,7 @@ func (st SafeType) String() string {
 
 // Cause returns the value passed to Chain() when this SafeType
 // was created (or nil).
+// only weirdo
 func (st SafeType) Cause() interface{} {
 	if len(st.causes) == 0 {
 		return nil
@@ -384,7 +387,7 @@ func Redact(r interface{}) string {
 	reportable := handle(r)
 
 	switch c := r.(type) {
-	case interfaceCauser:
+	case interfaceCauser: // all other ones are already handled by logging
 		cause := c.Cause()
 		if cause != nil {
 			reportable += ": caused by " + Redact(c.Cause())
@@ -471,15 +474,18 @@ func SendCrashReport(
 	if !ShouldSendReport(sv) {
 		return
 	}
+
+	report.BuildSentryReport(errors.NewWithDepthf(depth+1, format, reportables...))
 	err := ReportablesToSafeError(depth+1, format, reportables)
 	trace := sentry.NewStacktrace()
 	trace.Frames = trace.Frames[depth+2:]
 	cause := errors.Cause(err)
-	SendReport(ctx, err.Error(), crashReportType, nil, &sentry.Exception{
-		Type:       reflect.TypeOf(cause).String(),
-		Value:      cause.Error(),
-		Stacktrace: trace,
-	})
+	SendReport
+	//SendReport(ctx, err.Error(), crashReportType, nil, &sentry.Exception{
+	//	Type:       reflect.TypeOf(cause).String(),
+	//	Value:      cause.Error(),
+	//	Stacktrace: trace,
+	//})
 }
 
 // ShouldSendReport returns true iff SendReport() should be called.
@@ -500,28 +506,24 @@ func ShouldSendReport(sv *settings.Values) bool {
 // cluster did indeed crash or not.
 func SendReport(
 	ctx context.Context,
-	errMsg string,
 	crashReportType ReportType,
 	extraDetails map[string]interface{},
-	exception *sentry.Exception,
+	event *sentry.Event,
 ) {
-	event := sentry.NewEvent()
-	event.Message = errMsg
 	event.Extra["runtime.Version"] = runtime.Version()
 	event.Extra["runtime.NumCPU"] = runtime.NumCPU()
 	event.Extra["runtime.GOMAXPROCS"] = runtime.GOMAXPROCS(0) // 0 just returns the current value
 	event.Extra["runtime.NumGoroutine"] = runtime.NumGoroutine()
-	if exception != nil {
-		event.Exception = append(event.Exception, *exception)
-	}
 	for extraKey, extraValue := range extraDetails {
 		event.Extra[extraKey] = extraValue
 	}
 
 	if !ReportSensitiveDetails {
 		// Avoid leaking the machine's hostname by injecting the literal "<redacted>".
-		// Otherwise, raven.Client.Capture will see an empty ServerName field and
+		// Otherwise, CaptureEvent will see an empty ServerName field and
 		// automatically fill in the machine's hostname.
+		//
+		// TODO(tbg): not clear if this is true any more.
 		event.ServerName = "<redacted>"
 	}
 	event.Tags["uptime"] = uptimeTag(timeutil.Now())
@@ -538,11 +540,17 @@ func SendReport(
 		}
 	}
 
-	sentry.CaptureEvent(event)
+	ch := make(chan *sentry.EventID)
+	go func() {
+		defer close(ch)
+		ch <- sentry.CaptureEvent(event)
+	}()
 
 	select {
-	case <-ch:
-		Shout(ctx, Severity_ERROR, "Reported as error "+eventID)
+	case eid := <-ch:
+		if eid != nil {
+			Shout(ctx, Severity_ERROR, "Reported as error "+*eid)
+		}
 	case <-time.After(10 * time.Second):
 		Shout(ctx, Severity_ERROR, "Time out trying to submit crash report")
 	}
