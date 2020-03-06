@@ -11,7 +11,6 @@
 package log
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -29,9 +28,9 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/sysutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
+	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/report"
 	sentry "github.com/getsentry/sentry-go"
-	"github.com/pkg/errors"
 )
 
 // The call stack here is usually:
@@ -111,99 +110,10 @@ func RecoverAndReportNonfatalPanic(ctx context.Context, sv *settings.Values) {
 	}
 }
 
-// SafeMessager is implemented by objects which have a way of representing
-// themselves suitably redacted for anonymized reporting.
-// TODO here
-type SafeMessager interface {
-	SafeMessage() string
-}
-
-// A SafeType panic can be reported verbatim, i.e. does not leak information.
-// A nil `*SafeType` is not valid for use and may cause panics.
-type SafeType struct {
-	V      interface{}
-	causes []interface{} // unsafe
-}
-
-var _ SafeMessager = SafeType{}
-var _ interfaceCauser = SafeType{}
-
-// this is the weirdo
-type interfaceCauser interface {
-	Cause() interface{}
-}
-
-// SafeMessage implements SafeMessager. It does not recurse into
-// the SafeType's Cause()s.
-func (st SafeType) SafeMessage() string {
-	return fmt.Sprintf("%v", st.V)
-}
-
-// Format implements fmt.Formatter.
-func (st SafeType) Format(s fmt.State, verb rune) {
-	switch {
-	case verb == 'v' && s.Flag('+'):
-		fmt.Fprintf(s, "%s", st.Error())
-	default:
-		// "%d" etc with log.Safe() should minimally work.
-		// TODO(knz): This may lose some flags.
-		fmt.Fprintf(s, fmt.Sprintf("%%%c", verb), st.V)
-	}
-}
-
-// Error implements error as a convenience.
-func (st SafeType) Error() string {
-	var buf bytes.Buffer
-	fmt.Fprint(&buf, st.SafeMessage())
-	for _, cause := range st.causes {
-		fmt.Fprintf(&buf, "; caused by %v", cause)
-	}
-	return buf.String()
-}
-
-// SafeType implements fmt.Stringer as a convenience.
-func (st SafeType) String() string {
-	return st.SafeMessage()
-}
-
-// Cause returns the value passed to Chain() when this SafeType
-// was created (or nil).
-// only weirdo
-func (st SafeType) Cause() interface{} {
-	if len(st.causes) == 0 {
-		return nil
-	}
-	v := "<redacted>"
-	if messager, ok := st.causes[0].(SafeMessager); ok {
-		v = messager.SafeMessage()
-	}
-	return SafeType{
-		V:      v,
-		causes: st.causes[1:],
-	}
-}
-
-// Safe constructs a SafeType. It is equivalent to `Chain(v, nil)`.
-func Safe(v interface{}) SafeType {
-	return SafeType{V: v}
-}
-
-// WithCause links a safe message and a child about which nothing is assumed,
-// but for which the hope is that some anonymized parts can be obtained from it.
-func (st SafeType) WithCause(cause interface{}) SafeType {
-	causes := st.causes
-	for cause != nil {
-		causes = append(causes, cause)
-		causer, ok := cause.(interfaceCauser)
-		if !ok {
-			break
-		}
-		cause = causer.Cause()
-	}
-	return SafeType{
-		V:      st.V,
-		causes: causes,
-	}
+// Safe marks the passed interface as safe, meaning that it contains no PII.
+// Objects wrapped via Safe will be reported in crash reports, if enabled.
+func Safe(v interface{}) errors.SafeMessager {
+	return errors.Safe(v)
 }
 
 // ReportPanic reports a panic has occurred on the real stderr.
@@ -304,27 +214,11 @@ func (e *safeError) Error() string {
 // anonymized reporting.
 func Redact(r interface{}) string {
 	typAnd := func(i interface{}, text string) string {
-		typ := ErrorSource(i)
-		if typ == "" {
-			typ = fmt.Sprintf("%T", i)
-		}
-		if text == "" {
-			return typ
-		}
-		if strings.HasPrefix(typ, "errors.") {
-			// Don't bother reporting the type for errors.New() and its
-			// nondescript siblings. Note that errors coming from pkg/errors
-			// usually have `typ` overridden to file:line above, so they won't
-			// hit this path.
-			return text
-		}
-		return typ + ": " + text
+		return "" // TODO
 	}
 
 	handle := func(r interface{}) string {
-		switch t := r.(type) {
-		case SafeMessager:
-			return t.SafeMessage()
+		switch r.(type) {
 		case error:
 			// continue below
 		default:
@@ -387,14 +281,9 @@ func Redact(r interface{}) string {
 	reportable := handle(r)
 
 	switch c := r.(type) {
-	case interfaceCauser: // all other ones are already handled by logging
-		cause := c.Cause()
-		if cause != nil {
-			reportable += ": caused by " + Redact(c.Cause())
-		}
-	case (interface {
+	case interface {
 		Cause() error
-	}):
+	}:
 		reportable += ": caused by " + Redact(c.Cause())
 	}
 	return reportable
@@ -480,7 +369,7 @@ func SendCrashReport(
 	trace := sentry.NewStacktrace()
 	trace.Frames = trace.Frames[depth+2:]
 	cause := errors.Cause(err)
-	SendReport
+	_, _ = SendReport, cause
 	//SendReport(ctx, err.Error(), crashReportType, nil, &sentry.Exception{
 	//	Type:       reflect.TypeOf(cause).String(),
 	//	Value:      cause.Error(),
@@ -593,19 +482,4 @@ var tagFns []tagFn
 // This is intended to be called by other packages at init time.
 func RegisterTagFn(key string, value func(context.Context) string) {
 	tagFns = append(tagFns, tagFn{key, value})
-}
-
-// ErrorSource attempts to return the file:line where `i` was created if `i` has
-// that information (i.e. if it is an errors.withStack). Returns "" otherwise.
-func ErrorSource(i interface{}) string {
-	type stackTracer interface {
-		StackTrace() errors.StackTrace
-	}
-	if e, ok := i.(stackTracer); ok {
-		tr := e.StackTrace()
-		if len(tr) > 0 {
-			return fmt.Sprintf("%v", tr[0]) // prints file:line
-		}
-	}
-	return ""
 }

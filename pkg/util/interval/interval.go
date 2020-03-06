@@ -24,24 +24,23 @@ package interval
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/cockroachdb/cockroach/pkg/util/envutil"
-	"github.com/cockroachdb/cockroach/pkg/util/log"
+	"github.com/cockroachdb/errors"
 )
 
 // ErrInvertedRange is returned if an interval is used where the start value is greater
 // than the end value.
-var ErrInvertedRange error = &log.SafeType{V: errors.New("interval: inverted range")}
+var ErrInvertedRange error = errors.New("interval: inverted range") // TODO mark safe
 
 // ErrEmptyRange is returned if an interval is used where the start value is equal
 // to the end value.
-var ErrEmptyRange error = &log.SafeType{V: errors.New("interval: empty range")}
+var ErrEmptyRange error = errors.New("interval: empty range") // TODO ditto
 
 // ErrNilRange is returned if an interval is used where both the start value and
 // the end value are nil. This is a specialization of ErrEmptyRange.
-var ErrNilRange error = &log.SafeType{V: errors.New("interval: nil range")}
+var ErrNilRange error = errors.New("interval: nil range") // TODO ditto
 
 func rangeError(r Range) error {
 	switch r.Start.Compare(r.End) {

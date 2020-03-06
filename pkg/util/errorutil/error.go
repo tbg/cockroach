@@ -45,6 +45,6 @@ func SendReport(ctx context.Context, sv *settings.Values, err error) {
 	if !log.ShouldSendReport(sv) {
 		return
 	}
-	msg, extraDetails := errors.BuildSentryReport(err)
-	log.SendReport(ctx, msg, log.ReportTypeError, extraDetails)
+	event, extraDetails := errors.BuildSentryReport(err)
+	log.SendReport(ctx, log.ReportTypeError, extraDetails, event)
 }

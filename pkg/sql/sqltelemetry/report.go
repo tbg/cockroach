@@ -57,8 +57,7 @@ func RecordError(ctx context.Context, err error, sv *settings.Values) {
 
 		if log.ShouldSendReport(sv) {
 			event, extraDetails := errors.BuildSentryReport(err)
-			const errMsg = "TODO" // TODO what should this be?
-			log.SendReport(ctx, errMsg, log.ReportTypeError, extraDetails, event)
+			log.SendReport(ctx, log.ReportTypeError, extraDetails, event)
 		}
 	}
 }

@@ -39,7 +39,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timetz"
 	"github.com/cockroachdb/cockroach/pkg/util/uuid"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"go.etcd.io/etcd/raft/raftpb"
 )
 
@@ -772,7 +772,7 @@ func (ts TransactionStatus) IsCommittedOrStaging() bool {
 	return ts == COMMITTED || ts == STAGING
 }
 
-var _ log.SafeMessager = Transaction{}
+var _ errors.SafeMessager = Transaction{}
 
 // MakeTransaction creates a new transaction. The transaction key is
 // composed using the specified baseKey (for locality with data

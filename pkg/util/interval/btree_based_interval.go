@@ -16,7 +16,6 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 )
 
@@ -100,7 +99,7 @@ func newBTreeWithDegree(overlapper Overlapper, minimumDegree int) *btree {
 
 func isValidInterface(a Interface) error {
 	if a == nil {
-		return log.Safe(errors.New("nil interface"))
+		return errors.New("nil interface") // TODO WithSafeDetails
 	}
 	r := a.Range()
 	return rangeError(r)
