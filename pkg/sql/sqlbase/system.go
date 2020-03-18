@@ -1512,6 +1512,11 @@ func addSystemDatabaseToSchema(
 
 	target.AddSplitIDs(keys.PseudoTableIDs...)
 
+	if target.tenantID != 0 {
+		// Tenants don't get zone configs.
+		return
+	}
+
 	// Adding a new system table? It should be added here to the metadata schema,
 	// and also created as a migration for older cluster. The includedInBootstrap
 	// field should be set on the migration.

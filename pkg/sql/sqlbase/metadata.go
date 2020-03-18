@@ -31,7 +31,7 @@ var _ DescriptorProto = &TableDescriptor{}
 // databaseKey and tableKey. It is used to easily get the
 // descriptor key and plain name.
 type DescriptorKey interface {
-	Key() roachpb.Key
+	Key(...uint64) roachpb.Key
 	Name() string
 }
 
@@ -70,6 +70,7 @@ func WrapDescriptor(descriptor DescriptorProto) *Descriptor {
 // installed on the underlying persistent storage before a cockroach store can
 // start running correctly, thus requiring this special initialization.
 type MetadataSchema struct {
+	tenantID      uint64
 	descs         []metadataDescriptor
 	otherSplitIDs []uint32
 	otherKV       []roachpb.KeyValue
@@ -83,9 +84,14 @@ type metadataDescriptor struct {
 // MakeMetadataSchema constructs a new MetadataSchema value which constructs
 // the "system" database.
 func MakeMetadataSchema(
-	defaultZoneConfig *zonepb.ZoneConfig, defaultSystemZoneConfig *zonepb.ZoneConfig,
+	defaultZoneConfig *zonepb.ZoneConfig,
+	defaultSystemZoneConfig *zonepb.ZoneConfig,
+	tenantIDs ...uint64,
 ) MetadataSchema {
 	ms := MetadataSchema{}
+	if len(tenantIDs) > 0 {
+		ms.tenantID = tenantIDs[0]
+	}
 	addSystemDatabaseToSchema(&ms, defaultZoneConfig, defaultSystemZoneConfig)
 	return ms
 }
@@ -134,7 +140,7 @@ func (ms MetadataSchema) GetInitialValues(
 	value := roachpb.Value{}
 	value.SetInt(int64(keys.MinUserDescID))
 	ret = append(ret, roachpb.KeyValue{
-		Key:   keys.DescIDGenerator,
+		Key:   keys.DescIDGeneratorTenant(ms.tenantID),
 		Value: value,
 	})
 
@@ -150,7 +156,7 @@ func (ms MetadataSchema) GetInitialValues(
 		if bootstrapVersion.IsActive(clusterversion.VersionNamespaceTableWithSchemas) {
 			if parentID != keys.RootNamespaceID {
 				ret = append(ret, roachpb.KeyValue{
-					Key:   NewPublicTableKey(parentID, desc.GetName()).Key(),
+					Key:   NewPublicTableKey(parentID, desc.GetName()).Key(ms.tenantID),
 					Value: value,
 				})
 			} else {
@@ -161,11 +167,11 @@ func (ms MetadataSchema) GetInitialValues(
 				ret = append(
 					ret,
 					roachpb.KeyValue{
-						Key:   NewDatabaseKey(desc.GetName()).Key(),
+						Key:   NewDatabaseKey(desc.GetName()).Key(ms.tenantID),
 						Value: value,
 					},
 					roachpb.KeyValue{
-						Key:   NewPublicSchemaKey(desc.GetID()).Key(),
+						Key:   NewPublicSchemaKey(desc.GetID()).Key(ms.tenantID),
 						Value: publicSchemaValue,
 					})
 			}
@@ -183,11 +189,11 @@ func (ms MetadataSchema) GetInitialValues(
 			log.Fatalf(context.TODO(), "could not marshal %v", desc)
 		}
 		ret = append(ret, roachpb.KeyValue{
-			Key:   MakeDescMetadataKey(desc.GetID()),
+			Key:   MakeDescMetadataKey(desc.GetID(), ms.tenantID),
 			Value: value,
 		})
 		if desc.GetID() > keys.MaxSystemConfigDescID {
-			splits = append(splits, roachpb.RKey(keys.MakeTablePrefix(uint32(desc.GetID()))))
+			splits = append(splits, roachpb.RKey(keys.MakeTablePrefix(uint32(desc.GetID()), ms.tenantID)))
 		}
 	}
 
@@ -198,7 +204,7 @@ func (ms MetadataSchema) GetInitialValues(
 	}
 
 	for _, id := range ms.otherSplitIDs {
-		splits = append(splits, roachpb.RKey(keys.MakeTablePrefix(id)))
+		splits = append(splits, roachpb.RKey(keys.MakeTablePrefix(id, ms.tenantID)))
 	}
 
 	// Other key/value generation that doesn't fit into databases and

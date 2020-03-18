@@ -23,8 +23,17 @@ import (
 // versions >= 20.1.
 // Pass name == "" in order to generate the prefix key to use to scan over all
 // of the names for the specified parentID.
-func MakeNameMetadataKey(parentID ID, parentSchemaID ID, name string) roachpb.Key {
-	k := keys.MakeTablePrefix(uint32(NamespaceTable.ID))
+func MakeNameMetadataKey(
+	parentID ID, parentSchemaID ID, name string, tenantIDs ...uint64,
+) roachpb.Key {
+	var tenantID uint64
+	if len(tenantIDs) > 0 {
+		tenantID = tenantIDs[0]
+	}
+	var k roachpb.Key
+	k = keys.TenantPrefix(k, tenantID)
+	// TODO pass k into MakeTablePrefix.
+	k = append(k, keys.MakeTablePrefix(uint32(NamespaceTable.ID))...)
 	k = encoding.EncodeUvarintAscending(k, uint64(NamespaceTable.PrimaryIndex.ID))
 	k = encoding.EncodeUvarintAscending(k, uint64(parentID))
 	k = encoding.EncodeUvarintAscending(k, uint64(parentSchemaID))
@@ -94,8 +103,8 @@ func MakeAllDescsMetadataKey() roachpb.Key {
 }
 
 // MakeDescMetadataKey returns the key for the descriptor.
-func MakeDescMetadataKey(descID ID) roachpb.Key {
-	return keys.DescMetadataKey(uint32(descID))
+func MakeDescMetadataKey(descID ID, tenantIDs ...uint64) roachpb.Key {
+	return keys.DescMetadataKey(uint32(descID), tenantIDs...)
 }
 
 // IndexKeyValDirs returns the corresponding encoding.Directions for all the

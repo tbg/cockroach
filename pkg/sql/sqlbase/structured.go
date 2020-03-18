@@ -3982,8 +3982,8 @@ func NewDatabaseKey(name string) DatabaseKey {
 }
 
 // Key implements DescriptorKey interface.
-func (dk DatabaseKey) Key() roachpb.Key {
-	return MakeNameMetadataKey(keys.RootNamespaceID, keys.RootNamespaceID, dk.name)
+func (dk DatabaseKey) Key(tenantIDs ...uint64) roachpb.Key {
+	return MakeNameMetadataKey(keys.RootNamespaceID, keys.RootNamespaceID, dk.name, tenantIDs...)
 }
 
 // Name implements DescriptorKey interface.
@@ -4009,8 +4009,8 @@ func NewTableKey(parentID ID, parentSchemaID ID, name string) TableKey {
 }
 
 // Key implements DescriptorKey interface.
-func (tk TableKey) Key() roachpb.Key {
-	return MakeNameMetadataKey(tk.parentID, tk.parentSchemaID, tk.name)
+func (tk TableKey) Key(tenantIDs ...uint64) roachpb.Key {
+	return MakeNameMetadataKey(tk.parentID, tk.parentSchemaID, tk.name, tenantIDs...)
 }
 
 // Name implements DescriptorKey interface.
@@ -4035,8 +4035,8 @@ func NewPublicSchemaKey(parentID ID) SchemaKey {
 }
 
 // Key implements DescriptorKey interface.
-func (sk SchemaKey) Key() roachpb.Key {
-	return MakeNameMetadataKey(sk.parentID, keys.RootNamespaceID, sk.name)
+func (sk SchemaKey) Key(tenantIDs ...uint64) roachpb.Key {
+	return MakeNameMetadataKey(sk.parentID, keys.RootNamespaceID, sk.name, tenantIDs...)
 }
 
 // Name implements DescriptorKey interface.
@@ -4056,7 +4056,7 @@ func NewDeprecatedTableKey(parentID ID, name string) DeprecatedTableKey {
 }
 
 // Key implements DescriptorKey interface.
-func (dtk DeprecatedTableKey) Key() roachpb.Key {
+func (dtk DeprecatedTableKey) Key(...uint64) roachpb.Key {
 	return MakeDeprecatedNameMetadataKey(dtk.parentID, dtk.name)
 }
 
@@ -4076,7 +4076,7 @@ func NewDeprecatedDatabaseKey(name string) DeprecatedDatabaseKey {
 }
 
 // Key implements DescriptorKey interface.
-func (ddk DeprecatedDatabaseKey) Key() roachpb.Key {
+func (ddk DeprecatedDatabaseKey) Key(...uint64) roachpb.Key {
 	return MakeDeprecatedNameMetadataKey(keys.RootNamespaceID, ddk.name)
 }
 

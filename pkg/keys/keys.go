@@ -644,8 +644,13 @@ func MetaReverseScanBounds(key roachpb.RKey) (roachpb.RSpan, error) {
 }
 
 // MakeTablePrefix returns the key prefix used for the table's data.
-func MakeTablePrefix(tableID uint32) []byte {
-	return encoding.EncodeUvarintAscending(nil, uint64(tableID))
+func MakeTablePrefix(tableID uint32, tenantIDs ...uint64) []byte {
+	var tenantID uint64
+	if len(tenantIDs) > 0 {
+		tenantID = tenantIDs[0]
+	}
+	k := TenantPrefix(nil, tenantID)
+	return encoding.EncodeUvarintAscending(k, uint64(tableID))
 }
 
 // DecodeTablePrefix validates that the given key has a table prefix, returning
@@ -659,14 +664,19 @@ func DecodeTablePrefix(key roachpb.Key) ([]byte, uint64, error) {
 }
 
 // DescMetadataPrefix returns the key prefix for all descriptors.
-func DescMetadataPrefix() []byte {
-	k := MakeTablePrefix(uint32(DescriptorTableID))
+func DescMetadataPrefix(tenantIDs ...uint64) []byte {
+	var tenantID uint64
+	if len(tenantIDs) > 0 {
+		tenantID = tenantIDs[0]
+	}
+	k := TenantPrefix(nil, tenantID)
+	k = append(k, MakeTablePrefix(uint32(DescriptorTableID))...) // TODO
 	return encoding.EncodeUvarintAscending(k, DescriptorTablePrimaryKeyIndexID)
 }
 
 // DescMetadataKey returns the key for the descriptor.
-func DescMetadataKey(descID uint32) roachpb.Key {
-	k := DescMetadataPrefix()
+func DescMetadataKey(descID uint32, tenantIDs ...uint64) roachpb.Key {
+	k := DescMetadataPrefix(tenantIDs...)
 	k = encoding.EncodeUvarintAscending(k, uint64(descID))
 	return MakeFamilyKey(k, DescriptorTableDescriptorColFamID)
 }

@@ -14,6 +14,7 @@ import (
 	"math"
 
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
+	"github.com/cockroachdb/cockroach/pkg/util/encoding"
 )
 
 // For a high-level overview of the keyspace layout, see the package comment in
@@ -282,6 +283,10 @@ var (
 	//
 	// UserTableDataMin is the start key of user structured data.
 	UserTableDataMin = roachpb.Key(MakeTablePrefix(MinUserDescID))
+
+	tenantPrefixByte = roachpb.Key([]byte("\xff"))
+	TenantDataMin    = TenantPrefix(nil, 1)
+	TenantDataMax    = TenantPrefix(nil, math.MaxUint64)
 )
 
 // Various IDs used by the structured data layer.
@@ -379,3 +384,18 @@ const (
 // bootstrap process needs to create splits for them; splits for the tables
 // happen separately.
 var PseudoTableIDs = []uint32{MetaRangesID, SystemRangesID, TimeseriesRangesID, LivenessRangesID, PublicSchemaID}
+
+// TODO move out of this file
+
+func TenantPrefix(b []byte, tenantID uint64) []byte {
+	if tenantID == 0 {
+		return nil
+	}
+	b = append(b, '\xff')
+	return encoding.EncodeUvarintAscending(b, tenantID)
+}
+
+// TODO replace DescIDGenerator with this
+func DescIDGeneratorTenant(tenantID uint64) roachpb.Key {
+	return makeKey(TenantPrefix(nil, tenantID), SystemPrefix, DescIDGenerator)
+}

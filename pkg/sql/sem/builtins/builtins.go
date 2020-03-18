@@ -33,6 +33,7 @@ import (
 
 	"github.com/cockroachdb/apd"
 	"github.com/cockroachdb/cockroach/pkg/build"
+	"github.com/cockroachdb/cockroach/pkg/config/zonepb"
 	"github.com/cockroachdb/cockroach/pkg/kv"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/security"
@@ -3596,7 +3597,40 @@ may increase either contention or retry errors, or both.`,
 			Info: "This function is used to retrieve range statistics information as a JSON object.",
 		},
 	),
-
+	"crdb_internal.create_tenant": makeBuiltin(
+		tree.FunctionProperties{
+			Category: categorySystemInfo, // TODO(tbg): this is not accurate
+		},
+		tree.Overload{
+			Types: tree.ArgTypes{
+				{"id", types.Int},
+			},
+			ReturnType: tree.FixedReturnType(types.Int), // TODO(tbg): return "nothing"
+			Fn: func(ctx *tree.EvalContext, args tree.Datums) (tree.Datum, error) {
+				signedTenantID := int64(tree.MustBeDInt(args[0]))
+				if signedTenantID <= 0 {
+					return nil, errors.New("tenant ID must be positive")
+				}
+				tenantID := uint64(signedTenantID)
+				schema := sqlbase.MakeMetadataSchema(
+					zonepb.DefaultZoneConfigRef(),
+					zonepb.DefaultSystemZoneConfigRef(),
+					tenantID,
+				)
+				kvs, splits := schema.GetInitialValues(ctx.Settings.Version.ActiveVersion(ctx.Context))
+				b := &kv.Batch{}
+				for _, kv := range kvs {
+					b.Put(kv.Key, kv.Value)
+				}
+				if err := ctx.Txn.Run(ctx.Context, b); err != nil {
+					return nil, err
+				}
+				_ = splits // TODO (or not TODO?)
+				return tree.NewDInt(0), nil
+			},
+			Info: "Create a tenant.",
+		},
+	),
 	// Returns a namespace_id based on parentID and a given name.
 	// Allows a non-admin to query the system.namespace table, but performs
 	// the relevant permission checks to ensure secure access.

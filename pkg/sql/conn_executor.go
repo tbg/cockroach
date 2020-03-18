@@ -56,6 +56,8 @@ import (
 // logging overall usage growth in the log.
 var noteworthyMemoryUsageBytes = envutil.EnvOrDefaultInt64("COCKROACH_NOTEWORTHY_SESSION_MEMORY_USAGE", 1024*1024)
 
+var tenantID = envutil.EnvOrDefaultInt64("COCKROACH_TENANT_ID", 0)
+
 // A connExecutor is in charge of executing queries received on a given client
 // connection. The connExecutor implements a state machine (dictated by the
 // Postgres/pgwire session semantics). The state machine is supposed to run

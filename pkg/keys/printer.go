@@ -539,6 +539,14 @@ func decodeTimeseriesKey(_ []encoding.Direction, key roachpb.Key) string {
 // If the key doesn't match any prefix in KeyDict, return its byte value with
 // quotation and false, or else return its human readable value and true.
 func prettyPrintInternal(valDirs []encoding.Direction, key roachpb.Key, quoteRawKeys bool) string {
+	if len(key) >= 1 && key[0] == '\xff' {
+		// TODO(tbg): add unit test.
+		key, tenantID, err := encoding.DecodeUvarintAscending(key[1:])
+		if err != nil {
+			return err.Error()
+		}
+		return fmt.Sprintf("/Tenant/%d%s", tenantID, prettyPrintInternal(valDirs, key, quoteRawKeys))
+	}
 	for _, k := range ConstKeyDict {
 		if key.Equal(k.Value) {
 			return k.Name
