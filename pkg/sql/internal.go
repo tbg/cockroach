@@ -45,7 +45,8 @@ var _ sqlutil.InternalExecutor = &InternalExecutor{}
 //
 // Methods not otherwise specified are safe for concurrent execution.
 type InternalExecutor struct {
-	s *Server
+	tenantID uint64
+	s        *Server
 
 	// mon is the monitor used by all queries executed through the
 	// InternalExecutor.

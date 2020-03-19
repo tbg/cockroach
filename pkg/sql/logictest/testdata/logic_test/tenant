@@ -1,0 +1,15 @@
+query error must be positive
+SELECT crdb_internal.create_tenant(-1)
+
+query I
+SELECT crdb_internal.create_tenant(1)
+----
+0
+
+# TODO this error seems like a bug, maybe? I would've expected to get the
+# ConditionFailedError back verbatim, but it comes back wrapped in a
+# TxnAlreadyEncounteredErrorError.
+query error already encountered an error
+SELECT crdb_internal.create_tenant(1)
+
+

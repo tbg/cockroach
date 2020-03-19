@@ -30,12 +30,16 @@ func TestTenantInitialValues(t *testing.T) {
 	schema := MakeMetadataSchema(zonepb.DefaultZoneConfigRef(), zonepb.DefaultSystemZoneConfigRef(), tenantID)
 	// TODO(tbg): hard-code current binary version.
 	kvs, splits := schema.GetInitialValues(clusterversion.ClusterVersion{Version: roachpb.Version{Major: 9999}})
-	_ = splits
 
 	datadriven.RunTest(t, filepath.Join("testdata", "tenant_bootstrap"), func(t *testing.T, td *datadriven.TestData) string {
 		var buf strings.Builder
+		fmt.Fprintf(&buf, "%d keys:\n", len(kvs))
 		for _, kv := range kvs {
 			fmt.Fprintln(&buf, keys.PrettyPrint(nil, kv.Key))
+		}
+		fmt.Fprintf(&buf, "%d splits:\n", len(kvs))
+		for _, k := range splits {
+			fmt.Fprintln(&buf, keys.PrettyPrint(nil, k.AsRawKey()))
 		}
 		t.Log(buf.String())
 		return buf.String()

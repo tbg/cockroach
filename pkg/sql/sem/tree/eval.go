@@ -2664,6 +2664,7 @@ type ClientNoticeSender interface {
 // this to sqlutil.InternalExecutor or sql.InternalExecutor, and use the
 // alternatives.
 type InternalExecutor interface {
+	Tenant(tenantID uint64) InternalExecutor // HACK
 	// Query is part of the sqlutil.InternalExecutor interface.
 	Query(
 		ctx context.Context, opName string, txn *kv.Txn,

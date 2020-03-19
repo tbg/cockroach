@@ -3620,12 +3620,25 @@ may increase either contention or retry errors, or both.`,
 				kvs, splits := schema.GetInitialValues(ctx.Settings.Version.ActiveVersion(ctx.Context))
 				b := &kv.Batch{}
 				for _, kv := range kvs {
-					b.Put(kv.Key, kv.Value)
+					b.CPut(kv.Key, &kv.Value, nil)
 				}
 				if err := ctx.Txn.Run(ctx.Context, b); err != nil {
 					return nil, err
 				}
+				for _, res := range b.Results {
+					if res.Err != nil {
+						return nil, res.Err
+					}
+				}
 				_ = splits // TODO (or not TODO?)
+
+				// TODO run the sqlmigrations for this tenant. This basically
+				// requires being able to sudo to the tenant, which is... sort
+				// of crazy in prod but for testing it's nice. Looks like it
+				// needs lots of threading a tenantID everywhere and creating
+				// a full-on tenant InternalExecutor (which includes the whole
+				// Server) here.
+
 				return tree.NewDInt(0), nil
 			},
 			Info: "Create a tenant.",

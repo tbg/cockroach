@@ -397,5 +397,5 @@ func TenantPrefix(b []byte, tenantID uint64) []byte {
 
 // TODO replace DescIDGenerator with this
 func DescIDGeneratorTenant(tenantID uint64) roachpb.Key {
-	return makeKey(TenantPrefix(nil, tenantID), SystemPrefix, DescIDGenerator)
+	return makeKey(TenantPrefix(nil, tenantID), DescIDGenerator)
 }
