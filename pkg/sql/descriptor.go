@@ -97,7 +97,7 @@ func (p *planner) createDatabase(
 		return false, err
 	}
 
-	if err := p.createDescriptorWithID(ctx, dKey.Key(), id, desc, nil, jobDesc); err != nil {
+	if err := p.createDescriptorWithID(ctx, dKey.Key(sqlbase.TenantID()), id, desc, nil, jobDesc); err != nil {
 		return true, err
 	}
 
@@ -105,7 +105,7 @@ func (p *planner) createDatabase(
 	// be created in every database in >= 20.2.
 	if shouldCreatePublicSchema {
 		// Every database must be initialized with the public schema.
-		if err := p.createSchemaWithID(ctx, sqlbase.NewPublicSchemaKey(id).Key(), keys.PublicSchemaID); err != nil {
+		if err := p.createSchemaWithID(ctx, sqlbase.NewPublicSchemaKey(id).Key(sqlbase.TenantID()), keys.PublicSchemaID); err != nil {
 			return true, err
 		}
 	}
@@ -173,7 +173,7 @@ func (p *planner) createDescriptorWithID(
 func getDescriptorID(
 	ctx context.Context, txn *kv.Txn, plainKey sqlbase.DescriptorKey,
 ) (sqlbase.ID, error) {
-	key := plainKey.Key()
+	key := plainKey.Key(sqlbase.TenantID())
 	log.Eventf(ctx, "looking up descriptor ID for name key %q", key)
 	gr, err := txn.Get(ctx, key)
 	if err != nil {
@@ -337,7 +337,7 @@ func GetAllDescriptors(ctx context.Context, txn *kv.Txn) ([]sqlbase.DescriptorPr
 // descriptor IDs.
 func GetAllDatabaseDescriptorIDs(ctx context.Context, txn *kv.Txn) ([]sqlbase.ID, error) {
 	log.Eventf(ctx, "fetching all database descriptor IDs")
-	nameKey := sqlbase.NewDatabaseKey("" /* name */).Key()
+	nameKey := sqlbase.NewDatabaseKey("" /* name */).Key(sqlbase.TenantID())
 	kvs, err := txn.Scan(ctx, nameKey, nameKey.PrefixEnd(), 0 /*maxRows */)
 	if err != nil {
 		return nil, err
@@ -346,7 +346,7 @@ func GetAllDatabaseDescriptorIDs(ctx context.Context, txn *kv.Txn) ([]sqlbase.ID
 	// func (a UncachedPhysicalAccessor) GetObjectNames. Same concept
 	// applies here.
 	// TODO(solon): This complexity can be removed in 20.2.
-	nameKey = sqlbase.NewDeprecatedDatabaseKey("" /* name */).Key()
+	nameKey = sqlbase.NewDeprecatedDatabaseKey("" /* name */).Key(sqlbase.TenantID())
 	dkvs, err := txn.Scan(ctx, nameKey, nameKey.PrefixEnd(), 0 /* maxRows */)
 	if err != nil {
 		return nil, err

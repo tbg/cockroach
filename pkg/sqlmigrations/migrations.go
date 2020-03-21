@@ -306,7 +306,7 @@ func databaseIDs(names ...string) func(ctx context.Context, db db) ([]sqlbase.ID
 			// This runs as part of an older migration (introduced in 2.1). We use
 			// the DeprecatedDatabaseKey, and let the 20.1 migration handle moving
 			// from the old namespace table into the new one.
-			kv, err := db.Get(ctx, sqlbase.NewDeprecatedDatabaseKey(name).Key())
+			kv, err := db.Get(ctx, sqlbase.NewDeprecatedDatabaseKey(name).Key(sqlbase.TenantID()))
 			if err != nil {
 				return nil, err
 			}
@@ -649,7 +649,7 @@ func createSystemTable(ctx context.Context, r runner, desc sqlbase.TableDescript
 	err := r.db.Txn(ctx, func(ctx context.Context, txn *kv.Txn) error {
 		b := txn.NewBatch()
 		tKey := sqlbase.MakePublicTableNameKey(ctx, r.settings, desc.GetParentID(), desc.GetName())
-		b.CPut(tKey.Key(), desc.GetID(), nil)
+		b.CPut(tKey.Key(sqlbase.TenantID()), desc.GetID(), nil)
 		b.CPut(sqlbase.MakeDescMetadataKey(desc.GetID()), sqlbase.WrapDescriptor(&desc), nil)
 		if err := txn.SetSystemConfigTrigger(); err != nil {
 			return err
@@ -733,7 +733,7 @@ func createNewSystemNamespaceDescriptor(ctx context.Context, r runner) error {
 		//    copied over.
 		nameKey := sqlbase.NewPublicTableKey(
 			sqlbase.NamespaceTable.GetParentID(), sqlbase.NamespaceTable.GetName())
-		b.Put(nameKey.Key(), sqlbase.NamespaceTable.GetID())
+		b.Put(nameKey.Key(sqlbase.TenantID()), sqlbase.NamespaceTable.GetID())
 		b.Put(sqlbase.MakeDescMetadataKey(
 			sqlbase.NamespaceTable.GetID()), sqlbase.WrapDescriptor(&sqlbase.NamespaceTable))
 		return txn.Run(ctx, b)
@@ -803,12 +803,12 @@ func migrateSystemNamespace(ctx context.Context, r runner) error {
 		if parentID == keys.RootNamespaceID {
 			// This row represents a database. Add it to the new namespace table.
 			databaseKey := sqlbase.NewDatabaseKey(name)
-			if err := r.db.Put(ctx, databaseKey.Key(), id); err != nil {
+			if err := r.db.Put(ctx, databaseKey.Key(sqlbase.TenantID()), id); err != nil {
 				return err
 			}
 			// Also create a 'public' schema for this database.
 			schemaKey := sqlbase.NewSchemaKey(id, "public")
-			if err := r.db.Put(ctx, schemaKey.Key(), keys.PublicSchemaID); err != nil {
+			if err := r.db.Put(ctx, schemaKey.Key(sqlbase.TenantID()), keys.PublicSchemaID); err != nil {
 				return err
 			}
 		} else {
@@ -821,7 +821,7 @@ func migrateSystemNamespace(ctx context.Context, r runner) error {
 				continue
 			}
 			tableKey := sqlbase.NewTableKey(parentID, keys.PublicSchemaID, name)
-			if err := r.db.Put(ctx, tableKey.Key(), id); err != nil {
+			if err := r.db.Put(ctx, tableKey.Key(sqlbase.TenantID()), id); err != nil {
 				return err
 			}
 		}

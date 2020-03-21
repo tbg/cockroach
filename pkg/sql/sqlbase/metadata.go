@@ -31,7 +31,7 @@ var _ DescriptorProto = &TableDescriptor{}
 // databaseKey and tableKey. It is used to easily get the
 // descriptor key and plain name.
 type DescriptorKey interface {
-	Key(...uint64) roachpb.Key
+	Key(tenantID uint64) roachpb.Key
 	Name() string
 }
 
@@ -153,7 +153,7 @@ func (ms MetadataSchema) GetInitialValues(
 
 		// TODO(solon): This if/else can be removed in 20.2, as there will be no
 		// need to support the deprecated namespace table.
-		if bootstrapVersion.IsActive(clusterversion.VersionNamespaceTableWithSchemas) {
+		if true || bootstrapVersion.IsActive(clusterversion.VersionNamespaceTableWithSchemas) {
 			if parentID != keys.RootNamespaceID {
 				ret = append(ret, roachpb.KeyValue{
 					Key:   NewPublicTableKey(parentID, desc.GetName()).Key(ms.tenantID),
@@ -177,7 +177,7 @@ func (ms MetadataSchema) GetInitialValues(
 			}
 		} else {
 			ret = append(ret, roachpb.KeyValue{
-				Key:   NewDeprecatedTableKey(parentID, desc.GetName()).Key(),
+				Key:   NewDeprecatedTableKey(parentID, desc.GetName()).Key(ms.tenantID),
 				Value: value,
 			})
 		}
@@ -271,4 +271,8 @@ func LookupSystemTableDescriptorID(
 		return InvalidID
 	}
 	return dbID
+}
+
+func TenantID() uint64 {
+	return keys.TenantID()
 }

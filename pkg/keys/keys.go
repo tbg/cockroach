@@ -16,6 +16,7 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/util/encoding"
+	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/uuid"
 	"github.com/pkg/errors"
 )
@@ -643,12 +644,16 @@ func MetaReverseScanBounds(key roachpb.RKey) (roachpb.RSpan, error) {
 	return roachpb.RSpan{Key: start, EndKey: end}, nil
 }
 
+func VTenantID(tenantIDs []uint64) uint64 {
+	if len(tenantIDs) > 0 {
+		return tenantIDs[0]
+	}
+	return TenantID()
+}
+
 // MakeTablePrefix returns the key prefix used for the table's data.
 func MakeTablePrefix(tableID uint32, tenantIDs ...uint64) []byte {
-	var tenantID uint64
-	if len(tenantIDs) > 0 {
-		tenantID = tenantIDs[0]
-	}
+	tenantID := VTenantID(tenantIDs)
 	k := TenantPrefix(nil, tenantID)
 	return encoding.EncodeUvarintAscending(k, uint64(tableID))
 }
@@ -664,11 +669,7 @@ func DecodeTablePrefix(key roachpb.Key) ([]byte, uint64, error) {
 }
 
 // DescMetadataPrefix returns the key prefix for all descriptors.
-func DescMetadataPrefix(tenantIDs ...uint64) []byte {
-	var tenantID uint64
-	if len(tenantIDs) > 0 {
-		tenantID = tenantIDs[0]
-	}
+func DescMetadataPrefix(tenantID uint64) []byte {
 	k := TenantPrefix(nil, tenantID)
 	k = append(k, MakeTablePrefix(uint32(DescriptorTableID))...) // TODO
 	return encoding.EncodeUvarintAscending(k, DescriptorTablePrimaryKeyIndexID)
@@ -676,7 +677,11 @@ func DescMetadataPrefix(tenantIDs ...uint64) []byte {
 
 // DescMetadataKey returns the key for the descriptor.
 func DescMetadataKey(descID uint32, tenantIDs ...uint64) roachpb.Key {
-	k := DescMetadataPrefix(tenantIDs...)
+	var tenantID uint64
+	if len(tenantIDs) > 0 {
+		tenantID = tenantIDs[0]
+	}
+	k := DescMetadataPrefix(tenantID)
 	k = encoding.EncodeUvarintAscending(k, uint64(descID))
 	return MakeFamilyKey(k, DescriptorTableDescriptorColFamID)
 }
@@ -950,4 +955,8 @@ func ZoneKeyPrefix(id uint32) roachpb.Key {
 func ZoneKey(id uint32) roachpb.Key {
 	k := ZoneKeyPrefix(id)
 	return MakeFamilyKey(k, uint32(ZonesTableConfigColumnID))
+}
+
+func TenantID() uint64 {
+	return uint64(envutil.EnvOrDefaultInt64("COCKROACH_TENANT_ID", 0))
 }

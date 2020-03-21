@@ -23,13 +23,7 @@ import (
 // versions >= 20.1.
 // Pass name == "" in order to generate the prefix key to use to scan over all
 // of the names for the specified parentID.
-func MakeNameMetadataKey(
-	parentID ID, parentSchemaID ID, name string, tenantIDs ...uint64,
-) roachpb.Key {
-	var tenantID uint64
-	if len(tenantIDs) > 0 {
-		tenantID = tenantIDs[0]
-	}
+func MakeNameMetadataKey(parentID ID, parentSchemaID ID, name string, tenantID uint64) roachpb.Key {
 	var k roachpb.Key
 	k = keys.TenantPrefix(k, tenantID)
 	// TODO pass k into MakeTablePrefix.
@@ -86,8 +80,8 @@ func DecodeNameMetadataKey(k roachpb.Key) (parentID ID, parentSchemaID ID, name 
 // MakeDeprecatedNameMetadataKey returns the key for a name, as expected by
 // versions < 20.1. Pass name == "" in order to generate the prefix key to use
 // to scan over all of the names for the specified parentID.
-func MakeDeprecatedNameMetadataKey(parentID ID, name string) roachpb.Key {
-	k := keys.MakeTablePrefix(uint32(DeprecatedNamespaceTable.ID))
+func MakeDeprecatedNameMetadataKey(parentID ID, name string, t uint64) roachpb.Key {
+	k := keys.MakeTablePrefix(uint32(DeprecatedNamespaceTable.ID), t)
 	k = encoding.EncodeUvarintAscending(k, uint64(DeprecatedNamespaceTable.PrimaryIndex.ID))
 	k = encoding.EncodeUvarintAscending(k, uint64(parentID))
 	if name != "" {
@@ -99,7 +93,7 @@ func MakeDeprecatedNameMetadataKey(parentID ID, name string) roachpb.Key {
 
 // MakeAllDescsMetadataKey returns the key for all descriptors.
 func MakeAllDescsMetadataKey() roachpb.Key {
-	return keys.DescMetadataPrefix()
+	return keys.DescMetadataPrefix(TenantID())
 }
 
 // MakeDescMetadataKey returns the key for the descriptor.

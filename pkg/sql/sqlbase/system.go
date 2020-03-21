@@ -1444,7 +1444,7 @@ var (
 	}
 )
 
-func bootstrapRootKV() []roachpb.KeyValue {
+func bootstrapRootKV(tenantID uint64) []roachpb.KeyValue {
 	datums := []tree.Datum{
 		tree.NewDString("root"),
 		tree.NewDBytes(""),
@@ -1456,6 +1456,7 @@ func bootstrapRootKV() []roachpb.KeyValue {
 		UsersTable.ColumnIdxMap(),
 		datums,
 		false, /* includeEmpty */
+		tenantID,
 	)
 	if err != nil {
 		panic(err) // TODO
@@ -1536,7 +1537,7 @@ func addSystemDatabaseToSchema(
 
 	target.AddSplitIDs(keys.PseudoTableIDs...)
 
-	target.otherKV = append(target.otherKV, bootstrapRootKV()...)
+	target.otherKV = append(target.otherKV, bootstrapRootKV(target.tenantID)...)
 
 	if target.tenantID != 0 {
 		// Tenants don't get zone configs.

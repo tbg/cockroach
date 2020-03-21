@@ -86,7 +86,7 @@ func createTempSchema(params runParams, sKey sqlbase.DescriptorKey) (sqlbase.ID,
 	if err != nil {
 		return sqlbase.InvalidID, err
 	}
-	if err := params.p.createSchemaWithID(params.ctx, sKey.Key(), id); err != nil {
+	if err := params.p.createSchemaWithID(params.ctx, sKey.Key(sqlbase.TenantID()), id); err != nil {
 		return sqlbase.InvalidID, err
 	}
 

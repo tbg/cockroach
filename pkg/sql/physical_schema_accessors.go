@@ -101,7 +101,7 @@ func (a UncachedPhysicalAccessor) GetObjectNames(
 	}
 
 	log.Eventf(ctx, "fetching list of objects for %q", dbDesc.Name)
-	prefix := sqlbase.NewTableKey(dbDesc.ID, schemaID, "").Key()
+	prefix := sqlbase.NewTableKey(dbDesc.ID, schemaID, "").Key(sqlbase.TenantID())
 	sr, err := txn.Scan(ctx, prefix, prefix.PrefixEnd(), 0)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (a UncachedPhysicalAccessor) GetObjectNames(
 	// will only be present in the older system.namespace. To account for this
 	// scenario, we must do this filtering logic.
 	// TODO(solon): This complexity can be removed in  20.2.
-	dprefix := sqlbase.NewDeprecatedTableKey(dbDesc.ID, "").Key()
+	dprefix := sqlbase.NewDeprecatedTableKey(dbDesc.ID, "").Key(sqlbase.TenantID())
 	dsr, err := txn.Scan(ctx, dprefix, dprefix.PrefixEnd(), 0)
 	if err != nil {
 		return nil, err

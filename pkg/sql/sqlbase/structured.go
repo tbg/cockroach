@@ -3982,8 +3982,8 @@ func NewDatabaseKey(name string) DatabaseKey {
 }
 
 // Key implements DescriptorKey interface.
-func (dk DatabaseKey) Key(tenantIDs ...uint64) roachpb.Key {
-	return MakeNameMetadataKey(keys.RootNamespaceID, keys.RootNamespaceID, dk.name, tenantIDs...)
+func (dk DatabaseKey) Key(tenantID uint64) roachpb.Key {
+	return MakeNameMetadataKey(keys.RootNamespaceID, keys.RootNamespaceID, dk.name, tenantID)
 }
 
 // Name implements DescriptorKey interface.
@@ -4009,8 +4009,8 @@ func NewTableKey(parentID ID, parentSchemaID ID, name string) TableKey {
 }
 
 // Key implements DescriptorKey interface.
-func (tk TableKey) Key(tenantIDs ...uint64) roachpb.Key {
-	return MakeNameMetadataKey(tk.parentID, tk.parentSchemaID, tk.name, tenantIDs...)
+func (tk TableKey) Key(tenantID uint64) roachpb.Key {
+	return MakeNameMetadataKey(tk.parentID, tk.parentSchemaID, tk.name, tenantID)
 }
 
 // Name implements DescriptorKey interface.
@@ -4035,8 +4035,8 @@ func NewPublicSchemaKey(parentID ID) SchemaKey {
 }
 
 // Key implements DescriptorKey interface.
-func (sk SchemaKey) Key(tenantIDs ...uint64) roachpb.Key {
-	return MakeNameMetadataKey(sk.parentID, keys.RootNamespaceID, sk.name, tenantIDs...)
+func (sk SchemaKey) Key(tenantID uint64) roachpb.Key {
+	return MakeNameMetadataKey(sk.parentID, keys.RootNamespaceID, sk.name, tenantID)
 }
 
 // Name implements DescriptorKey interface.
@@ -4056,8 +4056,11 @@ func NewDeprecatedTableKey(parentID ID, name string) DeprecatedTableKey {
 }
 
 // Key implements DescriptorKey interface.
-func (dtk DeprecatedTableKey) Key(...uint64) roachpb.Key {
-	return MakeDeprecatedNameMetadataKey(dtk.parentID, dtk.name)
+func (dtk DeprecatedTableKey) Key(t uint64) roachpb.Key {
+	if t != 0 {
+		// panic("unreachable")
+	}
+	return MakeDeprecatedNameMetadataKey(dtk.parentID, dtk.name, t)
 }
 
 // Name implements DescriptorKey interface.
@@ -4076,8 +4079,12 @@ func NewDeprecatedDatabaseKey(name string) DeprecatedDatabaseKey {
 }
 
 // Key implements DescriptorKey interface.
-func (ddk DeprecatedDatabaseKey) Key(...uint64) roachpb.Key {
-	return MakeDeprecatedNameMetadataKey(keys.RootNamespaceID, ddk.name)
+func (ddk DeprecatedDatabaseKey) Key(t uint64) roachpb.Key {
+	if t != 0 {
+		// turns out it's reachable and that's fine
+		// panic("unreachable")
+	}
+	return MakeDeprecatedNameMetadataKey(keys.RootNamespaceID, ddk.name, t)
 }
 
 // Name implements DescriptorKey interface.

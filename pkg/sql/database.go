@@ -247,12 +247,12 @@ func (dc *databaseCache) getCachedDatabaseID(name string) (sqlbase.ID, error) {
 	}
 
 	var nameKey sqlbase.DescriptorKey = sqlbase.NewDatabaseKey(name)
-	nameVal := dc.systemConfig.GetValue(nameKey.Key())
+	nameVal := dc.systemConfig.GetValue(nameKey.Key(sqlbase.TenantID()))
 	if nameVal == nil {
 		// Try the deprecated system.namespace before returning InvalidID.
 		// TODO(solon): This can be removed in 20.2.
 		nameKey = sqlbase.NewDeprecatedDatabaseKey(name)
-		nameVal = dc.systemConfig.GetValue(nameKey.Key())
+		nameVal = dc.systemConfig.GetValue(nameKey.Key(sqlbase.TenantID()))
 		if nameVal == nil {
 			return sqlbase.InvalidID, nil
 		}
@@ -279,7 +279,7 @@ func (p *planner) renameDatabase(
 		return err
 	}
 
-	newKey := sqlbase.MakeDatabaseNameKey(ctx, p.ExecCfg().Settings, newName).Key()
+	newKey := sqlbase.MakeDatabaseNameKey(ctx, p.ExecCfg().Settings, newName).Key(sqlbase.TenantID())
 
 	descID := oldDesc.GetID()
 	descKey := sqlbase.MakeDescMetadataKey(descID)

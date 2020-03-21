@@ -180,6 +180,15 @@ func (s *SystemConfig) GetLargestObjectID(maxID uint32) (uint32, error) {
 		return hook(maxID), nil
 	}
 
+	for i := 0; i < len(s.Values); i++ {
+		if bytes.HasPrefix(s.Values[i].Key, []byte("\xff")) {
+			// HACK: otherwise highIndex below points at a tenant table and
+			// things break
+			s.Values = s.Values[:i]
+			break
+		}
+	}
+
 	// Search for the descriptor table entries within the SystemConfig.
 	highBound := roachpb.Key(keys.MakeTablePrefix(keys.DescriptorTableID + 1))
 	highIndex := sort.Search(len(s.Values), func(i int) bool {

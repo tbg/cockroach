@@ -612,6 +612,9 @@ func NewServer(cfg Config, stopper *stop.Stopper) (*Server, error) {
 	if leaseManagerTestingKnobs := cfg.TestingKnobs.SQLLeaseManager; leaseManagerTestingKnobs != nil {
 		lmKnobs = *leaseManagerTestingKnobs.(*sql.LeaseManagerTestingKnobs)
 	}
+
+	const tenantID = uint64(1)
+
 	s.leaseMgr = sql.NewLeaseManager(
 		s.cfg.AmbientCtx,
 		&s.nodeIDContainer,

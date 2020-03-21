@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -227,6 +228,7 @@ func verifyKeys(start, end roachpb.Key, checkEndKey bool) error {
 			return err
 		}
 		if !sAddr.Less(eAddr) {
+			debug.PrintStack()
 			return errors.Errorf("end key %q must be greater than start %q", end, start)
 		}
 		if !bytes.Equal(sAddr, start) {

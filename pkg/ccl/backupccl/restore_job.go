@@ -455,7 +455,7 @@ func WriteTableDescs(
 			// namespace table to write the descriptor into. This may cause wrong
 			// behavior if the cluster version is bumped DURING a restore.
 			dKey := sqlbase.MakeDatabaseNameKey(ctx, settings, desc.Name)
-			b.CPut(dKey.Key(), desc.ID, nil)
+			b.CPut(dKey.Key(sqlbase.TenantID()), desc.ID, nil)
 		}
 		for i := range tables {
 			// For full cluster restore, keep privileges as they were.
@@ -487,7 +487,7 @@ func WriteTableDescs(
 			// namespace table to write the descriptor into. This may cause wrong
 			// behavior if the cluster version is bumped DURING a restore.
 			tkey := sqlbase.MakePublicTableNameKey(ctx, settings, tables[i].ParentID, tables[i].Name)
-			b.CPut(tkey.Key(), tables[i].ID, nil)
+			b.CPut(tkey.Key(sqlbase.TenantID()), tables[i].ID, nil)
 		}
 		for _, kv := range extra {
 			b.InitPut(kv.Key, &kv.Value, false)
@@ -1161,7 +1161,7 @@ func (r *restoreResumer) dropTables(ctx context.Context, txn *kv.Txn) error {
 		if isDBEmpty {
 			descKey := sqlbase.MakeDescMetadataKey(dbDesc.ID)
 			b.Del(descKey)
-			b.Del(sqlbase.NewDatabaseKey(dbDesc.Name).Key())
+			b.Del(sqlbase.NewDatabaseKey(dbDesc.Name).Key(keys.TenantID()))
 		}
 	}
 	if err := txn.Run(ctx, b); err != nil {

@@ -52,7 +52,7 @@ func GetTableDescriptor(kvDB *kv.DB, database string, table string) *TableDescri
 	// testutil, so we pass settings as nil for both database and table name keys.
 	dKey := NewDatabaseKey(database)
 	ctx := context.TODO()
-	gr, err := kvDB.Get(ctx, dKey.Key())
+	gr, err := kvDB.Get(ctx, dKey.Key(TenantID()))
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +62,7 @@ func GetTableDescriptor(kvDB *kv.DB, database string, table string) *TableDescri
 	dbDescID := ID(gr.ValueInt())
 
 	tKey := NewPublicTableKey(dbDescID, table)
-	gr, err = kvDB.Get(ctx, tKey.Key())
+	gr, err = kvDB.Get(ctx, tKey.Key(TenantID()))
 	if err != nil {
 		panic(err)
 	}
