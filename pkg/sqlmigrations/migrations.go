@@ -910,6 +910,7 @@ func populateVersionSetting(ctx context.Context, r runner) error {
 }
 
 func addRootUser(ctx context.Context, r runner) error {
+	return nil // HACK
 	// Upsert the root user into the table. We intentionally override any existing entry.
 	const upsertRootStmt = `
 	        UPSERT INTO system.users (username, "hashedPassword", "isRole") VALUES ($1, '', false)

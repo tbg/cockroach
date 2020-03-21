@@ -35,9 +35,11 @@ func TestTenantInitialValues(t *testing.T) {
 		var buf strings.Builder
 		fmt.Fprintf(&buf, "%d keys:\n", len(kvs))
 		for _, kv := range kvs {
-			fmt.Fprintln(&buf, keys.PrettyPrint(nil, kv.Key))
+			k := keys.PrettyPrint(nil, kv.Key)
+			// TODO(tbg): figure out how to pretty-print the value.
+			fmt.Fprintf(&buf, "%s\n", k)
 		}
-		fmt.Fprintf(&buf, "%d splits:\n", len(kvs))
+		fmt.Fprintf(&buf, "%d splits:\n", len(splits))
 		for _, k := range splits {
 			fmt.Fprintln(&buf, keys.PrettyPrint(nil, k.AsRawKey()))
 		}

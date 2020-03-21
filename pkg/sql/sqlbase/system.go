@@ -19,6 +19,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/security"
 	"github.com/cockroachdb/cockroach/pkg/sql/privilege"
+	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/cockroachdb/cockroach/pkg/sql/types"
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
 )
@@ -1443,6 +1444,29 @@ var (
 	}
 )
 
+func bootstrapRootKV() []roachpb.KeyValue {
+	datums := []tree.Datum{
+		tree.NewDString("root"),
+		tree.NewDBytes(""),
+		tree.DBoolFalse,
+	}
+	ents, err := EncodePrimaryIndex(
+		&UsersTable,
+		&UsersTable.PrimaryIndex,
+		UsersTable.ColumnIdxMap(),
+		datums,
+		false, /* includeEmpty */
+	)
+	if err != nil {
+		panic(err) // TODO
+	}
+	var kvs []roachpb.KeyValue
+	for _, ent := range ents {
+		kvs = append(kvs, roachpb.KeyValue{Key: ent.Key, Value: ent.Value})
+	}
+	return kvs
+}
+
 // Create a kv pair for the zone config for the given key and config value.
 func createZoneConfigKV(keyID int, zoneConfig *zonepb.ZoneConfig) roachpb.KeyValue {
 	value := roachpb.Value{}
@@ -1511,6 +1535,8 @@ func addSystemDatabaseToSchema(
 	addSystemDescriptorsToSchema(target)
 
 	target.AddSplitIDs(keys.PseudoTableIDs...)
+
+	target.otherKV = append(target.otherKV, bootstrapRootKV()...)
 
 	if target.tenantID != 0 {
 		// Tenants don't get zone configs.
