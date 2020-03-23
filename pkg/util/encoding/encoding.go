@@ -2514,11 +2514,31 @@ func PrettyPrintValueEncoded(b []byte) ([]byte, string, error) {
 	}
 }
 
+func DecodeTenantPrefix(key []byte) ([]byte, uint64, error) {
+	if len(key) == 0 {
+		return key, 0, nil
+	}
+	if key[0] != '\xff' {
+		return key, 0, nil
+	}
+	key, tenantID, err := DecodeUvarintAscending(key[1:])
+	if err != nil {
+		return nil, 0, err
+	}
+	return key, tenantID, nil
+}
+
 // DecomposeKeyTokens breaks apart a key into its individual key-encoded values
 // and returns a slice of byte slices, one for each key-encoded value.
 // It also returns whether the key contains a NULL value.
 func DecomposeKeyTokens(b []byte) (tokens [][]byte, containsNull bool, err error) {
 	var out [][]byte
+
+	// TODO does tenantID need to be returned?
+	b, _, err = DecodeTenantPrefix(b)
+	if err != nil {
+		return nil, false, err
+	}
 
 	for len(b) > 0 {
 		tokenLen, err := PeekLength(b)
