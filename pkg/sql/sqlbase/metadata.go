@@ -89,9 +89,7 @@ func MakeMetadataSchema(
 	tenantIDs ...uint64,
 ) MetadataSchema {
 	ms := MetadataSchema{}
-	if len(tenantIDs) > 0 {
-		ms.tenantID = tenantIDs[0]
-	}
+	ms.tenantID = keys.VTenantID(tenantIDs)
 	addSystemDatabaseToSchema(&ms, defaultZoneConfig, defaultSystemZoneConfig)
 	return ms
 }

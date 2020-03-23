@@ -168,6 +168,18 @@ func TestGetLargestID(t *testing.T) {
 			kvs, _ /* splits */ := ms.GetInitialValues(clusterversion.TestingClusterVersion)
 			return testCase{kvs, uint32(maxDescID), 0, ""}
 		}(),
+		// Real SQL layout and there are tenants.
+		func() testCase {
+			ms := sqlbase.MakeMetadataSchema(zonepb.DefaultZoneConfigRef(), zonepb.DefaultSystemZoneConfigRef())
+			descIDs := ms.DescriptorIDs()
+			maxDescID := descIDs[len(descIDs)-1]
+			kvs, _ /* splits */ := ms.GetInitialValues(clusterversion.TestingClusterVersion)
+
+			msT := sqlbase.MakeMetadataSchema(zonepb.DefaultZoneConfigRef(), zonepb.DefaultSystemZoneConfigRef(), 1)
+			kvsT, _ := msT.GetInitialValues(clusterversion.TestingClusterVersion)
+			kvs = append(kvs, kvsT...)
+			return testCase{kvs, uint32(maxDescID), 0, ""}
+		}(),
 
 		// Test non-zero max.
 		{[]roachpb.KeyValue{

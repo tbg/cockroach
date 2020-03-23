@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"testing"
 	"time"
 
@@ -29,7 +30,10 @@ import (
 func TestTenant(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 
-	ctx := context.Background()
+	// NB: test must be invoked with COCKROACH_TENANT_ID=1 in order to work.
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	tenant := keys.TenantID() != 0
 
@@ -39,13 +43,15 @@ func TestTenant(t *testing.T) {
 		if tenant {
 			// Start the "base" server as a subprocess. This is an approximation
 			// to having a pure SQL container talk to a KV backend. A poor one.
-			cmd := exec.Command(os.Args[0], "-test.v", "-test.run", "TestTenant")
+			cmd := exec.CommandContext(ctx, os.Args[0], "-test.v", "-test.run", "TestTenant")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			cmd.Env = append(cmd.Env, "COCKROACH_TENANT_ID=0")
 			go func() {
 				if err := cmd.Run(); err != nil {
-					t.Error(err)
+					if ctx.Err() == nil {
+						t.Error(err)
+					}
 				}
 			}()
 
@@ -62,13 +68,18 @@ func TestTenant(t *testing.T) {
 		if !tenant {
 			_, err := db.Exec(`SELECT crdb_internal.create_tenant(1)`)
 			require.NoError(t, err)
-			time.Sleep(time.Minute)
+			<-(chan struct{})(nil)
 		} else {
 			time.Sleep(time.Second)
 			_, err := db.Query(`SELECT 1`)
 			require.NoError(t, err)
-			_, err := db.Query(`SHOW DATABASES`)
+			_, err = db.Query(`SHOW DATABASES`)
 			require.NoError(t, err)
+			_, err = db.Query(`SELECT * FROM system.settings`)
+			require.NoError(t, err)
+			c := make(chan os.Signal)
+			signal.Notify(c)
+			<-c
 		}
 
 	})

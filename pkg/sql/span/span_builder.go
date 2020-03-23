@@ -203,9 +203,15 @@ func (s *Builder) SpansFromConstraint(
 	var err error
 	if c == nil || c.IsUnconstrained() {
 		// Encode a full span.
+		n := len(spans)
 		spans, err = s.appendSpansFromConstraintSpan(spans, &constraint.UnconstrainedSpan, needed, forDelete)
 		if err != nil {
 			return nil, err
+		}
+		for i := n; i < len(spans); i++ {
+			if spans[i].EndKey.Compare(spans[i].Key) <= 0 {
+				return nil, errors.Errorf("TBG %s - %s", spans[i].Key, spans[i].EndKey)
+			}
 		}
 		return spans, nil
 	}

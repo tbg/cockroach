@@ -651,20 +651,6 @@ func VTenantID(tenantIDs []uint64) uint64 {
 	return TenantID()
 }
 
-func DecodeTenantPrefix(key []byte) ([]byte, uint64, error) {
-	if len(key) == 0 {
-		return key, 0, nil
-	}
-	if key[0] != '\xff' {
-		return key, 0, nil
-	}
-	key, tenantID, err := encoding.DecodeUvarintAscending(key[1:])
-	if err != nil {
-		return nil, 0, err
-	}
-	return key, tenantID, nil
-}
-
 // MakeTablePrefix returns the key prefix used for the table's data.
 func MakeTablePrefix(tableID uint32, tenantIDs ...uint64) []byte {
 	tenantID := VTenantID(tenantIDs)
@@ -676,7 +662,7 @@ func MakeTablePrefix(tableID uint32, tenantIDs ...uint64) []byte {
 // the remainder of the key (with the prefix removed) and the decoded descriptor
 // ID of the table.
 func DecodeTablePrefix(key roachpb.Key) ([]byte, uint64, error) {
-	key, tenantID, err := DecodeTenantPrefix(key)
+	key, tenantID, err := encoding.DecodeTenantPrefix(key)
 	if err != nil {
 		return nil, 0, err
 	}

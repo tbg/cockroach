@@ -317,6 +317,8 @@ func (rq *replicateQueue) processOneChange(
 
 	desc, zone := repl.DescAndZone()
 
+	return false, nil // hack to avoid ever replicating to n2 which is a tenanverifyKeyst
+
 	// Avoid taking action if the range has too many dead replicas to make
 	// quorum.
 	voterReplicas := desc.Replicas().Voters()

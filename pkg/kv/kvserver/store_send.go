@@ -49,6 +49,7 @@ func (s *Store) Send(
 		arg := union.GetInner()
 		header := arg.Header()
 		if err := verifyKeys(header.Key, header.EndKey, roachpb.IsRange(arg)); err != nil {
+			log.Infof(ctx, "TBG %s: %s", ba.Summary(), err)
 			return nil, roachpb.NewError(err)
 		}
 	}
