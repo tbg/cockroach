@@ -25,6 +25,7 @@ import (
 	"unicode"
 
 	"github.com/cockroachdb/apd"
+	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/kv"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
@@ -52,7 +53,7 @@ func GetTableDescriptor(kvDB *kv.DB, database string, table string) *TableDescri
 	// testutil, so we pass settings as nil for both database and table name keys.
 	dKey := NewDatabaseKey(database)
 	ctx := context.TODO()
-	gr, err := kvDB.Get(ctx, dKey.Key(TenantID()))
+	gr, err := kvDB.Get(ctx, dKey.Key(keys.TenantID()))
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +63,7 @@ func GetTableDescriptor(kvDB *kv.DB, database string, table string) *TableDescri
 	dbDescID := ID(gr.ValueInt())
 
 	tKey := NewPublicTableKey(dbDescID, table)
-	gr, err = kvDB.Get(ctx, tKey.Key(TenantID()))
+	gr, err = kvDB.Get(ctx, tKey.Key(keys.TenantID()))
 	if err != nil {
 		panic(err)
 	}

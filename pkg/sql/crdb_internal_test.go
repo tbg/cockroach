@@ -52,9 +52,9 @@ func TestGetAllNamesInternal(t *testing.T) {
 
 	err := kvDB.Txn(ctx, func(ctx context.Context, txn *kv.Txn) error {
 		batch := txn.NewBatch()
-		batch.Put(sqlbase.NewTableKey(999, 444, "bob").Key(), 9999)
-		batch.Put(sqlbase.NewDeprecatedTableKey(1000, "alice").Key(), 10000)
-		batch.Put(sqlbase.NewDeprecatedTableKey(999, "overwrite_me_old_value").Key(), 9999)
+		batch.Put(sqlbase.NewTableKey(999, 444, "bob").Key(keys.TenantID()), 9999)
+		batch.Put(sqlbase.NewDeprecatedTableKey(1000, "alice").Key(keys.TenantID()), 10000)
+		batch.Put(sqlbase.NewDeprecatedTableKey(999, "overwrite_me_old_value").Key(keys.TenantID()), 9999)
 		return txn.CommitInBatch(ctx, batch)
 	})
 	require.NoError(t, err)

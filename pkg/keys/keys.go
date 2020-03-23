@@ -651,6 +651,20 @@ func VTenantID(tenantIDs []uint64) uint64 {
 	return TenantID()
 }
 
+func DecodeTenantPrefix(key []byte) ([]byte, uint64, error) {
+	if len(key) == 0 {
+		return key, 0, nil
+	}
+	if key[0] != '\xff' {
+		return key, 0, nil
+	}
+	key, tenantID, err := encoding.DecodeUvarintAscending(key[1:])
+	if err != nil {
+		return nil, 0, err
+	}
+	return key, tenantID, nil
+}
+
 // MakeTablePrefix returns the key prefix used for the table's data.
 func MakeTablePrefix(tableID uint32, tenantIDs ...uint64) []byte {
 	tenantID := VTenantID(tenantIDs)
@@ -662,16 +676,20 @@ func MakeTablePrefix(tableID uint32, tenantIDs ...uint64) []byte {
 // the remainder of the key (with the prefix removed) and the decoded descriptor
 // ID of the table.
 func DecodeTablePrefix(key roachpb.Key) ([]byte, uint64, error) {
+	key, tenantID, err := DecodeTenantPrefix(key)
+	if err != nil {
+		return nil, 0, err
+	}
 	if encoding.PeekType(key) != encoding.Int {
 		return key, 0, errors.Errorf("invalid key prefix: %q", key)
 	}
+	_ = tenantID // TODO: some callers must know this (all that may run in the zero tenant)
 	return encoding.DecodeUvarintAscending(key)
 }
 
 // DescMetadataPrefix returns the key prefix for all descriptors.
 func DescMetadataPrefix(tenantID uint64) []byte {
-	k := TenantPrefix(nil, tenantID)
-	k = append(k, MakeTablePrefix(uint32(DescriptorTableID))...) // TODO
+	k := MakeTablePrefix(uint32(DescriptorTableID), tenantID)
 	return encoding.EncodeUvarintAscending(k, DescriptorTablePrimaryKeyIndexID)
 }
 

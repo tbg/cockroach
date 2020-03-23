@@ -116,7 +116,7 @@ func doCreateSequence(
 		dbDesc.ID,
 		schemaID,
 		name.Table(),
-	).Key(sqlbase.TenantID())
+	).Key(keys.TenantID())
 	if err = params.p.createDescriptorWithID(
 		params.ctx, key, id, &desc, params.EvalContext().Settings, jobDesc,
 	); err != nil {

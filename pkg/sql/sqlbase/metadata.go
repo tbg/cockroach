@@ -272,7 +272,3 @@ func LookupSystemTableDescriptorID(
 	}
 	return dbID
 }
-
-func TenantID() uint64 {
-	return keys.TenantID()
-}

@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/kv"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/security"
@@ -86,7 +87,7 @@ func createTempSchema(params runParams, sKey sqlbase.DescriptorKey) (sqlbase.ID,
 	if err != nil {
 		return sqlbase.InvalidID, err
 	}
-	if err := params.p.createSchemaWithID(params.ctx, sKey.Key(sqlbase.TenantID()), id); err != nil {
+	if err := params.p.createSchemaWithID(params.ctx, sKey.Key(keys.TenantID()), id); err != nil {
 		return sqlbase.InvalidID, err
 	}
 

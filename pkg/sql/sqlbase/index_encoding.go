@@ -29,16 +29,11 @@ import (
 // This file contains facilities to encode primary and secondary
 // indexes on SQL tables.
 
-func VTenantID(tenantIDs []uint64) uint64 {
-	return keys.VTenantID(tenantIDs)
-
-}
-
 // MakeIndexKeyPrefix returns the key prefix used for the index's data. If you
 // need the corresponding Span, prefer desc.IndexSpan(indexID) or
 // desc.PrimaryIndexSpan().
 func MakeIndexKeyPrefix(desc *TableDescriptor, indexID IndexID, tenantIDs ...uint64) []byte {
-	tenantID := VTenantID(tenantIDs)
+	tenantID := keys.VTenantID(tenantIDs)
 	key := keys.TenantPrefix(nil, tenantID)
 	if i, err := desc.FindIndexByID(indexID); err == nil && len(i.Interleave.Ancestors) > 0 {
 		key = encoding.EncodeUvarintAscending(key, uint64(i.Interleave.Ancestors[0].TableID))
@@ -925,7 +920,7 @@ func EncodePrimaryIndex(
 	includeEmpty bool,
 	tenantIDs ...uint64,
 ) ([]IndexEntry, error) {
-	tenantID := VTenantID(tenantIDs)
+	tenantID := keys.VTenantID(tenantIDs)
 	keyPrefix := MakeIndexKeyPrefix(tableDesc, index.ID, tenantID)
 	indexKey, _, err := EncodeIndexKey(tableDesc, index, colMap, values, keyPrefix)
 	if err != nil {

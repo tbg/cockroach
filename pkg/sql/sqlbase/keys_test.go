@@ -25,10 +25,10 @@ func TestKeyAddress(t *testing.T) {
 	}{
 		{MakeDescMetadataKey(123)},
 		{MakeDescMetadataKey(124)},
-		{NewPublicTableKey(0, "BAR").Key(TenantID())},
-		{NewPublicTableKey(1, "BAR").Key(TenantID())},
-		{NewPublicTableKey(1, "foo").Key(TenantID())},
-		{NewPublicTableKey(2, "foo").Key(TenantID())},
+		{NewPublicTableKey(0, "BAR").Key(keys.TenantID())},
+		{NewPublicTableKey(1, "BAR").Key(keys.TenantID())},
+		{NewPublicTableKey(1, "foo").Key(keys.TenantID())},
+		{NewPublicTableKey(2, "foo").Key(keys.TenantID())},
 	}
 	var lastKey roachpb.Key
 	for i, test := range testCases {

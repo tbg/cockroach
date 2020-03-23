@@ -14,6 +14,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/server/telemetry"
 	"github.com/cockroachdb/cockroach/pkg/sql/pgwire/pgerror"
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
@@ -116,7 +117,7 @@ func (n *createViewNode) startExec(params runParams) error {
 	// TODO (lucy): I think this needs a NodeFormatter implementation. For now,
 	// do some basic string formatting (not accurate in the general case).
 	if err = params.p.createDescriptorWithID(
-		params.ctx, tKey.Key(sqlbase.TenantID()), id, &desc, params.EvalContext().Settings,
+		params.ctx, tKey.Key(keys.TenantID()), id, &desc, params.EvalContext().Settings,
 		fmt.Sprintf("CREATE VIEW %q AS %q", n.viewName, n.viewQuery),
 	); err != nil {
 		return err

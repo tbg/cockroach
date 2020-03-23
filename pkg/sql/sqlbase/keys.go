@@ -93,7 +93,7 @@ func MakeDeprecatedNameMetadataKey(parentID ID, name string, t uint64) roachpb.K
 
 // MakeAllDescsMetadataKey returns the key for all descriptors.
 func MakeAllDescsMetadataKey() roachpb.Key {
-	return keys.DescMetadataPrefix(TenantID())
+	return keys.DescMetadataPrefix(keys.TenantID())
 }
 
 // MakeDescMetadataKey returns the key for the descriptor.

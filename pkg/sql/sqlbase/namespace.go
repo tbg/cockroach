@@ -81,7 +81,7 @@ func RemoveObjectNamespaceEntry(
 		if KVTrace {
 			log.VEventf(ctx, 2, "Del %s", delKey)
 		}
-		b.Del(delKey.Key(TenantID()))
+		b.Del(delKey.Key(keys.TenantID()))
 	}
 	return txn.Run(ctx, b)
 }
@@ -152,7 +152,7 @@ func LookupObjectID(
 	ctx context.Context, txn *kv.Txn, parentID ID, parentSchemaID ID, name string,
 ) (bool, ID, error) {
 	// HACK pass as param.
-	tenantID := TenantID()
+	tenantID := keys.TenantID()
 	var key DescriptorKey
 	if parentID == keys.RootNamespaceID {
 		key = NewDatabaseKey(name)
@@ -193,7 +193,7 @@ func LookupObjectID(
 	} else {
 		dKey = NewDeprecatedTableKey(parentID, name)
 	}
-	k = dKey.Key(TenantID())
+	k = dKey.Key(keys.TenantID())
 	log.Eventf(ctx, "looking up descriptor ID for name key %q", k)
 	res, err = txn.Get(ctx, k)
 	if err != nil {

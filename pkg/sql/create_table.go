@@ -265,7 +265,7 @@ func (n *createTableNode) startExec(params runParams) error {
 
 	// Descriptor written to store here.
 	if err := params.p.createDescriptorWithID(
-		params.ctx, tKey.Key(sqlbase.TenantID()), id, &desc, params.EvalContext().Settings,
+		params.ctx, tKey.Key(keys.TenantID()), id, &desc, params.EvalContext().Settings,
 		tree.AsStringWithFQNames(n.n, params.Ann()),
 	); err != nil {
 		return err

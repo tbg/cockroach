@@ -16,6 +16,7 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/cockroach/pkg/config"
+	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/kv"
 	"github.com/cockroachdb/cockroach/pkg/sql/pgwire/pgcode"
 	"github.com/cockroachdb/cockroach/pkg/sql/pgwire/pgerror"
@@ -247,12 +248,12 @@ func (dc *databaseCache) getCachedDatabaseID(name string) (sqlbase.ID, error) {
 	}
 
 	var nameKey sqlbase.DescriptorKey = sqlbase.NewDatabaseKey(name)
-	nameVal := dc.systemConfig.GetValue(nameKey.Key(sqlbase.TenantID()))
+	nameVal := dc.systemConfig.GetValue(nameKey.Key(keys.TenantID()))
 	if nameVal == nil {
 		// Try the deprecated system.namespace before returning InvalidID.
 		// TODO(solon): This can be removed in 20.2.
 		nameKey = sqlbase.NewDeprecatedDatabaseKey(name)
-		nameVal = dc.systemConfig.GetValue(nameKey.Key(sqlbase.TenantID()))
+		nameVal = dc.systemConfig.GetValue(nameKey.Key(keys.TenantID()))
 		if nameVal == nil {
 			return sqlbase.InvalidID, nil
 		}
@@ -279,7 +280,7 @@ func (p *planner) renameDatabase(
 		return err
 	}
 
-	newKey := sqlbase.MakeDatabaseNameKey(ctx, p.ExecCfg().Settings, newName).Key(sqlbase.TenantID())
+	newKey := sqlbase.MakeDatabaseNameKey(ctx, p.ExecCfg().Settings, newName).Key(keys.TenantID())
 
 	descID := oldDesc.GetID()
 	descKey := sqlbase.MakeDescMetadataKey(descID)

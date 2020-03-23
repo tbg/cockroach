@@ -51,7 +51,7 @@ func GetForDatabase(
 ) (map[sqlbase.ID]string, error) {
 	log.Eventf(ctx, "fetching all schema descriptor IDs for %d", dbID)
 
-	nameKey := sqlbase.NewSchemaKey(dbID, "" /* name */).Key(sqlbase.TenantID())
+	nameKey := sqlbase.NewSchemaKey(dbID, "" /* name */).Key(keys.TenantID())
 	kvs, err := txn.Scan(ctx, nameKey, nameKey.PrefixEnd(), 0 /* maxRows */)
 	if err != nil {
 		return nil, err

@@ -51,7 +51,7 @@ func TestDatabaseDescriptor(t *testing.T) {
 	}
 
 	// Database name.
-	nameKey := sqlbase.NewDatabaseKey("test").Key()
+	nameKey := sqlbase.NewDatabaseKey("test").Key(keys.TenantID())
 	if gr, err := kvDB.Get(ctx, nameKey); err != nil {
 		t.Fatal(err)
 	} else if gr.Exists() {
