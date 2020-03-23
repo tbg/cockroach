@@ -835,6 +835,7 @@ func (rf *Fetcher) processKV(
 	table := rf.currentTable
 
 	if rf.traceKV {
+		// TODO
 		prettyKey = fmt.Sprintf(
 			"/%s/%s%s",
 			table.desc.Name,

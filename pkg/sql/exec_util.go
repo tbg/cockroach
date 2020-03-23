@@ -220,7 +220,7 @@ var VectorizeRowCountThresholdClusterValue = settings.RegisterValidatedIntSettin
 var DistSQLClusterExecMode = settings.RegisterEnumSetting(
 	"sql.defaults.distsql",
 	"default distributed SQL execution mode",
-	"auto",
+	"off", // HACK
 	map[int64]string{
 		int64(sessiondata.DistSQLOff):  "off",
 		int64(sessiondata.DistSQLAuto): "auto",

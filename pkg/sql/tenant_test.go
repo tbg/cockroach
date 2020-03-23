@@ -15,13 +15,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/signal"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
 	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/testutils/serverutils"
+	"github.com/cockroachdb/cockroach/pkg/testutils/sqlutils"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/stretchr/testify/require"
@@ -70,16 +70,16 @@ func TestTenant(t *testing.T) {
 			require.NoError(t, err)
 			<-(chan struct{})(nil)
 		} else {
+			runner := sqlutils.MakeSQLRunner(db)
 			time.Sleep(time.Second)
-			_, err := db.Query(`SELECT 1`)
-			require.NoError(t, err)
-			_, err = db.Query(`SHOW DATABASES`)
-			require.NoError(t, err)
-			_, err = db.Query(`SELECT * FROM system.settings`)
-			require.NoError(t, err)
-			c := make(chan os.Signal)
-			signal.Notify(c)
-			<-c
+			runner.Exec(t, `CREATE DATABASE foo`)
+			runner.Exec(t, `create table foo.foo(id int primary key, v string)`)
+			t.Log(sqlutils.MatrixToStr(runner.QueryStr(t, `SELECT 1`)))
+			t.Log(sqlutils.MatrixToStr(runner.QueryStr(t, `SHOW DATABASES`)))
+			t.Log(sqlutils.MatrixToStr(runner.QueryStr(t, `SHOW TABLES FROM foo`)))
+			t.Log(sqlutils.MatrixToStr(runner.QueryStr(t, `SELECT * FROM system.settings`)))
+			runner.Exec(t, `INSERT INTO foo.foo VALUES(1, 'bar')`)
+			t.Log(sqlutils.MatrixToStr(runner.QueryStr(t, `SELECT * FROM foo.foo`)))
 		}
 
 	})
