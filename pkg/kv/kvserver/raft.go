@@ -227,7 +227,8 @@ var raftMessageRequestPool = sync.Pool{
 }
 
 func newRaftMessageRequest() *RaftMessageRequest {
-	return raftMessageRequestPool.Get().(*RaftMessageRequest)
+	req := raftMessageRequestPool.Get().(*RaftMessageRequest)
+	*req = RaftMessageRequest{}
 }
 
 func (m *RaftMessageRequest) release() {
