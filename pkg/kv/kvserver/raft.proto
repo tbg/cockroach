@@ -53,6 +53,8 @@ message RaftHeartbeat {
 // as a dummy message and discarded. A coalesced heartbeat request's replica
 // descriptor's range ID must be zero.
 message RaftMessageRequest {
+  optional bool ref_counting = 100 [(gogoproto.nullable) = false];
+  optional int64 ref_count = 101 [(gogoproto.nullable) = false];
   optional uint64 range_id = 1 [(gogoproto.nullable) = false,
       (gogoproto.customname) = "RangeID",
       (gogoproto.casttype) = "github.com/cockroachdb/cockroach/pkg/roachpb.RangeID"];
