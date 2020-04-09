@@ -156,7 +156,7 @@ func (u *versionUpgradeTest) run(ctx context.Context, t *test) {
 
 	defer func() {
 		for _, db := range u.conns {
-			_ = db.Close()
+			_ = db.db.Close()
 		}
 	}()
 
@@ -188,7 +188,7 @@ type versionUpgradeTest struct {
 
 	// Cache conns because opening one takes hundreds of ms, and we do it quite
 	// a lot.
-	conns []*gosql.DB
+	conns []conn
 }
 
 func newVersionUpgradeTest(
@@ -204,15 +204,24 @@ func newVersionUpgradeTest(
 
 func checkpointName(binaryVersion string) string { return "checkpoint-v" + binaryVersion }
 
+type conn struct {
+	i  int
+	db *gosql.DB
+}
+
 // Return a cached conn to the given node. Don't call .Close(), the test harness
 // will do it.
 func (u *versionUpgradeTest) conn(ctx context.Context, t *test, i int) *gosql.DB {
 	if u.conns == nil {
 		for _, i := range u.c.All() {
-			u.conns = append(u.conns, u.c.Conn(ctx, i))
+			u.conns = append(u.conns, conn{i, u.c.Conn(ctx, i)})
 		}
 	}
-	return u.conns[i-1]
+	conn := u.conns[i-1]
+	if conn.i != i {
+		t.Fatalf("wanted %d got %d", i, conn.i)
+	}
+	return conn.db
 }
 
 func (u *versionUpgradeTest) uploadVersion(ctx context.Context, t *test, newVersion string) option {
@@ -398,15 +407,11 @@ func waitForUpgradeStep() versionStep {
 
 		for i := 1; i <= c.spec.NodeCount; i++ {
 			err := retry.ForDuration(30*time.Second, func() error {
-				db := u.conn(ctx, t, i)
-
-				var currentVersion string
-				if err := db.QueryRow("SHOW CLUSTER SETTING version").Scan(&currentVersion); err != nil {
-					t.Fatalf("%d: %s", i, err)
-				}
+				currentVersion := u.clusterVersion(ctx, t, i).String()
 				if currentVersion != newVersion {
 					return fmt.Errorf("%d: expected version %s, got %s", i, newVersion, currentVersion)
 				}
+				t.l.Printf("%s: acked by n%d", currentVersion, i)
 				return nil
 			})
 			if err != nil {
