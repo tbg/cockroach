@@ -87,7 +87,7 @@ func runVersionUpgrade(ctx context.Context, t *test, c *cluster) {
 	// TODO(tbg): revisit as old versions are aged out of this test.
 	c.encryptDefault = false
 
-	const baseVersion = "19.1.5"
+	const baseVersion = "19.2.1"
 	u := newVersionUpgradeTest(c, versionUpgradeTestFeatures,
 		// Load baseVersion fixture. That fixture's cluster version may be
 		// at the predecessor version, so add a waitForUpgradeStep to make
@@ -100,8 +100,8 @@ func runVersionUpgrade(ctx context.Context, t *test, c *cluster) {
 		// NB: before the next step, cluster and binary version equals baseVersion,
 		// and auto-upgrades are on.
 
-		binaryUpgradeStep("19.2.1"),
-		waitForUpgradeStep(),
+		//binaryUpgradeStep("19.2.1"),
+		//waitForUpgradeStep(),
 
 		// Each new release has to be added here. When adding a new release,
 		// you'll probably need to use a release candidate binary. You may also
