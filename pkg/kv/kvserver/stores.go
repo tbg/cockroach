@@ -465,6 +465,8 @@ func (ls *Stores) OnClusterVersionChange(
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 
+	log.Infof(ctx, "cluster version callback fired with %+v", cv)
+
 	// We're going to read the cluster version from any engine - all the engines
 	// are always kept in sync so it doesn't matter which one we read from.
 	var someEngine storage.Engine
@@ -490,6 +492,6 @@ func (ls *Stores) OnClusterVersionChange(
 	if err := ls.WriteClusterVersion(ctx, cv); err != nil {
 		return errors.Wrap(err, "writing cluster version")
 	}
-
+	log.Infof(ctx, "wrote cluster version %+v", cv)
 	return nil
 }
