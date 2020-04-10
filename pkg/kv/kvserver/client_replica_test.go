@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"os"
 	"reflect"
 	"strconv"
 	"sync"
@@ -1771,6 +1772,42 @@ func TestSystemZoneConfigs(t *testing.T) {
 		return nil
 	}
 
+	tc.Stopper().RunAsyncTask(ctx, "conschecks", func(ctx context.Context) {
+		var n int
+		defer func() {
+			t.Logf("TBG checked %d times", n)
+		}()
+		for {
+			select {
+			case <-tc.Stopper().ShouldQuiesce():
+				return
+			case <-ctx.Done():
+				return
+			default:
+			}
+			for _, s := range tc.Servers {
+				s.Stores().VisitStores(func(store *kvserver.Store) error {
+					store.VisitReplicas(func(repl *kvserver.Replica) bool {
+						args := roachpb.CheckConsistencyRequest{
+							Mode: roachpb.ChecksumMode_CHECK_VIA_QUEUE,
+						}
+						resp, err := repl.CheckConsistency(ctx, args)
+						if err == nil {
+							n++
+							for _, res := range resp.Result {
+								if res.Status == roachpb.CheckConsistencyResponse_RANGE_CONSISTENT_STATS_INCORRECT || res.Status == roachpb.CheckConsistencyResponse_RANGE_INCONSISTENT {
+									t.Error("boom")
+								}
+							}
+						}
+						return true // more
+					})
+					return nil
+				})
+			}
+		}
+	})
+
 	// Wait until we're down to the expected number of replicas. This is
 	// effectively waiting on replica GC to kick in to destroy any replicas that
 	// got removed during rebalancing of the initial ranges, since the testcluster
@@ -1807,6 +1844,11 @@ func TestSystemZoneConfigs(t *testing.T) {
 	expectedReplicas += 4
 	testutils.SucceedsSoon(t, waitForReplicas)
 	log.Info(ctx, "TestSystemZoneConfig: up-replication of system ranges succeeded")
+
+	if t.Failed() {
+		// Exit without stopper so that the aux dir isn't cleaned up.
+		os.Exit(123)
+	}
 }
 
 func TestClearRange(t *testing.T) {

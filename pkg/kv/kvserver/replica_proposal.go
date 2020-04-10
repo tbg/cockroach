@@ -282,8 +282,8 @@ A file preventing this node from restarting was placed at:
 			if p := r.store.cfg.TestingKnobs.ConsistencyTestingKnobs.OnBadChecksumFatal; p != nil {
 				p(*r.store.Ident)
 			} else {
-				time.Sleep(10 * time.Second)
-				log.Fatalf(r.AnnotateCtx(context.Background()), preventStartupMsg)
+				//time.Sleep(10 * time.Second)
+				//log.Fatalf(r.AnnotateCtx(context.Background()), preventStartupMsg)
 			}
 		}
 
