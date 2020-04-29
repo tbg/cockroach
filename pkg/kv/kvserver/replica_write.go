@@ -606,7 +606,7 @@ func (r *Replica) newBatchedEngine(spans *spanset.SpanSet) (storage.Batch, *stor
 		opLogger = storage.NewOpLoggerBatch(batch)
 		batch = opLogger
 	}
-	if util.RaceEnabled {
+	if util.RaceEnabled || true {
 		// During writes we may encounter a versioned value newer than the request
 		// timestamp, and may have to retry at a higher timestamp. This is still
 		// safe as we're only ever writing at timestamps higher than the timestamp

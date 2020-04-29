@@ -36,7 +36,7 @@ func NewReplicaEvalContext(r *Replica, ss *spanset.SpanSet) batcheval.EvalContex
 	if ss == nil {
 		log.Fatalf(r.AnnotateCtx(context.Background()), "can't create a ReplicaEvalContext with assertions but no SpanSet")
 	}
-	if util.RaceEnabled {
+	if util.RaceEnabled || true {
 		return &SpanSetReplicaEvalContext{
 			i:  r,
 			ss: *ss,

@@ -50,7 +50,7 @@ func (r *Replica) executeReadOnlyBatch(
 	// we're stuck with a ReadWriter because of the way evaluateBatch is
 	// designed.
 	rw := r.store.Engine().NewReadOnly()
-	if util.RaceEnabled {
+	if util.RaceEnabled || true {
 		rw = spanset.NewReadWriterAt(rw, spans, ba.Timestamp)
 	}
 	defer rw.Close()
