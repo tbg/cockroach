@@ -18,7 +18,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -28,13 +30,6 @@ import (
 	"sync/atomic"
 	"time"
 	"unsafe"
-
-	"github.com/google/btree"
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
-	"go.etcd.io/etcd/raft"
-	"go.etcd.io/etcd/raft/raftpb"
-	"golang.org/x/time/rate"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
 	"github.com/cockroachdb/cockroach/pkg/config"
@@ -74,6 +69,12 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 	"github.com/cockroachdb/cockroach/pkg/util/tracing"
 	"github.com/cockroachdb/cockroach/pkg/util/uuid"
+	"github.com/google/btree"
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
+	"go.etcd.io/etcd/raft"
+	"go.etcd.io/etcd/raft/raftpb"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -141,9 +142,9 @@ func TestStoreConfig(clock *hlc.Clock) StoreConfig {
 	}
 	st := cluster.MakeTestingClusterSettings()
 	sc := StoreConfig{
-		Settings:   st,
-		AmbientCtx: log.AmbientContext{Tracer: st.Tracer},
-		Clock:      clock,
+		Settings:                    st,
+		AmbientCtx:                  log.AmbientContext{Tracer: st.Tracer},
+		Clock:                       clock,
 		CoalescedHeartbeatsInterval: 50 * time.Millisecond,
 		RaftHeartbeatIntervalTicks:  1,
 		ScanInterval:                10 * time.Minute,
@@ -2695,6 +2696,61 @@ type RemoveOptions struct {
 	DestroyData bool
 }
 
+type dummyStream struct {
+	final int
+}
+
+func (s *dummyStream) Send(req *SnapshotRequest) error {
+	if req.Final {
+		s.final = 1
+	}
+	return nil
+}
+func (s *dummyStream) Recv() (*SnapshotResponse, error) {
+	if s.final == 2 {
+		return nil, io.EOF
+	}
+	if s.final == 1 {
+		s.final++
+		return &SnapshotResponse{Status: SnapshotResponse_APPLIED}, nil
+	}
+	return &SnapshotResponse{Status: SnapshotResponse_ACCEPTED}, nil
+}
+
+func (s *Store) launchOneOffSnap(ctx context.Context, rep *Replica) {
+	snap, err := rep.GetSnapshot(ctx, snapTypeRaft)
+	if err != nil {
+		log.Infof(ctx, "TBG --- %s", err)
+	} else {
+		if err := s.stopper.RunAsyncTask(ctx, "TBG", func(ctx context.Context) {
+			time.Sleep(time.Duration(rand.Intn(10)) * time.Second)
+			header := SnapshotRequest_Header{
+				State:    snap.State,
+				Priority: 1,
+				Strategy: SnapshotRequest_KV_BATCH,
+			}
+			defer snap.Close()
+			if err := sendSnapshot(
+				ctx,
+				nil, /* raftCfg */
+				s.ClusterSettings(),
+				&dummyStream{},
+				nil, /* storePool */
+				header,
+				snap,
+				s.engine.NewBatch,
+				func() {},
+			); errors.Cause(err) == errMalformedSnapshot {
+				log.Fatal(ctx, err)
+			} else {
+				log.Infof(ctx, "TBG --- sent snap with err %v", err)
+			}
+		}); err != nil {
+			snap.Close()
+		}
+	}
+}
+
 // RemoveReplica removes the replica from the store's replica map and from the
 // sorted replicasByKey btree.
 //
@@ -2706,6 +2762,10 @@ type RemoveOptions struct {
 func (s *Store) RemoveReplica(
 	ctx context.Context, rep *Replica, nextReplicaID roachpb.ReplicaID, opts RemoveOptions,
 ) error {
+	// Launch (async) one snapshot whose RocksDB snap 100% precedes replicaGC.
+	s.launchOneOffSnap(ctx, rep)
+	// Launch (async) one snapshot whose RocksDB snap likely post-cedes it.
+	go s.launchOneOffSnap(ctx, rep)
 	rep.raftMu.Lock()
 	defer rep.raftMu.Unlock()
 	return s.removeReplicaImpl(ctx, rep, nextReplicaID, opts)
