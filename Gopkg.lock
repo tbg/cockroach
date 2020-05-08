@@ -1675,7 +1675,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1a9011794066a02df25f6487bfcb745bd653b543ecec32aac1cb1216cadae1a5"
+  digest = "1:cc6fde2b2d8134af96c0e117391c4fc1c2d28867a41da127c8a1aece2e7cbed8"
   name = "golang.org/x/crypto"
   packages = [
     "bcrypt",
@@ -1685,6 +1685,7 @@
     "ed25519/internal/edwards25519",
     "internal/chacha20",
     "internal/subtle",
+    "nacl/sign",
     "pbkdf2",
     "pkcs12",
     "pkcs12/internal/rc2",
@@ -2208,6 +2209,7 @@
     "go.etcd.io/etcd/raft/raftpb",
     "go.etcd.io/etcd/raft/tracker",
     "golang.org/x/crypto/bcrypt",
+    "golang.org/x/crypto/nacl/sign",
     "golang.org/x/crypto/pbkdf2",
     "golang.org/x/crypto/ssh",
     "golang.org/x/crypto/ssh/agent",
