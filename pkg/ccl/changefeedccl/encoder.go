@@ -16,6 +16,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/cockroachdb/cockroach/pkg/sql/sqlbase"
@@ -426,9 +427,20 @@ func (e *confluentAvroEncoder) register(
 		return 0, err
 	}
 
+	const schemaRegistryHTTPTimeout = 15 * time.Second
+	// Use a generous HTTP timeout. We've seen "Client.Timeout exceeded while
+	// awaiting headers" here with the default timeout (3s at the time of writing)
+	// on overloaded nodes.
+	client := httputil.NewClientWithTimeout(schemaRegistryHTTPTimeout)
+	defer client.CloseIdleConnections()
 	// TODO(someone): connect the context to the caller to obey
 	// cancellation.
-	resp, err := httputil.Post(ctx, url.String(), confluentSchemaContentType, &buf)
+	resp, err := client.Post(
+		ctx,
+		url.String(),
+		confluentSchemaContentType,
+		&buf,
+	)
 	if err != nil {
 		return 0, err
 	}
