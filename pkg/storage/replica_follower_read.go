@@ -119,5 +119,11 @@ func (r *Replica) maxClosed(ctx context.Context) (_ hlc.Timestamp, ok bool) {
 		lease.Replica.NodeID, r.RangeID, ctpb.Epoch(lease.Epoch), ctpb.LAI(lai))
 	maxClosed.Forward(lease.Start)
 	maxClosed.Forward(initialMaxClosed)
+
+	if maxClosed.IsEmpty() {
+		log.Infof(ctx, "storage:\n%s",
+			r.store.cfg.ClosedTimestamp.Storage.(*ctstorage.MultiStorage).StringForNodes(),
+		)
+	}
 	return maxClosed, true
 }
