@@ -117,6 +117,21 @@ func GenerateServerCert(
 	user string,
 	hosts []string,
 ) ([]byte, error) {
+	template, err := generateServerCertTemplate(caCert, lifetime, user, hosts)
+	if err != nil {
+		return nil, err
+	}
+	certBytes, err := x509.CreateCertificate(rand.Reader, template, caCert, nodePublicKey, caPrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return certBytes, nil
+}
+
+func generateServerCertTemplate(
+	caCert *x509.Certificate, lifetime time.Duration, user string, hosts []string,
+) (*x509.Certificate, error) {
 	// Create template for user.
 	template, err := newTemplate(user, lifetime)
 	if err != nil {
@@ -137,13 +152,7 @@ func GenerateServerCert(
 			template.DNSNames = append(template.DNSNames, h)
 		}
 	}
-
-	certBytes, err := x509.CreateCertificate(rand.Reader, template, caCert, nodePublicKey, caPrivateKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return certBytes, nil
+	return template, nil
 }
 
 // GenerateUIServerCert generates a server certificate for the Admin UI and returns the cert bytes.
