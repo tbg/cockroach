@@ -163,7 +163,7 @@ ignored = [
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "=v1.21.2"
+  version = "=v1.27.1"
 
 [prune]
   go-tests = true
