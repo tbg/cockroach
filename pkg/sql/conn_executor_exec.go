@@ -262,6 +262,13 @@ func (ex *connExecutor) execStmtInOpenState(
 			})
 	}
 
+	if strings.Contains(stmt.SQL, "cttest") {
+		recCtx, collectRec, cancel := tracing.ContextWithRecordingSpan(ctx, "test trace")
+		defer cancel()
+		ctx = recCtx
+		log.Infof(ctx, collectRec().String())
+	}
+
 	defer func() {
 		if filter := ex.server.cfg.TestingKnobs.StatementFilter; retErr == nil && filter != nil {
 			var execErr error
