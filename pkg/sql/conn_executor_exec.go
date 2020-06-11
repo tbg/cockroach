@@ -262,7 +262,7 @@ func (ex *connExecutor) execStmtInOpenState(
 			})
 	}
 
-	if strings.Contains(stmt.SQL, "cttest") {
+	if strings.Contains(stmt.SQL, "cttest") || strings.Contains(stmt.SQL, "SETTING") || ex.extraTxnState.autoRetryCounter > 10 {
 		recCtx, collectRec, cancel := tracing.ContextWithRecordingSpan(ctx, "test trace")
 		defer cancel()
 		ctx = recCtx
