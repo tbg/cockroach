@@ -266,7 +266,7 @@ func (ex *connExecutor) execStmtInOpenState(
 		recCtx, collectRec, cancel := tracing.ContextWithRecordingSpan(ctx, "test trace")
 		defer cancel()
 		ctx = recCtx
-		log.Infof(ctx, collectRec().String())
+		defer func() { log.Infof(ctx, "%v", collectRec()) }()
 	}
 
 	defer func() {
