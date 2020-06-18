@@ -636,6 +636,8 @@ func (r *Replica) collectSpans(
 func (r *Replica) limitTxnMaxTimestamp(
 	ctx context.Context, ba *roachpb.BatchRequest, status kvserverpb.LeaseStatus,
 ) {
+	return // HACK
+
 	if ba.Txn == nil {
 		return
 	}
