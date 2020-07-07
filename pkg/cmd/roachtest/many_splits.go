@@ -38,6 +38,7 @@ func runManySplits(ctx context.Context, t *test, c *cluster) {
 		`, numRanges)); err != nil {
 			return err
 		}
+		c.Stop(ctx, c.Node(3))
 		return nil
 	})
 	m.Wait()
