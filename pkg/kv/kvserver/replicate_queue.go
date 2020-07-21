@@ -257,11 +257,17 @@ func (rq *replicateQueue) shouldQueue(
 func (rq *replicateQueue) process(
 	ctx context.Context, repl *Replica, sysCfg *config.SystemConfig,
 ) (processed bool, err error) {
+	var attempts int
+	defer func(start time.Time) {
+		log.Infof(ctx, "TBG spent %d / %.2fs", attempts, timeutil.Since(start).Seconds())
+
+	}(timeutil.Now())
 	retryOpts := retry.Options{
-		InitialBackoff: 50 * time.Millisecond,
-		MaxBackoff:     1 * time.Second,
-		Multiplier:     2,
-		MaxRetries:     5,
+		InitialBackoff: 10 * time.Millisecond,
+		MaxBackoff:     50 * time.Millisecond,
+		// MaxBackoff:     1 * time.Second,
+		Multiplier: 2,
+		MaxRetries: 5,
 	}
 
 	// Use a retry loop in order to backoff in the case of snapshot errors,
@@ -269,6 +275,7 @@ func (rq *replicateQueue) process(
 	// selected target.
 	for r := retry.StartWithCtx(ctx, retryOpts); r.Next(); {
 		for {
+			attempts++
 			requeue, err := rq.processOneChange(ctx, repl, rq.canTransferLease, false /* dryRun */)
 			if IsSnapshotError(err) {
 				// If ChangeReplicas failed because the snapshot failed, we log the
@@ -305,6 +312,10 @@ func (rq *replicateQueue) process(
 func (rq *replicateQueue) processOneChange(
 	ctx context.Context, repl *Replica, canTransferLease func() bool, dryRun bool,
 ) (requeue bool, _ error) {
+	defer func(start time.Time) {
+		log.Infof(ctx, "TBG OneCHange  %.2fs", timeutil.Since(start).Seconds())
+
+	}(timeutil.Now())
 	// Check lease and destroy status here. The queue does this higher up already, but
 	// adminScatter (and potential other future callers) also call this method and don't
 	// perform this check, which could lead to infinite loops.
