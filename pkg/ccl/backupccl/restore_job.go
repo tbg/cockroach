@@ -1048,6 +1048,13 @@ func createImportingDescriptors(
 
 	if !details.PrepareCompleted {
 		err := p.ExecCfg().DB.Txn(ctx, func(ctx context.Context, txn *kv.Txn) error {
+			if len(details.Tenants) > 0 {
+				// TODO(during review): if the txn already has txn.Key set, we get an
+				// eror from AnchorOnSystemConfigRange without this. This is pretty
+				// silly though, can we avoid the system config trigger here? Might not
+				// be worth the hassle though.
+				txn.SetSystemConfigTrigger(p.ExecCfg().Codec.ForSystemTenant())
+			}
 			// Write the new TableDescriptors which are set in the OFFLINE state.
 			if err := WriteDescriptors(ctx, txn, databases, tables, typesToWrite, details.DescriptorCoverage, r.settings, nil /* extra */); err != nil {
 				return errors.Wrapf(err, "restoring %d TableDescriptors from %d databases", len(r.tables), len(databases))
@@ -1285,6 +1292,10 @@ func (r *restoreResumer) publishTables(ctx context.Context) error {
 
 	newSchemaChangeJobs := make([]*jobs.StartableJob, 0)
 	err := r.execCfg.DB.Txn(ctx, func(ctx context.Context, txn *kv.Txn) error {
+		if len(details.Tenants) > 0 {
+			// TODO(during review): see the other code like this when creating tenants.
+			txn.SetSystemConfigTrigger(r.execCfg.Codec.ForSystemTenant())
+		}
 		// Write the new TableDescriptors and flip state over to public so they can be
 		// accessed.
 		b := txn.NewBatch()
@@ -1377,7 +1388,9 @@ func (r *restoreResumer) OnFailOrCancel(ctx context.Context, phs interface{}) er
 		for _, tenant := range details.Tenants {
 			// TODO(dt): this is a noop since the tenant is already active=false but
 			// that should be fixed in DestroyTenant.
-			if err := sql.DestroyTenant(ctx, r.execCfg, txn, tenant.ID); err != nil {
+			// TODO(during review): why is r.execCfg nil and what's the difference
+			// to execCfg above?
+			if err := sql.DestroyTenant(ctx, execCfg, txn, tenant.ID); err != nil {
 				return err
 			}
 		}
