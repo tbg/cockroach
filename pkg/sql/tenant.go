@@ -189,11 +189,31 @@ func DestroyTenant(ctx context.Context, execCfg *ExecutorConfig, txn *kv.Txn, te
 		log.Fatalf(ctx, "unexpected number of rows affected: %d", num)
 	}
 
-	// TODO(nvanbenschoten): actually clear tenant keyspace. We don't want to do
-	// this synchronously in the same transaction, because we could be deleting
-	// a very large amount of data. Tracked in #48775.
+	// TODO(nvanbenschoten): clear tenant keyspace in a manner consistent with
+	// the TTL for the surrounding zone configuration. This will likely require
+	// scheduling this deletion asynchronously.
+	//
+	// Tracked in #48775.
+	var b kv.Batch
+	tenPrefix := keys.MakeTenantPrefix(roachpb.MakeTenantID(tenID))
+	b.AddRawRequest(&roachpb.ClearRangeRequest{
+		RequestHeader: roachpb.RequestHeader{
+			Key:    tenPrefix,
+			EndKey: tenPrefix.PrefixEnd(),
+		},
+	})
+	if err := txn.DB().Run(ctx, &b); err != nil {
+		return err
+	}
 
-	return nil
+	// The tenant has been deleted, so purge it from the system.tenants table.
+	// This needs work - see the TODO above - but it enables comprehensive testing
+	// of tenant backup-restore.
+	_, err := execCfg.InternalExecutor.ExecEx(
+		ctx, "destroy-tenant", txn, sqlbase.NodeUserSessionDataOverride,
+		`DELETE FROM system.tenants WHERE id = $1`, tenID,
+	)
+	return err
 }
 
 // DestroyTenant implements the tree.TenantOperator interface.

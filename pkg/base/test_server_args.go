@@ -216,4 +216,8 @@ type TestTenantArgs struct {
 	// AllowSettingClusterSettings, if true, allows the tenant to set in-memory
 	// cluster settings.
 	AllowSettingClusterSettings bool
+
+	// If set, the tenant server will be tied to this stopper, as opposed to being
+	// added as a closer to the underlying test server's Stopper.
+	Stopper *stop.Stopper
 }

@@ -2462,6 +2462,94 @@ func TestBackupAsOfSystemTime(t *testing.T) {
 	}
 }
 
+type backupRestoreRevisionTestHelper struct{}
+
+func (b *backupRestoreRevisionTestHelper) path(ts *string, revisions bool) string {
+	empty := ""
+	if ts == nil {
+		ts = &empty
+	}
+	return fmt.Sprintf("nodelocal://0/ts=%s,revs=%t", *ts, revisions)
+}
+
+func (b *backupRestoreRevisionTestHelper) stmts(ts string) []string {
+	return []string{
+		`BACKUP TO '` + b.path(nil, false) + `'`,
+		`BACKUP TO '` + b.path(&ts, false) + `' AS OF SYSTEM TIME ` + ts, // TODO
+		`BACKUP TO '` + b.path(nil, true) + `'`,
+		`BACKUP TO '` + b.path(&ts, true) + `' AS OF SYSTEM TIME ` + ts + ` WITH revision_history`,
+	}
+}
+
+func (b *backupRestoreRevisionTestHelper) backup(t *testing.T, db *sqlutils.SQLRunner) (ts string) {
+	t.Helper()
+	db.QueryRow(t, `SELECT cluster_logical_timestamp()`).Scan(&ts)
+
+	for _, stmt := range b.stmts(ts) {
+		db.Exec(t, stmt)
+	}
+
+	return ts
+}
+
+func TestRestoreTenantAsOfSystemTime(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+	defer log.Scope(t).Close(t)
+
+	const numAccounts = 10
+	ctx, tc, sqlDB, _, cleanupFn := BackupRestoreTestSetup(t, singleNode, numAccounts, InitNone)
+	defer cleanupFn()
+	s := tc.Servers[0]
+	const dir = "nodelocal://0/"
+
+	var b backupRestoreRevisionTestHelper
+
+	var tsTenant10Created string
+	var tsTenant10Populated string
+	var firstIncarnationFoo [][]string
+	func() {
+		shortStopper := stop.NewStopper()
+		defer shortStopper.Stop(ctx)
+		conn10 := serverutils.StartTenant(t, s, base.TestTenantArgs{
+			TenantID:   roachpb.MakeTenantID(10),
+			TenantInfo: []byte("first incarnation"),
+			Stopper:    shortStopper,
+		})
+		defer conn10.Close()
+
+		tsTenant10Created = b.backup(t, sqlDB)
+
+		conn10.Exec(`
+CREATE TABLE foo (id INT PRIMARY KEY, v STRING);
+INSERT INTO foo VALUES(1, 'first time');
+`)
+		tsTenant10Populated = b.backup(t, sqlDB)
+		r := sqlutils.MakeSQLRunner(conn10)
+		firstIncarnationFoo = r.QueryStr(t, `SELECT * FROM foo`)
+	}()
+
+	sqlDB.Exec(t, `SELECT crdb_internal.destroy_tenant(10)`)
+	tsTenant10Destroyed := b.backup(t, sqlDB)
+
+	conn10 := serverutils.StartTenant(t, s, base.TestTenantArgs{TenantID: roachpb.MakeTenantID(10), TenantInfo: []byte("second incarnation")})
+	defer conn10.Close()
+	tsTenant10Recreated := b.backup(t, sqlDB)
+
+	conn10.Exec(`CREATE TABLE foo (id INT PRIMARY KEY, v STRING); INSERT INTO foo VALUES(9, 'second time')`)
+	tsTenant10Repopulated := b.backup(t, sqlDB)
+
+	secondIncarnationFoo := sqlutils.MakeSQLRunner(conn10).QueryStr(t, `SELECT * FROM foo`)
+
+	_ = tsTenant10Destroyed
+	_ = tsTenant10Recreated
+	_ = tsTenant10Populated
+	_ = tsTenant10Repopulated
+	_ = firstIncarnationFoo
+	_ = secondIncarnationFoo
+	_ = tsTenant10Created
+
+}
+
 func TestRestoreAsOfSystemTime(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 	defer log.Scope(t).Close(t)
@@ -2478,7 +2566,7 @@ func TestRestoreAsOfSystemTime(t *testing.T) {
 	sqlDB.Exec(t, `UPDATE data.bank SET balance = 1`)
 	sqlDB.QueryRow(t, `SELECT cluster_logical_timestamp()`).Scan(&ts[1])
 
-	// Change the data in the tabe.
+	// Change the data in the table.
 	sqlDB.Exec(t, `CREATE TABLE data.teller (id INT PRIMARY KEY, name STRING)`)
 	sqlDB.Exec(t, `INSERT INTO data.teller VALUES (1, 'alice'), (7, 'bob'), (3, 'eve')`)
 
