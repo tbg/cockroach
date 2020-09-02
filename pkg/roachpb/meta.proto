@@ -1,0 +1,40 @@
+// Copyright 2020 The Cockroach Authors.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.txt.
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0, included in the file
+// licenses/APL.txt.
+
+syntax = "proto3";
+package cockroach.roachpb;
+option go_package = "roachpb";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+
+message Event {
+  int64 start_ns = 1;
+  int64 end_ns = 2;
+  google.protobuf.Any details = 3 [(gogoproto.nullable) = false]; // ContentionEvent, etc
+}
+
+// These would live in a kv-specific package
+
+message ContentionEvent {
+  bytes key = 1 [(gogoproto.customtype) = "Key"];
+  bool pushee_aborted = 3; // did pushee commit or abort?
+}
+
+message RequestLifecycleEvent {
+  int64 sequenced = 2; // past latch mgr
+  int64 proposed = 3; // put into raft
+  int64 applied = 4; // response from raft = end of processing
+}
+
+message Meta {
+  RequestLifecycleEvent lifecycle = 1 [(gogoproto.embed) = true];
+  repeated Event events = 2 [(gogoproto.nullable) = false];
+}

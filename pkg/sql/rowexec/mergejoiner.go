@@ -259,6 +259,9 @@ var _ execinfrapb.DistSQLSpanStats = &MergeJoinerStats{}
 const mergeJoinerTagPrefix = "mergejoiner."
 
 // Stats implements the SpanStats interface.
+//
+// TODO(tbg): here's that struct's map[string]string impl. I think we
+// could just return nil from our versions of these.
 func (mjs *MergeJoinerStats) Stats() map[string]string {
 	// statsMap starts off as the left input stats map.
 	statsMap := mjs.LeftInputStats.Stats(mergeJoinerTagPrefix + "left.")
@@ -298,6 +301,7 @@ func (m *mergeJoiner) outputStatsToTrace() {
 	if sp := opentracing.SpanFromContext(m.Ctx); sp != nil {
 		tracing.SetSpanStats(
 			sp,
+			// TODO(tbg): here's an example of one actual impl.
 			&MergeJoinerStats{
 				LeftInputStats:  lis,
 				RightInputStats: ris,

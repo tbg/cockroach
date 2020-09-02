@@ -64,6 +64,15 @@ message RecordedSpan {
   repeated LogRecord logs = 9 [(gogoproto.nullable) = false];
 
   // Stats collected in this span.
+  //
+  // TODO(tbg): this is almost what we need to return general unstructured events,
+  // except we don't want to be locked into a span. But maybe we can reuse the
+  // code around this on BatchResponse directly and, if tracing is on, ensure
+  // we also copy into the trace. We would then rename this field to "events",
+  // and SQL can keep using it for stats (stats events I guess).
+  // We'll also rename the SpanStats interface to EventStats and maybe enrich it
+  // a bit with a method that formats the event into a trace message. We should
+  // also lean on the SQL protobuf support that we now have.
   google.protobuf.Any stats = 10;
 }
 

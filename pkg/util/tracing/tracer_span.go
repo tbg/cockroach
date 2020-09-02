@@ -70,6 +70,8 @@ const (
 )
 
 // SpanStats are stats that can be added to a span.
+//
+// TODO(tbg): this is what is put into RecordedSpan.Stats
 type SpanStats interface {
 	proto.Message
 	// Stats returns the stats that the object represents as a map from stat name
@@ -674,6 +676,8 @@ func IsNoopContext(spanCtx opentracing.SpanContext) bool {
 
 // SetSpanStats sets the stats on a span. stats.Stats() will also be added to
 // the span tags.
+//
+// TODO(tbg): this is where the actual SpanStats impl gets passed in
 func SetSpanStats(os opentracing.Span, stats SpanStats) {
 	s := os.(*span)
 	s.mu.Lock()

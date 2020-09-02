@@ -23,6 +23,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/mon"
 	"github.com/cockroachdb/errors"
+	"github.com/gogo/protobuf/types"
 )
 
 // kvBatchSize is the number of keys we request at a time.
@@ -338,6 +339,22 @@ func (f *txnKVFetcher) fetch(ctx context.Context) error {
 	br, err := f.sendFn(ctx, ba)
 	if err != nil {
 		return err
+	}
+	for _, span := range br.CollectedSpans {
+		var da types.DynamicAny
+		if err := types.UnmarshalAny(span.Stats, &da); err != nil {
+			continue
+		}
+		switch da.Message.(type) {
+		case *roachpb.ContentionEvent:
+		// Do stuff, like add it to the StatementStatistics
+		// NB: there are other code paths where we need to pass this along
+		// with the DistSQL flows, so the real code is probably more like
+		// `extractStatsFromSpans` and lives higher up.
+		default:
+			// Not something we care about.
+			continue
+		}
 	}
 	if br != nil {
 		f.responses = br.Responses
