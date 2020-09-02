@@ -694,6 +694,7 @@ func StartTenant(
 		mux.Handle("/", debugServer)
 		f := varsHandler{metricSource: args.recorder}.handleVars
 		mux.Handle(statusVars, http.HandlerFunc(f))
+		mux.Handle("/health", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 		_ = http.Serve(httpL, mux)
 	})
 

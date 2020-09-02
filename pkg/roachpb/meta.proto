@@ -12,23 +12,25 @@ syntax = "proto3";
 package cockroach.roachpb;
 option go_package = "roachpb";
 
+import "roachpb/errors.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
 message Event {
-  int64 start_ns = 1;
-  int64 end_ns = 2;
-  // TODO(tbg): alternative would be a oneof that would then be KV specific
-  // (or become a Cockroach-global singleton). This would be mildly more
-  // performant but - I think - would result in poorer interfaces as we
-  // would be unable to provide infrastructure around these events in
-  // a small self-contained pkg. On the other hand, if we end up returning
-  // more events in the hot path (as we might want to) we need the special
-  // casing anyway. Maybe there's a middle ground? Each "subsystem" (KV, etc)
-  // gets a subsystem-specific message that is a oneof of all possible events,
-  // and that message itself is what gets send back in traces (but on the batch
-  // response, it's embedded via its concrete type).
-  google.protobuf.Any details = 3 [(gogoproto.nullable) = false]; // ContentionEvent, etc
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Duration duration = 2;
+  oneof event {
+    ContentionEvent contention = 4;
+    // NB: we'll need a contract on BatchResponse when errors are
+    // added to the events. It seems silly to do it while the
+    // response still contains the embedded error.
+    Error error = 5;
+    // Same for this one actually. This one sits directly on the
+    // response as well for perf reasons.
+    RangeExecEvent lifecycle = 5;
+  }
 }
 
 // These would live in a kv-specific package
@@ -36,9 +38,10 @@ message Event {
 message ContentionEvent {
   bytes key = 1 [(gogoproto.customtype) = "Key"];
   bool pushee_aborted = 3; // did pushee commit or abort?
+  // TODO more to come
 }
 
-message RequestLifecycleEvent {
+message RangeExecEvent {
   int64 sequenced = 2; // past latch mgr
   int64 proposed = 3; // put into raft
   int64 applied = 4; // response from raft = end of processing
@@ -46,5 +49,5 @@ message RequestLifecycleEvent {
 
 message Meta {
   RequestLifecycleEvent lifecycle = 1 [(gogoproto.embed) = true];
-  repeated Event events = 2 [(gogoproto.nullable) = false];
+  repeated Event aux_events = 3 [(gogoproto.nullable) = false];
 }
