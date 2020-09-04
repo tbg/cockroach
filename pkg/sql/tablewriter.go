@@ -124,6 +124,7 @@ func (tb *tableWriterBase) init(txn *kv.Txn, tableDesc catalog.TableDescriptor) 
 // flushAndStartNewBatch shares the common flushAndStartNewBatch() code between
 // tableWriters.
 func (tb *tableWriterBase) flushAndStartNewBatch(ctx context.Context) error {
+	// TODO(tbg): kvmeta would be produced here.
 	if err := tb.txn.Run(ctx, tb.b); err != nil {
 		return row.ConvertBatchError(ctx, tb.desc, tb.b)
 	}
@@ -140,6 +141,8 @@ func (tb *tableWriterBase) finalize(ctx context.Context) (err error) {
 		// An auto-txn can commit the transaction with the batch. This is an
 		// optimization to avoid an extra round-trip to the transaction
 		// coordinator.
+		// TODO(tbg): kvmeta would be produced here (and many other places
+		// across SQL codebase).
 		err = tb.txn.CommitInBatch(ctx, tb.b)
 	} else {
 		err = tb.txn.Run(ctx, tb.b)

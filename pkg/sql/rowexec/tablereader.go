@@ -171,6 +171,10 @@ func newTableReader(
 }
 
 func (tr *tableReader) generateTrailingMeta(ctx context.Context) []execinfrapb.ProducerMetadata {
+	// TODO(tbg): the infra here isn't quite what we need but might be good enough. It looks
+	// like at the time of writing, meta only flows once, when the flow is done, whereas we
+	// ideally would have a continuous/periodic flow of the meta to the root. Seems good
+	// enough though for now.
 	trailingMeta := tr.generateMeta(ctx)
 	tr.close()
 	return trailingMeta
