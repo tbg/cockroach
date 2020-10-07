@@ -18,8 +18,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
@@ -972,4 +974,65 @@ func (n *noopSpan) SetBaggageItem(key, val string) opentracing.Span {
 		panic("attempting to set Snowball on a noop span; use the Recordable option to StartSpan")
 	}
 	return n
+}
+
+// Metadata is immutable, structured trace data.
+type Metadata interface {
+	proto.Message
+	// More to come
+}
+
+func (s *span) AddMetadata(meta Metadata) {
+	// TBD
+}
+
+// InflightMetadata is a metadata that is not yet immutable.
+// Its purpose is to expose whatever partial information it
+// already contains via an InflightRegistry.
+type InflightMetadata interface {
+	// Current returns an immutable Metadata that represents the data
+	// currently in the InflightMetadata. This is typically a partially
+	// populated Metadata; the particular implementation of the
+	// Metadata should be clear about which partial states to expect.
+	Current() Metadata
+}
+
+type InflightRegistry struct {
+	m sync.Map // TODO consider specialized type
+}
+
+func (*InflightRegistry) spanInt64(id uint64) int64 {
+	// Reinterpret uint64 as an int64 so we can use IntMap.
+	//
+	// TODO(tbg): does this force &id on the heap?
+	return *(*int64)(unsafe.Pointer(&id))
+
+}
+
+type SpanI interface {
+	SpanID() uint64
+	AddMetadata(Metadata)
+}
+
+func (r *InflightRegistry) Register(sp SpanI) error {
+	spanID := r.spanInt64(sp.SpanID())
+
+	_, loaded := r.m.LoadOrStore(spanID, unsafe.Pointer(sp.(*span)))
+	if loaded {
+		return errors.New("Register() invoked more than once for the same span")
+	}
+	return nil
+}
+
+type InflightToken struct {
+}
+
+func (r *InflightRegistry) AddInflightMetadata(
+	spanID uint64, imeta InflightMetadata,
+) (InflightToken, error) {
+	v, ok := r.m.Load(r.spanInt64(spanID))
+	if !ok {
+		return InflightToken{}, errors.New("span not found")
+	}
+
 }
