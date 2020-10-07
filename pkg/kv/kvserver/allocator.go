@@ -1319,9 +1319,10 @@ func filterUnremovableReplicas(
 	replicas []roachpb.ReplicaDescriptor,
 	brandNewReplicaID roachpb.ReplicaID,
 ) []roachpb.ReplicaDescriptor {
-	upToDateReplicas := filterBehindReplicas(ctx, raftStatus, replicas)
-	oldQuorum := computeQuorum(len(replicas))
-	if len(upToDateReplicas) < oldQuorum {
+	// returns only replicas known to be up to date
+	upToDateReplicas := filterBehindReplicas(ctx, raftStatus, replicas) // 1, 2, 3, 4
+	oldQuorum := computeQuorum(len(replicas))                           // 4 (of 7)
+	if len(upToDateReplicas) < oldQuorum {                              // false
 		// The number of up-to-date replicas is less than the old quorum. No
 		// replicas can be removed. A below quorum range won't be able to process a
 		// replica removal in any case. The logic here prevents any attempt to even
@@ -1329,8 +1330,8 @@ func filterUnremovableReplicas(
 		return nil
 	}
 
-	newQuorum := computeQuorum(len(replicas) - 1)
-	if len(upToDateReplicas) > newQuorum {
+	newQuorum := computeQuorum(len(replicas) - 1) // 4 (of 6)
+	if len(upToDateReplicas) > newQuorum {        // false
 		// The number of up-to-date replicas is larger than the new quorum. Any
 		// replica can be removed, though we want to filter out brandNewReplicaID.
 		if brandNewReplicaID != 0 {
@@ -1344,6 +1345,8 @@ func filterUnremovableReplicas(
 		}
 		return replicas
 	}
+
+	// assert that we still have quorum
 
 	// The number of up-to-date replicas is equal to the new quorum. Only allow
 	// removal of behind replicas (except for brandNewReplicaID which is given a
