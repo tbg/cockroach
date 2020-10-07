@@ -603,6 +603,7 @@ func (rq *replicateQueue) findRemoveTarget(
 		log.VEventf(ctx, 3, "filtered unremovable replicas from %v to get %v as candidates for removal: %s",
 			existingReplicas, candidates, rangeRaftProgress(raftStatus, existingReplicas))
 		if len(candidates) > 0 {
+			log.Warningf(ctx, "TBG candidates == %+v\nraft status %+v", candidates, raftStatus)
 			break
 		}
 		if len(raftStatus.Progress) <= 2 {
