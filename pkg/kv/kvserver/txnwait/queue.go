@@ -28,6 +28,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
+	"github.com/cockroachdb/cockroach/pkg/util/tracing"
 	"github.com/cockroachdb/cockroach/pkg/util/uuid"
 )
 
@@ -112,6 +113,11 @@ type waitingPush struct {
 		syncutil.Mutex
 		dependents map[uuid.UUID]struct{} // transitive set of txns waiting on this txn
 	}
+}
+
+func (wp *waitingPush) Current() tracing.Metadata {
+	// dummy - really return some proto
+	return nil
 }
 
 // A waitingQueries object represents one or more QueryTxn commands that are
@@ -399,6 +405,8 @@ func (q *Queue) releaseWaitingQueriesLocked(ctx context.Context, txnID uuid.UUID
 	}
 }
 
+var r *tracing.InflightRegistry // dummy
+
 // MaybeWaitForPush checks whether there is a queue already
 // established for pushing the transaction. If not, or if the PushTxn
 // request isn't queueable, return immediately. If there is a queue,
@@ -413,6 +421,10 @@ func (q *Queue) MaybeWaitForPush(
 	if ShouldPushImmediately(req) {
 		return nil, nil
 	}
+
+	var sp tracing.SpanI // hack: really comes from 'ctx'
+	isp, done := r.Register(sp)
+	defer done()
 
 	q.mu.Lock()
 	// If the txn wait queue is not enabled or if the request is not
@@ -441,6 +453,13 @@ func (q *Queue) MaybeWaitForPush(
 		req:     req,
 		pending: make(chan *roachpb.Transaction, 1),
 	}
+	// Track the push in the node-local registry until it completes,
+	// at which point add it to trace.
+	isp.Add(push)
+	// TODO consider: isp.Promote(push) instead of the next two lines
+	defer isp.Del(push)
+	defer sp.AddMetadata(push.Current())
+
 	pending.waitingPushes = append(pending.waitingPushes, push)
 	if f := q.cfg.Knobs.OnPusherBlocked; f != nil {
 		f(ctx, req)
