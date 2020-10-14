@@ -106,6 +106,9 @@ func createPushTxnResponse(txn *roachpb.Transaction) *roachpb.PushTxnResponse {
 // set of all txns which are waiting on this txn in order to detect
 // dependency cycles.
 type waitingPush struct {
+	// TODO: need to propagate the conflict span around so that it's available here.
+	// Or we emit an extra event on the pusher's node, but it seems unwise to fragment
+	// the information.
 	req *roachpb.PushTxnRequest
 	// pending channel receives updated, pushed txn or nil if queue is cleared.
 	pending chan *roachpb.Transaction
@@ -566,6 +569,7 @@ func (q *Queue) MaybeWaitForPush(
 			// successful PushTxn response.
 			if isPushed(req, txn) {
 				log.VEvent(ctx, 2, "push request is satisfied")
+				// TODO need to make sure these are captured
 				return createPushTxnResponse(txn), nil
 			}
 			// If not successfully pushed, return not pushed so request proceeds.
