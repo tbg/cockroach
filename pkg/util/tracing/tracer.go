@@ -22,6 +22,7 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/settings"
 	"github.com/cockroachdb/cockroach/pkg/util/envutil"
+	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/logtags"
 	opentracing "github.com/opentracing/opentracing-go"
 	"golang.org/x/net/trace"
@@ -94,6 +95,11 @@ type Tracer struct {
 
 	// Pointer to shadowTracer, if using one.
 	shadowTracer unsafe.Pointer
+
+	storageMu struct {
+		syncutil.Mutex
+		active map[uint64][]*Span
+	}
 }
 
 // NewTracer creates a Tracer. It initially tries to run with minimal overhead
