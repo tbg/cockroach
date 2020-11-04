@@ -216,13 +216,13 @@ func (s *Span) IsRecording() bool {
 func (s *crdbSpan) enableRecording(
 	parent *crdbSpan, recType RecordingType, separateRecording bool,
 ) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	atomic.StoreInt32(&s.recording, 1)
-	s.mu.recording.recordingType = recType
 	if parent != nil && !separateRecording {
 		parent.addChild(s)
 	}
+	s.mu.Lock()
+	atomic.StoreInt32(&s.recording, 1)
+	s.mu.recording.recordingType = recType
+
 	if recType == SnowballRecording {
 		s.setBaggageItemLocked(Snowball, "1")
 	}
@@ -232,6 +232,7 @@ func (s *crdbSpan) enableRecording(
 	s.mu.recording.recordedLogs = nil
 	s.mu.recording.children = nil
 	s.mu.recording.remoteSpans = nil
+	s.mu.Unlock()
 }
 
 // StartRecording enables recording on the Span. Events from this point forward
@@ -253,6 +254,7 @@ func (s *Span) StartRecording(recType RecordingType) {
 	if s.isNoop() {
 		panic("StartRecording called on NoopSpan; use the WithForceRealSpan option for StartSpan")
 	}
+	assertNoDuplicates(s.crdb, map[uint64]bool{})
 
 	// If we're already recording (perhaps because the parent was recording when
 	// this Span was created), there's nothing to do.
@@ -276,6 +278,7 @@ func (s *Span) StopRecording() {
 }
 
 func (s *crdbSpan) disableRecording() {
+	assertNoDuplicates(s, map[uint64]bool{})
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	atomic.StoreInt32(&s.recording, 0)
@@ -300,6 +303,7 @@ func (s *crdbSpan) getRecording() Recording {
 	if !s.isRecording() {
 		return nil
 	}
+	assertNoDuplicates(s, map[uint64]bool{})
 	s.mu.Lock()
 	// The capacity here is approximate since we don't know how many grandchildren
 	// there are.
@@ -336,10 +340,37 @@ func (s *Span) ImportRemoteSpans(remoteSpans []tracingpb.RecordedSpan) error {
 	return s.crdb.ImportRemoteSpans(remoteSpans)
 }
 
+func assertNoDuplicates(s *crdbSpan, spansSeen map[uint64]bool) {
+	if s == nil {
+		return
+	}
+	if wasSpan, ok := spansSeen[s.spanID]; ok {
+		panic(errors.Errorf("already saw span, was span=%t (recording otherwise)", wasSpan))
+	}
+	spansSeen[s.spanID] = true
+
+	s.mu.Lock()
+	children := append(([]*crdbSpan)(nil), s.mu.recording.children...)
+	remoteSpans := append(Recording(nil), s.mu.recording.remoteSpans...)
+	s.mu.Unlock()
+
+	for _, chld := range children {
+		assertNoDuplicates(chld, spansSeen)
+	}
+	for _, sp := range remoteSpans {
+		if wasSpan, ok := spansSeen[sp.SpanID]; ok {
+			panic(errors.Errorf("already saw spanID, wasSpan=%t", wasSpan))
+		}
+		spansSeen[sp.SpanID] = false
+	}
+}
+
 func (s *crdbSpan) ImportRemoteSpans(remoteSpans []tracingpb.RecordedSpan) error {
 	if !s.isRecording() {
 		return errors.AssertionFailedf("adding Raw Spans to a Span that isn't recording")
 	}
+
+	assertNoDuplicates(s, map[uint64]bool{})
 	// Change the root of the remote recording to be a child of this Span. This is
 	// usually already the case, except with DistSQL traces where remote
 	// processors run in spans that FollowFrom an RPC Span that we don't collect.
@@ -348,6 +379,9 @@ func (s *crdbSpan) ImportRemoteSpans(remoteSpans []tracingpb.RecordedSpan) error
 	s.mu.Lock()
 	s.mu.recording.remoteSpans = append(s.mu.recording.remoteSpans, remoteSpans...)
 	s.mu.Unlock()
+
+	assertNoDuplicates(s, map[uint64]bool{})
+
 	return nil
 }
 
@@ -655,7 +689,11 @@ func (s *crdbSpan) getRecordingLocked() tracingpb.RecordedSpan {
 }
 
 func (s *crdbSpan) addChild(child *crdbSpan) {
+	assertNoDuplicates(child, map[uint64]bool{})
+	assertNoDuplicates(s, map[uint64]bool{})
 	s.mu.Lock()
 	s.mu.recording.children = append(s.mu.recording.children, child)
 	s.mu.Unlock()
+	assertNoDuplicates(s, map[uint64]bool{})
+	assertNoDuplicates(child, map[uint64]bool{})
 }

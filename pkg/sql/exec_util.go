@@ -1447,13 +1447,35 @@ func (st *SessionTracing) getSessionTrace() ([]traceRow, error) {
 	return generateSessionTraceVTable(st.getRecording())
 }
 
+func checkNoDuplicateSpans(spans tracing.Recording) error {
+	spansSeen := map[uint64]struct{}{}
+	for _, span := range spans {
+		if _, ok := spansSeen[span.SpanID]; ok {
+			return errors.New("duplicate span")
+		}
+		spansSeen[span.SpanID] = struct{}{}
+	}
+	return nil
+}
+
 // getRecording returns the recorded spans of the current trace.
 func (st *SessionTracing) getRecording() []tracingpb.RecordedSpan {
 	var spans []tracingpb.RecordedSpan
 	if st.firstTxnSpan != nil {
-		spans = append(spans, st.firstTxnSpan.GetRecording()...)
+		spans = st.firstTxnSpan.GetRecording()
+		if err := checkNoDuplicateSpans(spans); err != nil {
+			panic(err)
+		}
 	}
-	return append(spans, st.connSpan.GetRecording()...)
+	connSpans := st.connSpan.GetRecording()
+	if err := checkNoDuplicateSpans(connSpans); err != nil {
+		panic(err)
+	}
+	combined := append(spans, connSpans...)
+	if err := checkNoDuplicateSpans(combined); err != nil {
+		panic(err)
+	}
+	return combined
 }
 
 // StartTracing starts "session tracing". From this moment on, everything
@@ -1566,14 +1588,11 @@ func (st *SessionTracing) StopTracing() error {
 	st.showResults = false
 	st.recordingType = tracing.NoRecording
 
-	var spans []tracingpb.RecordedSpan
-
+	spans := st.getRecording()
 	if st.firstTxnSpan != nil {
-		spans = append(spans, st.firstTxnSpan.GetRecording()...)
 		st.firstTxnSpan.StopRecording()
 	}
 	st.connSpan.Finish()
-	spans = append(spans, st.connSpan.GetRecording()...)
 	// NOTE: We're stopping recording on the connection's ctx only; the stopping
 	// is not inherited by children. If we are inside of a txn, that span will
 	// continue recording, even though nobody will collect its recording again.
@@ -1745,10 +1764,7 @@ func generateSessionTraceVTable(spans []tracingpb.RecordedSpan) ([]traceRow, err
 
 	// NOTE: The spans are recorded in the order in which they are started.
 	seenSpans := make(map[uint64]struct{})
-	for spanIdx, span := range spans {
-		if _, ok := seenSpans[span.SpanID]; ok {
-			continue
-		}
+	for spanIdx := range spans {
 		spanWithIndex := spanWithIndex{
 			RecordedSpan: &spans[spanIdx],
 			index:        spanIdx,
@@ -1869,7 +1885,8 @@ func getMessagesForSubtrace(
 	span spanWithIndex, allSpans []tracingpb.RecordedSpan, seenSpans map[uint64]struct{},
 ) ([]logRecordRow, error) {
 	if _, ok := seenSpans[span.SpanID]; ok {
-		return nil, errors.Errorf("duplicate span %d", span.SpanID)
+		return nil, errors.New("tbg")
+		// return nil, nil
 	}
 	var allLogs []logRecordRow
 	const spanStartMsgTemplate = "=== SPAN START: %s ==="

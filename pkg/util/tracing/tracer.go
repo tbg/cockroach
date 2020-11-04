@@ -205,6 +205,7 @@ func (t *Tracer) startSpanGeneric(opName string, opts spanOptions) *Span {
 		if opts.RemoteParent != nil {
 			panic("can't specify both Parent and RemoteParent")
 		}
+		assertNoDuplicates(opts.Parent.crdb, map[uint64]bool{})
 	}
 
 	// If tracing is disabled, avoid overhead and return a noop Span.
@@ -550,7 +551,7 @@ func ChildSpan(ctx context.Context, opName string) (context.Context, *Span) {
 // ChildSpanSeparateRecording is like ChildSpan but the new Span has separate
 // recording (see StartChildSpan).
 func ChildSpanSeparateRecording(ctx context.Context, opName string) (context.Context, *Span) {
-	return childSpan(ctx, opName, spanOptions{SeparateRecording: true})
+	return childSpan(ctx, opName, spanOptions{SeparateRecording: false /* HACK(tbg) */})
 }
 
 func childSpan(ctx context.Context, opName string, opts spanOptions) (context.Context, *Span) {

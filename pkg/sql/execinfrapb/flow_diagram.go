@@ -766,12 +766,17 @@ func extractStatsFromSpans(
 ) (processorStats, streamStats map[int][]string) {
 	processorStats = make(map[int][]string)
 	streamStats = make(map[int][]string)
+	seenSpans := map[uint64]struct{}{} // spanID -> seen
 	for _, span := range spans {
 		// The trace can contain spans from multiple flows; make sure we select the
 		// right ones.
 		if fid, ok := span.Tags[FlowIDTagKey]; !ok || fid != flowID.String() {
 			continue
 		}
+		if _, ok := seenSpans[span.SpanID]; ok {
+			// HACK(tbg) continue
+		}
+		seenSpans[span.SpanID] = struct{}{}
 
 		var id string
 		var stats map[int][]string
