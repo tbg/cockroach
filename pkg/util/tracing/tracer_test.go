@@ -11,6 +11,7 @@
 package tracing
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/cockroachdb/logtags"
@@ -20,9 +21,13 @@ import (
 )
 
 func TestStartSpanAlwaysTrace(t *testing.T) {
+	runLegacy(t, testStartSpanAlwaysTraceImpl)
+}
+
+func testStartSpanAlwaysTraceImpl(t *testing.T, legacy bool) {
 	// Regression test: if tracing is on, don't erroneously return a noopSpan
 	// due to optimizations in StartSpan.
-	tr := NewTracer()
+	tr := newTracer(legacy)
 	tr._useNetTrace = 1
 	require.True(t, tr.AlwaysTrace())
 	nilMeta := tr.noopSpan.Meta()
@@ -35,8 +40,36 @@ func TestStartSpanAlwaysTrace(t *testing.T) {
 	require.False(t, sp.isNoop())
 }
 
-func TestTracerRecording(t *testing.T) {
+// runLegacy is a helper that runs tests that precede always-on tracing with
+// both the legacy and non-legacy mode (see type mode for details). These
+// tests don't provide specific coverage for the non-legacy mode but at
+// least they will pass in both; specialized tests for non-legacy are added
+// separately and do not use this helper. Once the legacy mode is removed,
+// this helper can be removed and legacy=false can be baked into the tests.
+func runLegacy(t *testing.T, fn func(*testing.T, bool)) {
+	for _, b := range []bool{false, true} {
+		t.Run(fmt.Sprintf("legacy=%t", b), func(t *testing.T) {
+			fn(t, b)
+		})
+	}
+}
+
+func newTracer(legacy bool) *Tracer {
 	tr := NewTracer()
+	if legacy {
+		tr._mode = int32(modeLegacy)
+	} else {
+		tr._mode = int32(modeBackground)
+	}
+	return tr
+}
+
+func TestTracerRecording(t *testing.T) {
+	runLegacy(t, testTracerRecordingImpl)
+}
+
+func testTracerRecordingImpl(t *testing.T, legacy bool) {
+	tr := newTracer(legacy)
 
 	noop1 := tr.StartSpan("noop")
 	if !noop1.isNoop() {
@@ -77,10 +110,10 @@ func TestTracerRecording(t *testing.T) {
 
 	if err := TestingCheckRecordedSpans(s1.GetRecording(), `
 		Span a:
-			tags: sb=1 unfinished=
+			tags: unfinished=
 			x: 2
 		Span b:
-			tags: sb=1 unfinished=
+			tags: unfinished=
 			x: 3
 	`); err != nil {
 		t.Fatal(err)
@@ -88,7 +121,7 @@ func TestTracerRecording(t *testing.T) {
 
 	if err := TestingCheckRecordedSpans(s2.GetRecording(), `
 		Span b:
-			tags: sb=1 unfinished=
+			tags: unfinished=
 			x: 3
 	`); err != nil {
 		t.Fatal(err)
@@ -102,13 +135,12 @@ func TestTracerRecording(t *testing.T) {
 
 	if err := TestingCheckRecordedSpans(s1.GetRecording(), `
 		Span a:
-			tags: sb=1 unfinished=
+			tags: unfinished=
 			x: 2
 		Span b:
-			tags: sb=1
 			x: 3
 		Span c:
-			tags: sb=1 tag=val unfinished=
+			tags: tag=val unfinished=
 			x: 4
 	`); err != nil {
 		t.Fatal(err)
@@ -116,13 +148,12 @@ func TestTracerRecording(t *testing.T) {
 	s3.Finish()
 	if err := TestingCheckRecordedSpans(s1.GetRecording(), `
 		Span a:
-      tags: sb=1 unfinished=
+      tags: unfinished=
 			x: 2
 		Span b:
-      tags: sb=1
 			x: 3
 		Span c:
-			tags: sb=1 tag=val
+			tags: tag=val
 			x: 4
 	`); err != nil {
 		t.Fatal(err)
@@ -137,7 +168,7 @@ func TestTracerRecording(t *testing.T) {
 	s3.LogKV("x", 5)
 	if err := TestingCheckRecordedSpans(s3.GetRecording(), `
 		Span c:
-			tags: sb=1 tag=val
+			tags: tag=val
 			x: 4
 			x: 5
 	`); err != nil {
@@ -147,6 +178,10 @@ func TestTracerRecording(t *testing.T) {
 }
 
 func TestStartChildSpan(t *testing.T) {
+	runLegacy(t, testStartChildSpanImpl)
+}
+
+func testStartChildSpanImpl(t *testing.T, legacy bool) {
 	tr := NewTracer()
 	sp1 := tr.StartSpan("parent", WithForceRealSpan())
 	sp1.StartRecording(SnowballRecording)
@@ -156,9 +191,7 @@ func TestStartChildSpan(t *testing.T) {
 
 	var exp = `
 Span parent:
-      tags: sb=1
     Span child:
-      tags: sb=1
 `
 
 	if err := TestingCheckRecordedSpans(sp1.GetRecording(), exp); err != nil {
@@ -172,13 +205,11 @@ Span parent:
 	sp1.Finish()
 	if err := TestingCheckRecordedSpans(sp1.GetRecording(), `
 		Span parent:
-			tags: sb=1
 	`); err != nil {
 		t.Fatal(err)
 	}
 	if err := TestingCheckRecordedSpans(sp2.GetRecording(), `
 		Span child:
-			tags: sb=1
 	`); err != nil {
 		t.Fatal(err)
 	}
@@ -187,21 +218,25 @@ Span parent:
 	sp1.StartRecording(SnowballRecording)
 	sp2 = tr.StartSpan("child", WithParentAndAutoCollection(sp1),
 		WithLogTags(logtags.SingleTagBuffer("key", "val")))
+	require.Equal(t, SnowballRecording, sp2.crdb.getRecordingType())
 	sp2.Finish()
 	sp1.Finish()
 	if err := TestingCheckRecordedSpans(sp1.GetRecording(), `
 		Span parent:
-			tags: sb=1
 			Span child:
-				tags: key=val sb=1
+				tags: key=val
 	`); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestTracerInjectExtract(t *testing.T) {
-	tr := NewTracer()
-	tr2 := NewTracer()
+	runLegacy(t, testTracerInjectExtractImpl)
+}
+
+func testTracerInjectExtractImpl(t *testing.T, legacy bool) {
+	tr := newTracer(legacy)
+	tr2 := newTracer(legacy)
 
 	// Verify that noop spans become noop spans on the remote side.
 
@@ -258,10 +293,10 @@ func TestTracerInjectExtract(t *testing.T) {
 	s2.Finish()
 
 	// Verify that recording was started automatically.
+	require.Equal(t, SnowballRecording, s2.crdb.getRecordingType())
 	rec := s2.GetRecording()
 	if err := TestingCheckRecordedSpans(rec, `
 		Span remote op:
-			tags: sb=1
 			x: 1
 	`); err != nil {
 		t.Fatal(err)
@@ -269,7 +304,7 @@ func TestTracerInjectExtract(t *testing.T) {
 
 	if err := TestingCheckRecordedSpans(s1.GetRecording(), `
 		Span a:
-			tags: sb=1 unfinished=
+			tags: unfinished=
 	`); err != nil {
 		t.Fatal(err)
 	}
@@ -281,9 +316,7 @@ func TestTracerInjectExtract(t *testing.T) {
 
 	if err := TestingCheckRecordedSpans(s1.GetRecording(), `
 		Span a:
-			tags: sb=1
 		Span remote op:
-			tags: sb=1
 			x: 1
 	`); err != nil {
 		t.Fatal(err)
@@ -291,7 +324,11 @@ func TestTracerInjectExtract(t *testing.T) {
 }
 
 func TestLightstepContext(t *testing.T) {
-	tr := NewTracer()
+	runLegacy(t, testLightstepContextImpl)
+}
+
+func testLightstepContextImpl(t *testing.T, legacy bool) {
+	tr := newTracer(legacy)
 	lsTr := lightstep.NewTracer(lightstep.Options{
 		AccessToken: "invalid",
 		Collector: lightstep.Endpoint{

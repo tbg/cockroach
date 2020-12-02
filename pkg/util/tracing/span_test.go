@@ -25,8 +25,12 @@ import (
 )
 
 func TestRecordingString(t *testing.T) {
-	tr := NewTracer()
-	tr2 := NewTracer()
+	runLegacy(t, testRecordingStringImpl)
+}
+
+func testRecordingStringImpl(t *testing.T, legacy bool) {
+	tr := newTracer(legacy)
+	tr2 := newTracer(legacy)
 
 	root := tr.StartSpan("root", WithForceRealSpan())
 	root.StartRecording(SnowballRecording)
@@ -66,28 +70,25 @@ func TestRecordingString(t *testing.T) {
 	// its String() representation; this just list all the spans in order.
 	err = TestingCheckRecordedSpans(rec, `
 Span root:
-	tags: sb=1
 	event: root 1
 	event: root 2
 	event: root 3
 	event: root 4
 	event: root 5
 Span remote child:
-	tags: sb=1
 	event: remote child 1
 Span local child:
-	tags: sb=1
 	event: local child 1
 `)
 	require.NoError(t, err)
 
-	exp := `=== operation:root sb:1
+	exp := `=== operation:root
 event:root 1
-    === operation:remote child sb:1
+    === operation:remote child
     event:remote child 1
 event:root 2
 event:root 3
-    === operation:local child sb:1
+    === operation:local child
     event:local child 1
 event:root 4
 event:root 5
@@ -101,7 +102,7 @@ event:root 5
 	require.Equal(t, traceLine{
 		timeSinceTraceStart: "0.000ms",
 		timeSincePrev:       "0.000ms",
-		text:                "=== operation:root sb:1",
+		text:                "=== operation:root",
 	}, l)
 	l, err = parseLine(lines[1])
 	require.Equal(t, traceLine{
@@ -144,7 +145,11 @@ func recToStrippedString(r Recording) string {
 }
 
 func TestRecordingInRecording(t *testing.T) {
-	tr := NewTracer()
+	runLegacy(t, testRecordingInRecordingImpl)
+}
+
+func testRecordingInRecordingImpl(t *testing.T, legacy bool) {
+	tr := newTracer(legacy)
 
 	root := tr.StartSpan("root", WithForceRealSpan())
 	root.StartRecording(SnowballRecording)
@@ -154,6 +159,7 @@ func TestRecordingInRecording(t *testing.T) {
 	// have to be imported into the parent manually (this would usually happen via
 	// code at the RPC boundaries).
 	grandChild := tr.StartSpan("grandchild", WithParentAndManualCollection(child.Meta()))
+	require.Equal(t, SnowballRecording, grandChild.crdb.getRecordingType())
 	grandChild.Finish()
 	require.NoError(t, child.ImportRemoteSpans(grandChild.GetRecording()))
 	child.Finish()
@@ -162,29 +168,28 @@ func TestRecordingInRecording(t *testing.T) {
 	rootRec := root.GetRecording()
 	require.NoError(t, TestingCheckRecordedSpans(rootRec, `
 Span root:
-	tags: sb=1
 Span child:
-	tags: sb=1
 Span grandchild:
-	tags: sb=1
 `))
 
 	childRec := child.GetRecording()
 	require.NoError(t, TestingCheckRecordedSpans(childRec, `
 Span child:
-	tags: sb=1
 Span grandchild:
-	tags: sb=1
 `))
 
-	exp := `=== operation:child sb:1
-    === operation:grandchild sb:1
+	exp := `=== operation:child
+    === operation:grandchild
 `
 	require.Equal(t, exp, recToStrippedString(childRec))
 }
 
 func TestChildSpan(t *testing.T) {
-	tr := NewTracer()
+	runLegacy(t, testChildSpanImpl)
+}
+
+func testChildSpanImpl(t *testing.T, legacy bool) {
+	tr := newTracer(legacy)
 	// Set up non-recording span.
 	sp := tr.StartSpan("foo", WithForceRealSpan())
 	ctx := ContextWithSpan(context.Background(), sp)

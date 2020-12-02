@@ -28,7 +28,11 @@ import (
 )
 
 // RecordingType is the type of recording that a Span might be performing.
-type RecordingType int
+type RecordingType int32
+
+// RecordingOff
+// RecordingBackground
+// RecordingVerbose
 
 const (
 	// NoRecording means that the Span isn't recording. Child spans created from
@@ -39,7 +43,14 @@ const (
 	// i.e. this mode crosses RPC boundaries). Derived spans will maintain
 	// their own recording, and this recording will be included in that of
 	// any local parent spans.
+	//
+	// TODO(tbg): rename this to reflect that this is verbose recording.
 	SnowballRecording
+	// BackgroundRecording is like SnowballRecording, but does not record
+	// verbose information, i.e. LogFields will be a no-op.
+	//
+	// TODO(tbg): give this a better description.
+	BackgroundRecording
 )
 
 type traceLogData struct {

@@ -45,8 +45,59 @@ const (
 	fieldNameTraceID = prefixTracerState + "traceid"
 	fieldNameSpanID  = prefixTracerState + "spanid"
 	// fieldNameShadow is the name of the shadow tracer.
-	fieldNameShadowType = prefixTracerState + "shadowtype"
+	fieldNameShadowType    = prefixTracerState + "shadowtype"
+	fieldNameRecordingType = prefixTracerState + "rectype"
 )
+
+type mode int32
+
+const (
+	modeLegacy mode = iota
+	modeBackground
+)
+
+func (m mode) baggageValue() string {
+	switch m {
+	case modeBackground:
+		return "b"
+	}
+	return "1" // modeLegacy
+}
+
+// tracingMode informs the creation of noop spans
+// and the default recording mode of created spans.
+var tracingMode = settings.RegisterPublicEnumSetting(
+	"trace.mode",
+	`configures the CockroachDB-internal tracing subsystem.
+
+If set to 'background', trace spans will be created for all operations, but
+these trace spans will only be recording sparse structured information,
+unless an operation explicitly requests verbose recording.
+This is the default mode of operation, is optimized for low overhead, and
+powers fine-grained statistics and alerts. Note that this mode is not
+compatible with CockroachDB v20.2 (trace information will be lost), so
+it should only be used once the cluster version is at least v21.1. Note
+also that configuring an auxiliary trace sinks will continue to receive
+verbose traces, which may lead to high memory consumption. It is not
+currently possible to send non-verbose traces to auxiliary sinks.
+
+If set to 'legacy', trace spans will not be created (unless an auxiliary
+tracer such as Lightstep or Zipkin, is configured, or an internal code path
+explicitly requests a trace to be created) but when they are, they record
+verbose information.
+This has two effects: the observability of the cluster may
+be degraded (as some trace spans are elided) and where trace
+spans are created, they may consume large amounts of memory.
+This mode should not be used with auxiliary tracing sinks as that leads
+to expensive trace spans being created throughout.
+`,
+	"legacy",
+	map[int64]string{
+		// TODO(tbg): add a long-running migration that switches from 'legacy' to
+		// 'background' when v21.1 becomes active.
+		int64(modeBackground): "background",
+		int64(modeLegacy):     "legacy",
+	})
 
 var enableNetTrace = settings.RegisterPublicBoolSetting(
 	"trace.debug.enable",
@@ -80,16 +131,17 @@ var zipkinCollector = settings.RegisterPublicStringSetting(
 // Even when tracing is disabled, we still use this Tracer (with x/net/trace and
 // lightstep disabled) because of its recording capability (snowball
 // tracing needs to work in all cases).
-//
-// Tracer is currently stateless so we could have a single instance; however,
-// this won't be the case if the cluster settings move away from using global
-// state.
 type Tracer struct {
 	// Preallocated noopSpan, used to avoid creating spans when we are not using
 	// x/net/trace or lightstep and we are not recording.
 	noopSpan *Span
 
-	// True if tracing to the debug/requests endpoint. Accessed via t.useNetTrace().
+	// The tracingMode cluster setting.
+	// Access this via t.mode().
+	_mode int32 // updated atomically
+
+	// True if tracing to the debug/requests endpoint (enableNetTrace cluster setting).
+	// Access this via t.useNetTrace().
 	_useNetTrace int32 // updated atomically
 
 	// Pointer to shadowTracer, if using one.
@@ -121,6 +173,7 @@ func (t *Tracer) Configure(sv *settings.Values) {
 			nt = 1
 		}
 		atomic.StoreInt32(&t._useNetTrace, nt)
+		atomic.StoreInt32(&t._mode, int32(tracingMode.Get(sv)))
 	}
 
 	reconfigure()
@@ -128,6 +181,10 @@ func (t *Tracer) Configure(sv *settings.Values) {
 	enableNetTrace.SetOnChange(sv, reconfigure)
 	lightstepToken.SetOnChange(sv, reconfigure)
 	zipkinCollector.SetOnChange(sv, reconfigure)
+}
+
+func (t *Tracer) mode() mode {
+	return mode(atomic.LoadInt32(&t._mode))
 }
 
 func (t *Tracer) useNetTrace() bool {
@@ -172,8 +229,7 @@ func (t *Tracer) StartSpan(operationName string, os ...SpanOption) *Span {
 // AlwaysTrace returns true if operations should be traced regardless of the
 // context.
 func (t *Tracer) AlwaysTrace() bool {
-	shadowTracer := t.getShadowTracer()
-	return t.useNetTrace() || shadowTracer != nil
+	return t.useNetTrace() || t.getShadowTracer() != nil
 }
 
 // startSpanGeneric is the implementation of StartSpan.
@@ -278,6 +334,7 @@ func (t *Tracer) startSpanGeneric(opName string, opts spanOptions) *Span {
 	}{}
 
 	helper.crdbSpan = crdbSpan{
+		legacy:       t.mode() == modeLegacy,
 		traceID:      traceID,
 		spanID:       spanID,
 		operation:    opName,
@@ -366,6 +423,7 @@ func (t *Tracer) Inject(sc *SpanMeta, format interface{}, carrier interface{}) e
 
 	mapWriter.Set(fieldNameTraceID, strconv.FormatUint(sc.traceID, 16))
 	mapWriter.Set(fieldNameSpanID, strconv.FormatUint(sc.spanID, 16))
+	mapWriter.Set(fieldNameRecordingType, strconv.FormatInt(int64(sc.recordingType), 10))
 
 	for k, v := range sc.Baggage {
 		mapWriter.Set(prefixBaggage+k, v)
@@ -421,6 +479,7 @@ func (t *Tracer) Extract(format interface{}, carrier interface{}) (*SpanMeta, er
 
 	var traceID uint64
 	var spanID uint64
+	var recordingType RecordingType
 	var baggage map[string]string
 
 	// TODO(tbg): ForeachKey forces things on the heap. We can do better
@@ -441,6 +500,12 @@ func (t *Tracer) Extract(format interface{}, carrier interface{}) (*SpanMeta, er
 			}
 		case fieldNameShadowType:
 			shadowType = v
+		case fieldNameRecordingType:
+			n, err := strconv.ParseInt(v, 10, 32)
+			if err != nil {
+				return opentracing.ErrSpanContextCorrupted
+			}
+			recordingType = RecordingType(n)
 		default:
 			if strings.HasPrefix(k, prefixBaggage) {
 				if baggage == nil {
@@ -464,9 +529,13 @@ func (t *Tracer) Extract(format interface{}, carrier interface{}) (*SpanMeta, er
 		return noopSpanContext, nil
 	}
 
-	var recordingType RecordingType
-	if baggage[Snowball] != "" {
-		recordingType = SnowballRecording
+	var legacy bool
+	{
+		s, ok := baggage[Snowball]
+		legacy = ok
+		if s != "" {
+			recordingType = SnowballRecording
+		}
 	}
 
 	var shadowCtx opentracing.SpanContext
@@ -492,6 +561,7 @@ func (t *Tracer) Extract(format interface{}, carrier interface{}) (*SpanMeta, er
 	}
 
 	return &SpanMeta{
+		legacy:           legacy,
 		traceID:          traceID,
 		spanID:           spanID,
 		shadowTracerType: shadowType,

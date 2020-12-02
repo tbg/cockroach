@@ -42,6 +42,7 @@ import (
 // child finishes, so that the caller can inductively construct the
 // entire trace.
 type SpanMeta struct {
+	legacy  bool
 	traceID uint64
 	spanID  uint64
 
@@ -86,8 +87,7 @@ type crdbSpanMu struct {
 
 	// recording maintains state once StartRecording() is called.
 	recording struct {
-		recordingType RecordingType
-		recordedLogs  []opentracing.LogRecord
+		recordedLogs []opentracing.LogRecord
 		// children contains the list of child spans started after this Span
 		// started recording.
 		children []*crdbSpan
@@ -110,6 +110,7 @@ type crdbSpanMu struct {
 }
 
 type crdbSpan struct {
+	legacy bool
 	// The traceID, probabilistically unique.
 	traceID uint64
 	// The spanID, probabilistically unique.
@@ -129,14 +130,14 @@ type crdbSpan struct {
 	// tag's key to a user.
 	logTags *logtags.Buffer
 
-	// Atomic flag used to avoid taking the mutex in the hot path.
-	recording int32
+	// RecordingType type as an int32, access atomically.
+	_recording int32
 
 	mu crdbSpanMu
 }
 
-func (s *crdbSpan) isRecording() bool {
-	return s != nil && atomic.LoadInt32(&s.recording) != 0
+func (s *crdbSpan) recType() RecordingType {
+	return RecordingType(atomic.LoadInt32(&s._recording))
 }
 
 // otSpan is a span for an external opentracing compatible tracer
@@ -187,16 +188,16 @@ type Span struct {
 }
 
 func (s *Span) isBlackHole() bool {
-	return !s.crdb.isRecording() && s.netTr == nil && s.ot == (otSpan{})
+	return s.crdb.recType() == NoRecording && s.netTr == nil && s.ot == (otSpan{})
 }
 
 func (s *Span) isNoop() bool {
 	return s.crdb == nil && s.netTr == nil && s.ot == (otSpan{})
 }
 
-// IsRecording returns true if the Span is recording its events.
+// IsRecording returns true if the Span is recording (in background or verbose mode).
 func (s *Span) IsRecording() bool {
-	return s.crdb.isRecording()
+	return s.crdb.recType() != NoRecording
 }
 
 // enableRecording start recording on the Span. From now on, log events and child spans
@@ -209,12 +210,20 @@ func (s *Span) IsRecording() bool {
 func (s *crdbSpan) enableRecording(parent *crdbSpan, recType RecordingType) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	atomic.StoreInt32(&s.recording, 1)
-	s.mu.recording.recordingType = recType
+	oldRecType := RecordingType(atomic.SwapInt32(&s._recording, int32(recType)))
+	if oldRecType == recType {
+		// If we're already recording (perhaps because the parent was recording when
+		// this Span was created), there's nothing to do.
+		//
+		// Note that this is not reachable with parent != nil as we only ever pass
+		// the parent when recording is started from startSpanGeneric for the very
+		// first time.
+		return
+	}
 	if parent != nil {
 		parent.addChild(s)
 	}
-	if recType == SnowballRecording {
+	if s.legacy && recType == SnowballRecording {
 		s.setBaggageItemLocked(Snowball, "1")
 	}
 	// Clear any previously recorded info. This is needed by SQL SessionTracing,
@@ -245,11 +254,7 @@ func (s *Span) StartRecording(recType RecordingType) {
 		panic("StartRecording called on NoopSpan; use the WithForceRealSpan option for StartSpan")
 	}
 
-	// If we're already recording (perhaps because the parent was recording when
-	// this Span was created), there's nothing to do.
-	if !s.crdb.isRecording() {
-		s.crdb.enableRecording(nil /* parent */, recType)
-	}
+	s.crdb.enableRecording(nil /* parent */, recType)
 }
 
 // StopRecording disables recording on this Span. Child spans that were created
@@ -269,11 +274,11 @@ func (s *Span) StopRecording() {
 func (s *crdbSpan) disableRecording() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	atomic.StoreInt32(&s.recording, 0)
+	oldRecType := RecordingType(atomic.SwapInt32(&s._recording, int32(NoRecording)))
 	// We test the duration as a way to check if the Span has been finished. If it
 	// has, we don't want to do the call below as it might crash (at least if
 	// there's a netTr).
-	if (s.mu.duration == -1) && (s.mu.recording.recordingType == SnowballRecording) {
+	if s.legacy && (s.mu.duration == -1) && (oldRecType == SnowballRecording) {
 		// Clear the Snowball baggage item, assuming that it was set by
 		// enableRecording().
 		s.setBaggageItemLocked(Snowball, "")
@@ -288,7 +293,7 @@ func (s *Span) GetRecording() Recording {
 }
 
 func (s *crdbSpan) getRecording() Recording {
-	if !s.isRecording() {
+	if s.recType() == NoRecording {
 		return nil
 	}
 	s.mu.Lock()
@@ -314,10 +319,12 @@ func (s *crdbSpan) getRecording() Recording {
 	return result
 }
 
+// TODO(tbg): consolidate this with getRecType and figure out if
+// mutex order is needed here.
 func (s *crdbSpan) getRecordingType() RecordingType {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.mu.recording.recordingType
+	return RecordingType(atomic.LoadInt32(&s._recording))
 }
 
 // ImportRemoteSpans adds RecordedSpan data to the recording of the given Span;
@@ -328,7 +335,7 @@ func (s *Span) ImportRemoteSpans(remoteSpans []tracingpb.RecordedSpan) error {
 }
 
 func (s *crdbSpan) ImportRemoteSpans(remoteSpans []tracingpb.RecordedSpan) error {
-	if !s.isRecording() {
+	if s.recType() == NoRecording {
 		return errors.AssertionFailedf("adding Raw Spans to a Span that isn't recording")
 	}
 	// Change the root of the remote recording to be a child of this Span. This is
@@ -400,13 +407,14 @@ func (s *Span) Finish() {
 // This may return nil, which is a valid input to `WithParentAndManualCollection`,
 // if the Span has been optimized out.
 func (s *Span) Meta() *SpanMeta {
+	var legacy bool
 	var traceID uint64
 	var spanID uint64
 	var recordingType RecordingType
 	var baggage map[string]string
 
 	if s.crdb != nil {
-		traceID, spanID = s.crdb.traceID, s.crdb.spanID
+		legacy, traceID, spanID = s.crdb.legacy, s.crdb.traceID, s.crdb.spanID
 		s.crdb.mu.Lock()
 		defer s.crdb.mu.Unlock()
 		n := len(s.crdb.mu.Baggage)
@@ -417,9 +425,7 @@ func (s *Span) Meta() *SpanMeta {
 		for k, v := range s.crdb.mu.Baggage {
 			baggage[k] = v
 		}
-		if s.crdb.isRecording() {
-			recordingType = s.crdb.mu.recording.recordingType
-		}
+		recordingType = s.crdb.recType()
 	}
 
 	var shadowTrTyp string
@@ -438,6 +444,7 @@ func (s *Span) Meta() *SpanMeta {
 		return nil
 	}
 	return &SpanMeta{
+		legacy:           legacy,
 		traceID:          traceID,
 		spanID:           spanID,
 		shadowTracerType: shadowTrTyp,
@@ -468,6 +475,11 @@ func (s *Span) SetTag(key string, value interface{}) *Span {
 }
 
 func (s *crdbSpan) setTagLocked(key string, value interface{}) {
+	if key == Snowball {
+		// This is an internal baggage item that is being phased out,
+		// don't duplicate it into the tag. This simplifies tests.
+		return
+	}
 	if s.mu.tags == nil {
 		s.mu.tags = make(opentracing.Tags)
 	}
@@ -520,9 +532,13 @@ func (s *Span) LogFields(fields ...otlog.Field) {
 }
 
 func (s *crdbSpan) LogFields(fields ...otlog.Field) {
-	if !s.isRecording() {
+	if s.recType() != SnowballRecording {
 		return
 	}
+	s.logFieldsImpl(fields...)
+}
+
+func (s *crdbSpan) logFieldsImpl(fields ...otlog.Field) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if len(s.mu.recording.recordedLogs) < maxLogsPerSpan {
@@ -530,6 +546,23 @@ func (s *crdbSpan) LogFields(fields ...otlog.Field) {
 			Timestamp: time.Now(),
 			Fields:    fields,
 		})
+	}
+}
+
+// logBackground is a testing-only implementation of logging that is active
+// in both SnowballRecording and BackgroundRecording (LogFields will discard
+// its inputs for BackgroundRecording). This serves as a stepping stone for
+// always-on tracing (https://github.com/cockroachdb/cockroach/issues/55584)
+// as it allows unit testing of background recording prior to introducing
+// the structured events that will ultimately be collected during background
+// tracing.
+func (s *Span) logBackground(kvs ...interface{}) {
+	if s.crdb != nil {
+		fields, err := otlog.InterleavedKVToFields(kvs...)
+		if err != nil {
+			panic(err)
+		}
+		s.crdb.logFieldsImpl(fields...)
 	}
 }
 
