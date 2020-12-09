@@ -37,6 +37,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/sql"
 	"github.com/cockroachdb/cockroach/pkg/sql/catalog/bootstrap"
 	"github.com/cockroachdb/cockroach/pkg/storage"
+	"github.com/cockroachdb/cockroach/pkg/storage/enginepb"
 	"github.com/cockroachdb/cockroach/pkg/util"
 	"github.com/cockroachdb/cockroach/pkg/util/grpcutil"
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
@@ -1033,6 +1034,40 @@ func (n *Node) RangeFeed(
 	return nil
 }
 
+func uncommittedScanMetaKVs(
+	ctx context.Context, db *kv.DB, span roachpb.Span,
+) ([]kv.KeyValue, error) {
+	metaStart := keys.RangeMetaKey(keys.MustAddr(span.Key).Next())
+	metaEnd := keys.RangeMetaKey(keys.MustAddr(span.EndKey))
+
+	var b kv.Batch
+	b.Header.ReadConsistency = roachpb.READ_UNCOMMITTED
+	b.Scan(metaStart, metaEnd)
+	if err := db.Run(ctx, &b); err != nil {
+		return nil, err
+	}
+	var kvs []kv.KeyValue
+	for _, pair := range b.RawResponse().Responses[0].GetScan().Rows {
+		kvs = append(kvs, kv.KeyValue{
+			Key:   pair.Key,
+			Value: &pair.Value,
+		})
+	}
+	if len(kvs) == 0 || !kvs[len(kvs)-1].Key.Equal(metaEnd.AsRawKey()) {
+		// Normally we need to scan one more KV because the ranges are addressed by
+		// the end key.
+		var b kv.Batch
+		b.Header.ReadConsistency = roachpb.READ_UNCOMMITTED
+		b.Header.MaxSpanRequestKeys = 1
+		b.Scan(metaEnd, keys.Meta2Prefix.PrefixEnd())
+		if err := db.Run(ctx, &b); err != nil {
+			return nil, err
+		}
+		kvs = append(kvs, b.Results[0].Rows[0])
+	}
+	return kvs, nil
+}
+
 func (n *Node) ResetQuorum(
 	ctx context.Context, req *roachpb.ResetQuorumRequest,
 ) (_ *roachpb.ResetQuorumResponse, rErr error) {
@@ -1043,8 +1078,9 @@ func (n *Node) ResetQuorum(
 	}()
 	// Get range descriptor for the input range id.
 	var desc roachpb.RangeDescriptor
-	if err := n.storeCfg.DB.Txn(ctx, func(ctx context.Context, txn *kv.Txn) error {
-		kvs, err := sql.ScanMetaKVs(ctx, txn, roachpb.Span{
+	var cputBase []byte
+	if err := func() error {
+		kvs, err := uncommittedScanMetaKVs(ctx, n.storeCfg.DB, roachpb.Span{
 			Key:    roachpb.KeyMin,
 			EndKey: roachpb.KeyMax,
 		})
@@ -1057,11 +1093,12 @@ func (n *Node) ResetQuorum(
 				return err
 			}
 			if desc.RangeID == roachpb.RangeID(req.RangeID) {
+				cputBase = kvs[i].Value.TagAndDataBytes()
 				return nil
 			}
 		}
 		return errors.Errorf("r%d not found", req.RangeID)
-	}); err != nil {
+	}(); err != nil {
 		return nil, err
 	}
 
@@ -1098,12 +1135,35 @@ func (n *Node) ResetQuorum(
 	desc.IncrementGeneration()
 
 	log.Infof(ctx, "starting recovery using desc %+v", desc)
+
+	// If there's an intent on meta2, nuke it as it would likely be anchored
+	// on the unavailable range and thus unabortable.
+	{
+		var b kv.Batch
+		b.AddRawRequest(
+			&roachpb.ResolveIntentRequest{
+				RequestHeader: roachpb.RequestHeader{
+					Key: keys.RangeMetaKey(desc.EndKey).AsRawKey(),
+				},
+				IntentTxn: enginepb.TxnMeta{
+					ID:             uuid.Nil,
+					Priority:       123456,
+					WriteTimestamp: n.storeCfg.Clock.Now(),
+				},
+				Status: roachpb.ABORTED,
+			})
+		if err := n.storeCfg.DB.Run(ctx, &b); err != nil {
+			return nil, err
+		}
+		log.Infof(ctx, "%s", b.RawResponse())
+	}
+
 	// Update the meta2 entry. Note that we're intentionally
 	// eschewing updateRangeAddressing since the copy of the
 	// descriptor that resides on the range itself has lost quorum.
 	metaKey := keys.RangeMetaKey(desc.EndKey).AsRawKey()
 	// TODO (thesamhuang): change to conditional put (CPut)
-	if err := n.storeCfg.DB.Put(ctx, metaKey, &desc); err != nil {
+	if err := n.storeCfg.DB.CPut(ctx, metaKey, &desc, cputBase); err != nil {
 		return nil, err
 	}
 

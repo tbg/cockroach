@@ -20,6 +20,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/storage"
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
 	"github.com/cockroachdb/cockroach/pkg/util/uuid"
+	"github.com/cockroachdb/errors"
 )
 
 func init() {
@@ -87,6 +88,19 @@ func ResolveIntent(
 	}
 
 	update := args.AsLockUpdate()
+	if args.IntentTxn.ID == uuid.Nil && args.IntentTxn.Priority == 123456 {
+		_, _, err := storage.MVCCGet(ctx, readWriter, args.Key, hlc.MaxTimestamp, storage.MVCCGetOptions{})
+		if err == nil {
+			// No intent.
+			return result.Result{}, nil
+		}
+		wiErr := err.(*roachpb.WriteIntentError)
+		if wiErr == nil {
+			return result.Result{}, errors.New("expected write intent error")
+		}
+		update.Txn = wiErr.Intents[0].Txn
+		update.Status = roachpb.ABORTED
+	}
 	ok, err := storage.MVCCResolveWriteIntent(ctx, readWriter, ms, update)
 	if err != nil {
 		return result.Result{}, err
