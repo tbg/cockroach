@@ -11,6 +11,8 @@
 package tracing
 
 import (
+	"context"
+
 	"github.com/cockroachdb/logtags"
 	"github.com/opentracing/opentracing-go"
 )
@@ -112,6 +114,13 @@ func WithParentAndAutoCollection(sp *Span) SpanOption {
 func (p *parentAndAutoCollectionOption) apply(opts spanOptions) spanOptions {
 	opts.Parent = (*Span)(p)
 	return opts
+}
+
+// WithParentAndAutoCollectionCtx is like WithParentAndAutoCollection, but
+// looks for a Span in the provided context.Context. If no Span is contained,
+// this option has no effect, resulting in StartSpan starting a new trace.
+func WithParentAndAutoCollectionCtx(ctx context.Context) SpanOption {
+	return WithParentAndAutoCollection(SpanFromContext(ctx))
 }
 
 type parentAndManualCollectionOption SpanMeta
