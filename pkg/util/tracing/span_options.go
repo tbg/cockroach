@@ -26,6 +26,7 @@ type spanOptions struct {
 	LogTags       *logtags.Buffer               // see WithLogTags
 	Tags          map[string]interface{}        // see WithTags
 	ForceRealSpan bool                          // see WithForceRealSpan
+	Alloc         *Alloc
 }
 
 func (opts *spanOptions) parentTraceID() uint64 {
@@ -201,5 +202,16 @@ func WithForceRealSpan() SpanOption {
 
 func (forceRealSpanOption) apply(opts spanOptions) spanOptions {
 	opts.ForceRealSpan = true
+	return opts
+}
+
+type allocOption Alloc
+
+func WithAlloc(alloc *Alloc) SpanOption {
+	return (*allocOption)(alloc)
+}
+
+func (a *allocOption) apply(opts spanOptions) spanOptions {
+	opts.Alloc = (*Alloc)(a)
 	return opts
 }

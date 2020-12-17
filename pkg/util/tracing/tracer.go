@@ -226,6 +226,12 @@ func (t *Tracer) AlwaysTrace() bool {
 	return t.useNetTrace() || shadowTracer != nil
 }
 
+type Alloc struct {
+	ctx      spanCtx
+	span     Span
+	crdbSpan crdbSpan
+}
+
 // startSpanGeneric is the implementation of StartSpan.
 func (t *Tracer) startSpanGeneric(opName string, opts spanOptions) *Span {
 	if opts.RefType != opentracing.ChildOfRef && opts.RefType != opentracing.FollowsFromRef {
@@ -326,10 +332,10 @@ func (t *Tracer) startSpanGeneric(opName string, opts spanOptions) *Span {
 	// NB: at the time of writing, it's not possible to start a Span
 	// that *only* contains `ot` or `netTr`. This is just an artifact
 	// of the history of this code and may change in the future.
-	helper := struct {
-		Span     Span
-		crdbSpan crdbSpan
-	}{}
+	helper := opts.Alloc
+	if helper == nil {
+		helper = &Alloc{}
+	}
 
 	helper.crdbSpan = crdbSpan{
 		traceID:      traceID,
@@ -342,14 +348,14 @@ func (t *Tracer) startSpanGeneric(opName string, opts spanOptions) *Span {
 			duration: -1, // unfinished
 		},
 	}
-	helper.Span = Span{
+	helper.span = Span{
 		tracer: t,
 		crdb:   &helper.crdbSpan,
 		ot:     ot,
 		netTr:  netTr,
 	}
 
-	s := &helper.Span
+	s := &helper.span
 
 	// Start recording if necessary. We inherit the recording type of the local parent, if any,
 	// over the remote parent, if any. If neither are specified, we're not recording.
@@ -643,8 +649,13 @@ func EnsureContext(ctx context.Context, tracer *Tracer, opName string) (context.
 // The caller is responsible for closing the Span (via Span.Finish).
 func EnsureChildSpan(ctx context.Context, tracer *Tracer, name string) (context.Context, *Span) {
 	if SpanFromContext(ctx) == nil {
-		sp := tracer.StartSpan(name, WithCtxLogTags(ctx))
-		return ContextWithSpan(ctx, sp), sp
+		alloc := Alloc{}
+		sp := tracer.StartSpan(name, WithCtxLogTags(ctx), WithAlloc(&alloc))
+		alloc.ctx = spanCtx{
+			Context: ctx,
+			sp:      sp,
+		}
+		return alloc.ctx, sp
 	}
 	return ChildSpan(ctx, name)
 }
@@ -660,9 +671,24 @@ func SpanFromContext(ctx context.Context) *Span {
 	return nil
 }
 
+type spanCtx struct {
+	context.Context
+	sp *Span
+}
+
+func (ctx spanCtx) Value(v interface{}) interface{} {
+	if v == interface{}(activeSpanKey{}) {
+		return ctx.sp
+	}
+	return ctx.Context.Value(v)
+}
+
 // ContextWithSpan returns a Context wrapping the supplied Span.
 func ContextWithSpan(ctx context.Context, sp *Span) context.Context {
-	return context.WithValue(ctx, activeSpanKey{}, sp)
+	return &spanCtx{
+		Context: ctx,
+		sp:      sp,
+	}
 }
 
 // StartVerboseTrace takes in a context and returns a derived one with a
