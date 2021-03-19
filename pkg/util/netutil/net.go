@@ -150,12 +150,16 @@ func (s *Server) ServeWith(
 			return e
 		}
 		tempDelay = 0
-		go func() {
-			defer stopper.Recover(ctx)
+		if err := stopper.RunAsyncTask(ctx, "serve", func(ctx context.Context) {
 			s.Server.ConnState(rw, http.StateNew) // before Serve can return
 			serveConn(rw)
 			s.Server.ConnState(rw, http.StateClosed)
-		}()
+		}); err != nil {
+			s.Server.ConnState(rw, http.StateNew)
+			_ = rw.Close()
+			s.Server.ConnState(rw, http.StateClosed)
+			return nil // stopper shutting down
+		}
 	}
 }
 
