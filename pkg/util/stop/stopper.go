@@ -349,7 +349,7 @@ func (s *Stopper) RunAsyncTask(
 		defer span.Finish()
 
 		f(ctx)
-	}()
+	}() //nolint:nakedgo
 	return nil
 }
 
@@ -408,7 +408,7 @@ func (s *Stopper) RunLimitedAsyncTask(
 		defer span.Finish()
 
 		f(ctx)
-	}()
+	}() //nolint:nakedgo
 	return nil
 }
 
@@ -461,10 +461,10 @@ func (s *Stopper) Stop(ctx context.Context) {
 	// avoids stalls and helps some tests in `./cli` finish cleanly (where
 	// panics happen on purpose).
 	if r := recover(); r != nil {
-		go s.Quiesce(ctx)
+		go s.Quiesce(ctx) //nolint:nakedgo
 		s.mu.Lock()
 		for _, c := range s.mu.closers {
-			go c.Close()
+			go c.Close() //nolint:nakedgo
 		}
 		s.mu.Unlock()
 		panic(r)

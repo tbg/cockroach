@@ -158,7 +158,7 @@ func (s *Server) ServeWith(
 			s.Server.ConnState(rw, http.StateNew)
 			_ = rw.Close()
 			s.Server.ConnState(rw, http.StateClosed)
-			return nil // stopper shutting down
+			return nil //nolint:returnerrcheck
 		}
 	}
 }
