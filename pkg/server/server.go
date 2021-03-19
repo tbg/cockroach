@@ -900,6 +900,11 @@ func (s *Server) startMonitoringForwardClockJumps(ctx context.Context) error {
 		ctx,
 		forwardJumpCheckEnabled,
 		time.NewTicker,
+		func(ctx context.Context, f func(ctx context.Context)) {
+			_ = s.stopper.RunAsyncTask(ctx, "monitor-clock-jumps", func(ctx context.Context) {
+				f(ctx)
+			})
+		},
 		nil, /* tick callback */
 	); err != nil {
 		return errors.Wrap(err, "monitoring forward clock jumps")

@@ -213,6 +213,7 @@ func TestHLCPhysicalClockJump(t *testing.T) {
 					ticker.C = tickerCh
 					return ticker
 				},
+				func(ctx context.Context, f func(context.Context)) { go f(ctx) },
 				func() {
 					tickProcessedCh <- struct{}{}
 				},
@@ -225,6 +226,7 @@ func TestHLCPhysicalClockJump(t *testing.T) {
 				ctx,
 				forwardJumpCheckEnabledCh,
 				time.NewTicker,
+				func(ctx context.Context, f func(context.Context)) { go f(ctx) },
 				nil, /* tick callback */
 			); !isErrSimilar(regexp.MustCompile("already being monitored"), err) {
 				t.Error("expected an error when starting monitor goroutine twice")
@@ -614,7 +616,13 @@ func TestLateStartForwardClockJump(t *testing.T) {
 		tickedCh <- struct{}{}
 	}
 	ctx := context.Background()
-	if err := c.StartMonitoringForwardClockJumps(ctx, activeCh, time.NewTicker, ticked); err != nil {
+	if err := c.StartMonitoringForwardClockJumps(
+		ctx,
+		activeCh,
+		time.NewTicker,
+		func(ctx context.Context, f func(context.Context)) { go f(ctx) },
+		ticked,
+	); err != nil {
 		t.Fatal(err)
 	}
 	<-tickedCh

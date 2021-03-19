@@ -213,6 +213,7 @@ func (c *Clock) StartMonitoringForwardClockJumps(
 	ctx context.Context,
 	forwardClockJumpCheckEnabledCh <-chan bool,
 	tickerFn func(d time.Duration) *time.Ticker,
+	goer func(context.Context, func(ctx context.Context)),
 	tickCallback func(),
 ) error {
 	alreadyMonitoring := c.setMonitoringClockJump()
@@ -220,7 +221,7 @@ func (c *Clock) StartMonitoringForwardClockJumps(
 		return errors.New("clock jumps are already being monitored")
 	}
 
-	go func() {
+	goer(ctx, func(ctx context.Context) {
 		// Create a ticker object which can be used in selects.
 		// This ticker is turned on / off based on forwardClockJumpCheckEnabledCh
 		ticker := tickerFn(time.Hour)
@@ -252,7 +253,7 @@ func (c *Clock) StartMonitoringForwardClockJumps(
 				tickCallback()
 			}
 		}
-	}()
+	})
 
 	return nil
 }
