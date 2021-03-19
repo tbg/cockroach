@@ -142,7 +142,7 @@ func lex(name, input string) *lexer {
 		input: input,
 		items: make(chan item),
 	}
-	go l.run()
+	go l.run() //nolint:nakedgo
 	return l
 }
 
