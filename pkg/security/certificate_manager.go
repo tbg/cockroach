@@ -229,7 +229,7 @@ func (cm *CertificateManager) Metrics() CertificateMetrics {
 // refresh of the certificates directory on notification.
 func (cm *CertificateManager) RegisterSignalHandler(stopper *stop.Stopper) {
 	ctx := context.Background()
-	go func() {
+	_ = stopper.RunAsyncTask(ctx, "certs-signal-handler", func(ctx context.Context) {
 		ch := sysutil.RefreshSignaledChan()
 		for {
 			select {
@@ -245,7 +245,7 @@ func (cm *CertificateManager) RegisterSignalHandler(stopper *stop.Stopper) {
 				}
 			}
 		}
-	}()
+	})
 }
 
 // A CertsLocator provides locations to certificates.
