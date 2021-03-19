@@ -128,6 +128,7 @@ import (
 
 // Group wraps errgroup.
 type Group struct {
+	tracker Tracker
 	wrapped *errgroup.Group
 	ctx     context.Context
 }
@@ -146,10 +147,17 @@ func (g Group) Wait() error {
 	return ctxErr
 }
 
+// Tracker manages goroutines. It mimicks Stopper.RunAsyncTask.
+type Tracker interface {
+	Track(_ context.Context, desc string) error
+	RecoverAndUntrack(context.Context)
+}
+
 // WithContext returns a new Group and an associated Context derived from ctx.
-func WithContext(ctx context.Context) Group {
+func WithContext(ctx context.Context, tracker Tracker) Group {
 	grp, ctx := errgroup.WithContext(ctx)
 	return Group{
+		tracker: tracker,
 		wrapped: grp,
 		ctx:     ctx,
 	}
@@ -163,16 +171,25 @@ func (g Group) Go(f func() error) {
 // GoCtx calls the given function in a new goroutine.
 func (g Group) GoCtx(f func(ctx context.Context) error) {
 	g.wrapped.Go(func() error {
+		ctx := g.ctx
+		defer g.tracker.RecoverAndUntrack(ctx)
+		if err := g.tracker.Track(ctx, "ctxgroup"); err != nil {
+			return err
+		}
 		return f(g.ctx)
-	})
+	}) //nolint:nakedgo
 }
 
 // GroupWorkers runs num worker go routines in an errgroup.
-func GroupWorkers(ctx context.Context, num int, f func(context.Context, int) error) error {
-	group := WithContext(ctx)
+func GroupWorkers(
+	ctx context.Context, tracker Tracker, num int, f func(context.Context, int) error,
+) error {
+	group := WithContext(ctx, tracker)
 	for i := 0; i < num; i++ {
 		workerID := i
-		group.GoCtx(func(ctx context.Context) error { return f(ctx, workerID) })
+		group.GoCtx(func(ctx context.Context) error {
+			return f(ctx, workerID)
+		})
 	}
 	return group.Wait()
 }

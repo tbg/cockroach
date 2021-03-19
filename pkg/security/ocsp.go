@@ -22,6 +22,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/contextutil"
 	"github.com/cockroachdb/cockroach/pkg/util/ctxgroup"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ocsp"
 )
@@ -43,7 +44,9 @@ func makeOCSPVerifier(settings TLSSettings) func([][]byte, [][]*x509.Certificate
 				// Per-conn telemetry counter.
 				telemetry.Inc(ocspChecksCounter)
 
-				errG := ctxgroup.WithContext(ctx)
+				s := stop.Stopper{}
+				defer s.Stop(ctx)
+				errG := ctxgroup.WithContext(ctx, s.Tracker())
 				for _, chain := range verifiedChains {
 					// Ignore the last cert in the chain; it's the root and if it
 					// has an issuer we don't have it so we can't do an OCSP check

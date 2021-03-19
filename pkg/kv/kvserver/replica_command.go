@@ -791,7 +791,7 @@ func waitForApplication(
 	leaseIndex uint64,
 ) error {
 	return contextutil.RunWithTimeout(ctx, "wait for application", 5*time.Second, func(ctx context.Context) error {
-		g := ctxgroup.WithContext(ctx)
+		g := ctxgroup.WithContext(ctx, dialer.Stopper().Tracker())
 		for _, repl := range replicas {
 			repl := repl // copy for goroutine
 			g.GoCtx(func(ctx context.Context) error {
@@ -822,7 +822,7 @@ func waitForReplicasInit(
 	replicas []roachpb.ReplicaDescriptor,
 ) error {
 	return contextutil.RunWithTimeout(ctx, "wait for replicas init", 5*time.Second, func(ctx context.Context) error {
-		g := ctxgroup.WithContext(ctx)
+		g := ctxgroup.WithContext(ctx, dialer.Stopper().Tracker())
 		for _, repl := range replicas {
 			repl := repl // copy for goroutine
 			g.GoCtx(func(ctx context.Context) error {

@@ -22,6 +22,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/sql/lex"
 	"github.com/cockroachdb/cockroach/pkg/util/ctxgroup"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/cockroach/pkg/util/version"
 	"github.com/cockroachdb/cockroach/pkg/workload"
 	"github.com/cockroachdb/errors"
@@ -111,7 +112,9 @@ func Split(ctx context.Context, db *gosql.DB, table workload.Table, concurrency 
 	doneCh := make(chan struct{})
 
 	log.Infof(ctx, `starting %d splits`, len(splitPoints))
-	g := ctxgroup.WithContext(ctx)
+	s := stop.NewStopper()
+	defer s.Stop(context.Background())
+	g := ctxgroup.WithContext(ctx, s.Tracker())
 	// Rate limit splitting to prevent replica imbalance.
 	r := rate.NewLimiter(128, 1)
 	for i := 0; i < concurrency; i++ {

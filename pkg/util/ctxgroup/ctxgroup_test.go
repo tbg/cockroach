@@ -17,6 +17,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/testutils"
 	"github.com/cockroachdb/cockroach/pkg/util/ctxgroup"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/errors"
 )
 
@@ -27,7 +28,9 @@ func TestErrorAfterCancel(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		g := ctxgroup.WithContext(ctx)
+		s := stop.NewStopper()
+		defer s.Stop(context.Background())
+		g := ctxgroup.WithContext(ctx, s.Tracker())
 		g.Go(func() error {
 			return nil
 		})

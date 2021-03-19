@@ -627,8 +627,10 @@ func TestTransientTxnErrors(t *testing.T) {
 	// Setup numConcurrent workers, each executing maxExec executeSchedule calls.
 	const maxExec = 100
 	const numConcurrent = 3
+	s := stop.NewStopper()
+	defer s.Stop(context.Background())
 	require.NoError(t,
-		ctxgroup.GroupWorkers(context.Background(), numConcurrent, func(ctx context.Context, _ int) error {
+		ctxgroup.GroupWorkers(context.Background(), s.Tracker(), numConcurrent, func(ctx context.Context, _ int) error {
 			ticker := time.NewTicker(time.Millisecond)
 			numExecs := 0
 			for range ticker.C {

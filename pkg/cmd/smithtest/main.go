@@ -32,6 +32,7 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/internal/sqlsmith"
 	"github.com/cockroachdb/cockroach/pkg/util/ctxgroup"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 	"github.com/cockroachdb/errors"
@@ -71,7 +72,9 @@ func main() {
 
 	fmt.Println("running...")
 
-	g := ctxgroup.WithContext(ctx)
+	s := stop.NewStopper()
+	defer s.Stop(context.Background())
+	g := ctxgroup.WithContext(ctx, s.Tracker())
 	for i := 0; i < *num; i++ {
 		g.GoCtx(setup.work)
 	}

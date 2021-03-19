@@ -2809,7 +2809,7 @@ func (s *Store) PurgeOutdatedReplicas(ctx context.Context, version roachpb.Versi
 	// Let's set a reasonable bound on the number of replicas being processed in
 	// parallel.
 	qp := quotapool.NewIntPool("purge-outdated-replicas", 50)
-	g := ctxgroup.WithContext(ctx)
+	g := ctxgroup.WithContext(ctx, s.stopper.Tracker())
 	s.VisitReplicas(func(repl *Replica) (wantMore bool) {
 		if (repl.Version() == roachpb.Version{}) {
 			// TODO(irfansharif,tbg): This is a stop gap for #58523.

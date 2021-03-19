@@ -15,6 +15,7 @@ import (
 	"sort"
 
 	"github.com/cockroachdb/cockroach/pkg/util/ctxgroup"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 )
 
 // An example use case for AcquireFunc is a pool of workers attempting to
@@ -88,7 +89,9 @@ func ExampleIntPool_AcquireFunc() {
 			}
 		}
 	}
-	g := ctxgroup.WithContext(context.Background())
+	s := stop.NewStopper()
+	defer s.Stop(context.Background())
+	g := ctxgroup.WithContext(context.Background(), s.Tracker())
 	for i := 0; i < workers; i++ {
 		g.GoCtx(runWorker(i))
 	}

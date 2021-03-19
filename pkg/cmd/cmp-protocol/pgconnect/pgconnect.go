@@ -18,6 +18,7 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/sql/pgwire/pgwirebase"
 	"github.com/cockroachdb/cockroach/pkg/util/ctxgroup"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgproto3/v2"
 )
@@ -47,7 +48,9 @@ func Connect(
 	// Use go routines to divide up work in order to improve debugging. These
 	// aren't strictly necessary, but they make it easy to print when messages
 	// are received.
-	g := ctxgroup.WithContext(ctx)
+	s := stop.NewStopper()
+	defer s.Stop(context.Background())
+	g := ctxgroup.WithContext(ctx, s.Tracker())
 	// The send chan sends messages to the server.
 	g.GoCtx(func(ctx context.Context) error {
 		defer close(send)

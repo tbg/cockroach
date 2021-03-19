@@ -57,7 +57,7 @@ func (ds *DistSender) RangeFeed(
 		return err
 	}
 
-	g := ctxgroup.WithContext(ctx)
+	g := ctxgroup.WithContext(ctx, ds.rpcContext.Stopper.Tracker())
 	// Goroutine that processes subdivided ranges and creates a rangefeed for
 	// each.
 	rangeCh := make(chan singleRangeInfo, 16)

@@ -22,6 +22,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/ctxgroup"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/quotapool"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/redact"
 	"google.golang.org/grpc"
@@ -106,7 +107,11 @@ func (c *Cluster) ForEveryNode(
 	// We'll want to rate limit outgoing RPCs (limit pulled out of thin air).
 	qp := quotapool.NewIntPool("every-node", 25)
 	log.Infof(ctx, "executing %s on nodes %s", redact.Safe(op), ns)
-	grp := ctxgroup.WithContext(ctx)
+
+	// TODO(tbg): plumb a stopper in.
+	s := stop.NewStopper()
+	defer s.Stop(context.Background())
+	grp := ctxgroup.WithContext(ctx, s.Tracker())
 
 	for _, node := range ns {
 		id := node.ID // copy out of the loop variable

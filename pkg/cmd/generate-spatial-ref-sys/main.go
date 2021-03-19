@@ -39,6 +39,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/geo/geoprojbase"
 	"github.com/cockroachdb/cockroach/pkg/util/ctxgroup"
 	"github.com/cockroachdb/cockroach/pkg/util/httputil"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 )
@@ -130,7 +131,9 @@ func getTemplateVars() templateVars {
 	var projections []projection
 	var spheroids []spheroid
 
-	g := ctxgroup.WithContext(context.Background())
+	s := stop.NewStopper()
+	defer s.Stop(context.Background())
+	g := ctxgroup.WithContext(context.Background(), s.Tracker())
 	records := readRecords()
 	const numWorkers = 8
 	batchSize := int(math.Ceil(float64(len(records)) / numWorkers))

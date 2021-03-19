@@ -27,6 +27,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
+	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 	"github.com/stretchr/testify/require"
@@ -125,11 +126,11 @@ func TestLockfreeTrackerRandomStress(t *testing.T) {
 	// At the same time, there a consumer goroutine (taking an exclusive lock),
 	// and a checker goroutine.
 	stopT := time.After(testDuration)
-	stop := make(chan struct{})
+	stopCh := make(chan struct{})
 	// Adapt the timer channel to a channel of struct{}.
 	go func() {
 		<-stopT
-		close(stop)
+		close(stopCh)
 	}()
 
 	// This mutex is protecting the Tracker. Producers will lock it in read mode
@@ -138,11 +139,13 @@ func TestLockfreeTrackerRandomStress(t *testing.T) {
 	var mu syncutil.RWMutex
 	var rs requestsCollection
 
-	g := ctxgroup.WithContext(ctx)
+	s := stop.NewStopper()
+	defer s.Stop(ctx)
+	g := ctxgroup.WithContext(ctx, s.Tracker())
 
 	for i := 0; i < numProducers; i++ {
 		p := makeRequestProducer(
-			stop, mu.RLocker(),
+			stopCh, mu.RLocker(),
 			maxReqDurationMillis, maxReqTrailingMillis, maxConcurrentRequestsPerProducer,
 			tr, &rs)
 		g.GoCtx(func(ctx context.Context) error {
@@ -151,16 +154,16 @@ func TestLockfreeTrackerRandomStress(t *testing.T) {
 		})
 	}
 
-	c := makeRequestConsumer(stop, &mu, tr, &rs)
+	c := makeRequestConsumer(stopCh, &mu, tr, &rs)
 	g.GoCtx(func(ctx context.Context) error {
 		c.run(ctx)
 		return nil
 	})
 
-	checker := makeTrackerChecker(stop, &mu, tr, &rs)
+	checker := makeTrackerChecker(stopCh, &mu, tr, &rs)
 	g.GoCtx(checker.run)
 
-	<-stop
+	<-stopCh
 	require.NoError(t, g.Wait())
 
 	for _, req := range rs.mu.rs {

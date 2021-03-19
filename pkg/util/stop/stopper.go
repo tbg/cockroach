@@ -527,3 +527,36 @@ func (s *Stopper) Quiesce(ctx context.Context) {
 		time.Sleep(5 * time.Millisecond)
 	}
 }
+
+// Tracker manages goroutines. It mimicks Stopper.RunAsyncTask.
+type Tracker interface {
+	// Track informs the Tracker that a given goroutine was started.
+	// If an error is returned, the goroutine must exit immediately.
+	Track(_ context.Context, desc string) error
+	// RecoverAndUntrack must be `defer`ed right after a succesful
+	// call to Track().
+	RecoverAndUntrack(context.Context)
+}
+
+// Tracker returns the Stopper as a Tracker.
+func (s *Stopper) Tracker() Tracker {
+	return (*tracker)(s)
+}
+
+type tracker Stopper
+
+func (t *tracker) Track(context.Context, string) error {
+	s := (*Stopper)(t)
+	if !s.runPrelude() {
+		return ErrUnavailable
+	}
+	return nil
+}
+
+// RecoverAndUntrack calls Recover() after having marked a
+// task as done.
+func (t *tracker) RecoverAndUntrack(ctx context.Context) {
+	s := (*Stopper)(t)
+	s.runPostlude() // this is an atomic and won't panic
+	s.Recover(ctx)
+}
