@@ -593,17 +593,34 @@ func (tc *TestCluster) changeReplicas(
 	changeType roachpb.ReplicaChangeType, startKey roachpb.RKey, targets ...roachpb.ReplicationTarget,
 ) (roachpb.RangeDescriptor, error) {
 	ctx := context.TODO()
-	var beforeDesc roachpb.RangeDescriptor
-	if err := tc.Servers[0].DB().GetProto(
-		ctx, keys.RangeDescriptorKey(startKey), &beforeDesc,
-	); err != nil {
-		return roachpb.RangeDescriptor{}, errors.Wrap(err, "range descriptor lookup error")
+
+	var returnErr error
+	var desc *roachpb.RangeDescriptor
+	if err := testutils.SucceedsSoonError(func() error {
+		var beforeDesc roachpb.RangeDescriptor
+		if err := tc.Servers[0].DB().GetProto(
+			ctx, keys.RangeDescriptorKey(startKey), &beforeDesc,
+		); err != nil {
+			return errors.Wrap(err, "range descriptor lookup error")
+		}
+		var err error
+		desc, err = tc.Servers[0].DB().AdminChangeReplicas(
+			ctx, startKey.AsRawKey(), beforeDesc, roachpb.MakeReplicationChanges(changeType, targets...),
+		)
+		if kvserver.IsRetriableReplicationChangeError(err) {
+			return err
+		}
+		// Don't return blindly - if this isn't an error we think is related to a
+		// replication error that we can retry, save the error to the outer scope
+		// and return nil.
+		returnErr = err
+		return nil
+	}); err != nil {
+		returnErr = err
 	}
-	desc, err := tc.Servers[0].DB().AdminChangeReplicas(
-		ctx, startKey.AsRawKey(), beforeDesc, roachpb.MakeReplicationChanges(changeType, targets...),
-	)
-	if err != nil {
-		return roachpb.RangeDescriptor{}, errors.Wrap(err, "AdminChangeReplicas error")
+
+	if returnErr != nil {
+		return roachpb.RangeDescriptor{}, errors.Wrap(returnErr, "AdminChangeReplicas error")
 	}
 	return *desc, nil
 }
