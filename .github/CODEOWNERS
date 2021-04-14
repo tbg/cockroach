@@ -1,1 +1,3 @@
 /docs/RFCS/                  @tbg
+/pkg @tbg+noreview
+/pkg/acceptance @tbg @banana+noreview
