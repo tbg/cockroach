@@ -36,7 +36,7 @@ import (
 var (
 	metaCgoCalls = metric.Metadata{
 		Name:        "sys.cgocalls",
-		Help:        "Total number of cgo calls",
+		Help:        "Total number of cgo calls since the process started",
 		Measurement: "cgo Calls",
 		Unit:        metric.Unit_COUNT,
 	}
@@ -349,15 +349,15 @@ func NewRuntimeStatSampler(ctx context.Context, clock *hlc.Clock) *RuntimeStatSa
 		startTimeNanos:           clock.PhysicalNow(),
 		initialNetCounters:       netCounters,
 		initialDiskCounters:      diskCounters,
-		CgoCalls:                 metric.NewGauge(metaCgoCalls),
+		CgoCalls:                 metric.NewGauge(metaCgoCalls), // TODO counter
 		Goroutines:               metric.NewGauge(metaGoroutines),
 		RunnableGoroutinesPerCPU: metric.NewGaugeFloat64(metaRunnableGoroutinesPerCPU),
 		GoAllocBytes:             metric.NewGauge(metaGoAllocBytes),
 		GoTotalBytes:             metric.NewGauge(metaGoTotalBytes),
 		CgoAllocBytes:            metric.NewGauge(metaCgoAllocBytes),
 		CgoTotalBytes:            metric.NewGauge(metaCgoTotalBytes),
-		GcCount:                  metric.NewGauge(metaGCCount),
-		GcPauseNS:                metric.NewGauge(metaGCPauseNS),
+		GcCount:                  metric.NewGauge(metaGCCount),   // TODO counter
+		GcPauseNS:                metric.NewGauge(metaGCPauseNS), // TODO counter
 		GcPausePercent:           metric.NewGaugeFloat64(metaGCPausePercent),
 		CPUUserNS:                metric.NewGauge(metaCPUUserNS),
 		CPUUserPercent:           metric.NewGaugeFloat64(metaCPUUserPercent),
@@ -365,19 +365,19 @@ func NewRuntimeStatSampler(ctx context.Context, clock *hlc.Clock) *RuntimeStatSa
 		CPUSysPercent:            metric.NewGaugeFloat64(metaCPUSysPercent),
 		CPUCombinedPercentNorm:   metric.NewGaugeFloat64(metaCPUCombinedPercentNorm),
 		RSSBytes:                 metric.NewGauge(metaRSSBytes),
-		HostDiskReadBytes:        metric.NewGauge(metaHostDiskReadBytes),
-		HostDiskReadCount:        metric.NewGauge(metaHostDiskReadCount),
-		HostDiskReadTime:         metric.NewGauge(metaHostDiskReadTime),
-		HostDiskWriteBytes:       metric.NewGauge(metaHostDiskWriteBytes),
-		HostDiskWriteCount:       metric.NewGauge(metaHostDiskWriteCount),
-		HostDiskWriteTime:        metric.NewGauge(metaHostDiskWriteTime),
-		HostDiskIOTime:           metric.NewGauge(metaHostDiskIOTime),
-		HostDiskWeightedIOTime:   metric.NewGauge(metaHostDiskWeightedIOTime),
+		HostDiskReadBytes:        metric.NewGauge(metaHostDiskReadBytes),      // TODO counter
+		HostDiskReadCount:        metric.NewGauge(metaHostDiskReadCount),      // TODO counter
+		HostDiskReadTime:         metric.NewGauge(metaHostDiskReadTime),       // TODO counter
+		HostDiskWriteBytes:       metric.NewGauge(metaHostDiskWriteBytes),     // TODO counter
+		HostDiskWriteCount:       metric.NewGauge(metaHostDiskWriteCount),     // TODO counter
+		HostDiskWriteTime:        metric.NewGauge(metaHostDiskWriteTime),      // TODO counter
+		HostDiskIOTime:           metric.NewGauge(metaHostDiskIOTime),         // TODO counter
+		HostDiskWeightedIOTime:   metric.NewGauge(metaHostDiskWeightedIOTime), // TODO counter
 		IopsInProgress:           metric.NewGauge(metaHostIopsInProgress),
-		HostNetRecvBytes:         metric.NewGauge(metaHostNetRecvBytes),
-		HostNetRecvPackets:       metric.NewGauge(metaHostNetRecvPackets),
-		HostNetSendBytes:         metric.NewGauge(metaHostNetSendBytes),
-		HostNetSendPackets:       metric.NewGauge(metaHostNetSendPackets),
+		HostNetRecvBytes:         metric.NewGauge(metaHostNetRecvBytes),   // TODO counter
+		HostNetRecvPackets:       metric.NewGauge(metaHostNetRecvPackets), // TODO counter
+		HostNetSendBytes:         metric.NewGauge(metaHostNetSendBytes),   // TODO counter
+		HostNetSendPackets:       metric.NewGauge(metaHostNetSendPackets), // TODO counter
 		FDOpen:                   metric.NewGauge(metaFDOpen),
 		FDSoftLimit:              metric.NewGauge(metaFDSoftLimit),
 		Uptime:                   metric.NewGauge(metaUptime),

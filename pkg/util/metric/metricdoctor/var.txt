@@ -1,0 +1,3127 @@
+# HELP changefeed_emit_nanos Total time spent emitting all feeds
+# TYPE changefeed_emit_nanos counter
+changefeed_emit_nanos 0
+# HELP sql_hydrated_table_cache_misses counter on the number of cache misses
+# TYPE sql_hydrated_table_cache_misses counter
+sql_hydrated_table_cache_misses 0
+# HELP sql_restart_savepoint_started_count_internal Number of `SAVEPOINT cockroach_restart` statements started (internal queries)
+# TYPE sql_restart_savepoint_started_count_internal counter
+sql_restart_savepoint_started_count_internal 0
+# HELP sys_cgo_allocbytes Current bytes of memory allocated by cgo
+# TYPE sys_cgo_allocbytes gauge
+sys_cgo_allocbytes 7.0197008e+07
+# HELP txn_commits1PC Number of KV transaction one-phase commit attempts
+# TYPE txn_commits1PC counter
+txn_commits1PC 562
+# HELP kv_prober_read_latency Latency of successful KV read probes
+# TYPE kv_prober_read_latency histogram
+kv_prober_read_latency_bucket{le="+Inf"} 0
+kv_prober_read_latency_sum 0
+kv_prober_read_latency_count 0
+# HELP jobs_migration_resume_retry_error Number of migration jobs which failed with a retriable error
+# TYPE jobs_migration_resume_retry_error counter
+jobs_migration_resume_retry_error 0
+# HELP queue_consistency_process_failure Number of replicas which failed processing in the consistency checker queue
+# TYPE queue_consistency_process_failure counter
+queue_consistency_process_failure{store="1"} 0
+# HELP txnrecovery_attempts_pending Number of transaction recovery attempts currently in-flight
+# TYPE txnrecovery_attempts_pending gauge
+txnrecovery_attempts_pending{store="1"} 0
+# HELP sys_cpu_sys_percent Current system cpu percentage
+# TYPE sys_cpu_sys_percent gauge
+sys_cpu_sys_percent 0.023313386546555032
+# HELP distsender_rpc_err_indeterminatecommiterrtype Number of IndeterminateCommitErrType errors received
+# TYPE distsender_rpc_err_indeterminatecommiterrtype counter
+distsender_rpc_err_indeterminatecommiterrtype 0
+# HELP sql_txn_commit_started_count Number of SQL transaction COMMIT statements started
+# TYPE sql_txn_commit_started_count counter
+sql_txn_commit_started_count 0
+# HELP sql_txn_rollback_started_count_internal Number of SQL transaction ROLLBACK statements started (internal queries)
+# TYPE sql_txn_rollback_started_count_internal counter
+sql_txn_rollback_started_count_internal 0
+# HELP raft_process_tickingnanos Nanoseconds spent in store.processRaft() processing replica.Tick()
+# TYPE raft_process_tickingnanos counter
+raft_process_tickingnanos{store="1"} 5.2416e+07
+# HELP queue_replicate_nonvoterpromotions Number of non-voters promoted to voters by the replicate queue
+# TYPE queue_replicate_nonvoterpromotions counter
+queue_replicate_nonvoterpromotions{store="1"} 0
+# HELP distsender_rpc_err_errordetailtype_21_ Number of ErrorDetailType(21) errors received
+# TYPE distsender_rpc_err_errordetailtype_21_ counter
+distsender_rpc_err_errordetailtype_21_ 0
+# HELP jobs_create_stats_resume_completed Number of create_stats jobs which successfully resumed to completion
+# TYPE jobs_create_stats_resume_completed counter
+jobs_create_stats_resume_completed 0
+# HELP jobs_create_stats_fail_or_cancel_completed Number of create_stats jobs which successfully completed their failure or cancelation process
+# TYPE jobs_create_stats_fail_or_cancel_completed counter
+jobs_create_stats_fail_or_cancel_completed 0
+# HELP sql_ddl_started_count_internal Number of SQL DDL statements started (internal queries)
+# TYPE sql_ddl_started_count_internal counter
+sql_ddl_started_count_internal 2
+# HELP distsender_rpc_err_nodeunavailableerrtype Number of NodeUnavailableErrType errors received
+# TYPE distsender_rpc_err_nodeunavailableerrtype counter
+distsender_rpc_err_nodeunavailableerrtype 0
+# HELP replicas_reserved Number of replicas reserved for snapshots
+# TYPE replicas_reserved gauge
+replicas_reserved{store="1"} 0
+# HELP txnwaitqueue_pusher_waiting Number of pushers on the txn wait queue
+# TYPE txnwaitqueue_pusher_waiting gauge
+txnwaitqueue_pusher_waiting{store="1"} 0
+# HELP queue_raftsnapshot_process_failure Number of replicas which failed processing in the Raft repair queue
+# TYPE queue_raftsnapshot_process_failure counter
+queue_raftsnapshot_process_failure{store="1"} 0
+# HELP queue_tsmaintenance_pending Number of pending replicas in the time series maintenance queue
+# TYPE queue_tsmaintenance_pending gauge
+queue_tsmaintenance_pending{store="1"} 0
+# HELP sys_cpu_user_ns Total user cpu time
+# TYPE sys_cpu_user_ns gauge
+sys_cpu_user_ns 4.8912e+10
+# HELP txn_refresh_success Number of successful transaction refreshes. A refresh may be preemptive or reactive. A reactive refresh is performed after a request throws an error because a refresh is needed for it to succeed. In these cases, the request will be re-issued as an auto-retry (see txn.refresh.auto_retries) after the refresh succeeds.
+# TYPE txn_refresh_success counter
+txn_refresh_success 0
+# HELP sql_distsql_queries_active Number of SQL queries currently active
+# TYPE sql_distsql_queries_active gauge
+sql_distsql_queries_active 0
+# HELP queue_raftlog_process_success Number of replicas successfully processed by the Raft log queue
+# TYPE queue_raftlog_process_success counter
+queue_raftlog_process_success{store="1"} 386
+# HELP queue_merge_purgatory Number of replicas in the merge queue's purgatory, waiting to become mergeable
+# TYPE queue_merge_purgatory gauge
+queue_merge_purgatory{store="1"} 0
+# HELP distsender_rpc_err_writetooolderrtype Number of WriteTooOldErrType errors received
+# TYPE distsender_rpc_err_writetooolderrtype counter
+distsender_rpc_err_writetooolderrtype 0
+# HELP jobs_import_resume_retry_error Number of import jobs which failed with a retriable error
+# TYPE jobs_import_resume_retry_error counter
+jobs_import_resume_retry_error 0
+# HELP jobs_auto_create_stats_fail_or_cancel_failed Number of auto_create_stats jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_auto_create_stats_fail_or_cancel_failed counter
+jobs_auto_create_stats_fail_or_cancel_failed 0
+# HELP jobs_migration_fail_or_cancel_retry_error Number of migration jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_migration_fail_or_cancel_retry_error counter
+jobs_migration_fail_or_cancel_retry_error 0
+# HELP capacity Total storage capacity
+# TYPE capacity gauge
+capacity{store="1"} 2.50685575168e+11
+# HELP kv_tenant_rate_limit_num_tenants Number of tenants currently being tracked
+# TYPE kv_tenant_rate_limit_num_tenants gauge
+kv_tenant_rate_limit_num_tenants{store="1"} 0
+# HELP sys_cpu_sys_ns Total system cpu time
+# TYPE sys_cpu_sys_ns gauge
+sys_cpu_sys_ns 4.9103e+10
+# HELP distsender_rpc_requestlease_sent Number of RequestLease requests sent
+# TYPE distsender_rpc_requestlease_sent counter
+distsender_rpc_requestlease_sent 0
+# HELP jobs_create_stats_resume_failed Number of create_stats jobs which failed with a non-retriable error
+# TYPE jobs_create_stats_resume_failed counter
+jobs_create_stats_resume_failed 0
+# HELP schedules_round_num_jobs_running The number of jobs started by schedules that are currently running
+# TYPE schedules_round_num_jobs_running gauge
+schedules_round_num_jobs_running 0
+# HELP jobs_new_schema_change_fail_or_cancel_completed Number of new_schema_change jobs which successfully completed their failure or cancelation process
+# TYPE jobs_new_schema_change_fail_or_cancel_completed counter
+jobs_new_schema_change_fail_or_cancel_completed 0
+# HELP distsender_rpc_err_replicacorruptionerrtype Number of ReplicaCorruptionErrType errors received
+# TYPE distsender_rpc_err_replicacorruptionerrtype counter
+distsender_rpc_err_replicacorruptionerrtype 0
+# HELP sql_update_started_count Number of SQL UPDATE statements started
+# TYPE sql_update_started_count counter
+sql_update_started_count 0
+# HELP sql_update_count Number of SQL UPDATE statements successfully executed
+# TYPE sql_update_count counter
+sql_update_count 0
+# HELP sql_optimizer_fallback_count Number of statements which the cost-based optimizer was unable to plan
+# TYPE sql_optimizer_fallback_count counter
+sql_optimizer_fallback_count 0
+# HELP distsender_rpc_err_errordetailtype_20_ Number of ErrorDetailType(20) errors received
+# TYPE distsender_rpc_err_errordetailtype_20_ counter
+distsender_rpc_err_errordetailtype_20_ 0
+# HELP txn_refresh_fail_with_condensed_spans Number of failed refreshes for transactions whose read tracking lost fidelity because of condensing. Such a failure could be a false conflict. Failures counted here are also counted in txn.refresh.fail, and the respective transactions are also counted in txn.refresh.memory_limit_exceeded.
+# TYPE txn_refresh_fail_with_condensed_spans counter
+txn_refresh_fail_with_condensed_spans 0
+# HELP jobs_backup_resume_failed Number of backup jobs which failed with a non-retriable error
+# TYPE jobs_backup_resume_failed counter
+jobs_backup_resume_failed 0
+# HELP sql_disk_distsql_current Current sql statement disk usage for distsql
+# TYPE sql_disk_distsql_current gauge
+sql_disk_distsql_current 0
+# HELP distsender_rpc_deleterange_sent Number of DeleteRange requests sent
+# TYPE distsender_rpc_deleterange_sent counter
+distsender_rpc_deleterange_sent 96
+# HELP jobs_schema_change_gc_fail_or_cancel_completed Number of schema_change_gc jobs which successfully completed their failure or cancelation process
+# TYPE jobs_schema_change_gc_fail_or_cancel_completed counter
+jobs_schema_change_gc_fail_or_cancel_completed 0
+# HELP rocksdb_block_cache_hits Count of block cache hits
+# TYPE rocksdb_block_cache_hits gauge
+rocksdb_block_cache_hits{store="1"} 0
+# HELP raft_entrycache_hits Number of successful cache lookups in the Raft entry cache
+# TYPE raft_entrycache_hits counter
+raft_entrycache_hits{store="1"} 386
+# HELP requests_slow_raft Number of requests that have been stuck for a long time in raft
+# TYPE requests_slow_raft gauge
+requests_slow_raft{store="1"} 123
+# HELP distsender_rpc_export_sent Number of Export requests sent
+# TYPE distsender_rpc_export_sent counter
+distsender_rpc_export_sent 0
+# HELP txn_condensed_intent_spans_gauge KV transactions currently running that have exceeded their intent tracking memory budget (kv.transaction.max_intents_bytes). See also txn.condensed_intent_spans for a perpetual counter/rate.
+# TYPE txn_condensed_intent_spans_gauge gauge
+txn_condensed_intent_spans_gauge 0
+# HELP raft_heartbeats_pending Number of pending heartbeats and responses waiting to be coalesced
+# TYPE raft_heartbeats_pending gauge
+raft_heartbeats_pending{store="1"} 0
+# HELP requests_slow_lease Number of requests that have been stuck for a long time acquiring a lease
+# TYPE requests_slow_lease gauge
+requests_slow_lease{store="1"} 0
+# HELP changefeed_emit_hist_nanos Time spent emitting messages across all changefeeds
+# TYPE changefeed_emit_hist_nanos histogram
+changefeed_emit_hist_nanos_bucket{le="+Inf"} 0
+changefeed_emit_hist_nanos_sum 0
+changefeed_emit_hist_nanos_count 0
+# HELP sql_restart_savepoint_release_started_count Number of `RELEASE SAVEPOINT cockroach_restart` statements started
+# TYPE sql_restart_savepoint_release_started_count counter
+sql_restart_savepoint_release_started_count 0
+# HELP totalbytes Total number of bytes taken up by keys and values including non-live data
+# TYPE totalbytes gauge
+totalbytes{store="1"} 6.139389e+06
+# HELP rocksdb_compacted_bytes_written Bytes written during compaction
+# TYPE rocksdb_compacted_bytes_written gauge
+rocksdb_compacted_bytes_written{store="1"} 0
+# HELP distsender_rpc_err_errordetailtype_19_ Number of ErrorDetailType(19) errors received
+# TYPE distsender_rpc_err_errordetailtype_19_ counter
+distsender_rpc_err_errordetailtype_19_ 0
+# HELP distsender_rpc_err_storenotfounderrtype Number of StoreNotFoundErrType errors received
+# TYPE distsender_rpc_err_storenotfounderrtype counter
+distsender_rpc_err_storenotfounderrtype 0
+# HELP jobs_changefeed_resume_completed Number of changefeed jobs which successfully resumed to completion
+# TYPE jobs_changefeed_resume_completed counter
+jobs_changefeed_resume_completed 0
+# HELP changefeed_error_retries Total retryable errors encountered by all changefeeds
+# TYPE changefeed_error_retries counter
+changefeed_error_retries 0
+# HELP txnwaitqueue_pushee_waiting Number of pushees on the txn wait queue
+# TYPE txnwaitqueue_pushee_waiting gauge
+txnwaitqueue_pushee_waiting{store="1"} 0
+# HELP txnrecovery_failures Number of transaction recovery attempts that failed
+# TYPE txnrecovery_failures counter
+txnrecovery_failures{store="1"} 0
+# HELP txn_refresh_memory_limit_exceeded Number of transaction which exceed the refresh span bytes limit, causing their read spans to be condensed
+# TYPE txn_refresh_memory_limit_exceeded counter
+txn_refresh_memory_limit_exceeded 0
+# HELP sql_mem_internal_session_current Current sql session memory usage for internal
+# TYPE sql_mem_internal_session_current gauge
+sql_mem_internal_session_current 0
+# HELP sql_delete_started_count Number of SQL DELETE statements started
+# TYPE sql_delete_started_count counter
+sql_delete_started_count 0
+# HELP kv_tenant_rate_limit_read_bytes_admitted Number of read bytes admitted by the rate limiter
+# TYPE kv_tenant_rate_limit_read_bytes_admitted counter
+kv_tenant_rate_limit_read_bytes_admitted{store="1"} 0
+# HELP raft_rcvd_vote Number of MsgVote messages received by this store
+# TYPE raft_rcvd_vote counter
+raft_rcvd_vote{store="1"} 0
+# HELP sys_host_net_send_packets Packets sent on all network interfaces since this process started
+# TYPE sys_host_net_send_packets gauge
+sys_host_net_send_packets 48309
+# HELP jobs_import_fail_or_cancel_retry_error Number of import jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_import_fail_or_cancel_retry_error counter
+jobs_import_fail_or_cancel_retry_error 0
+# HELP schedules_round_schedules_ready_to_run The number of jobs ready to execute
+# TYPE schedules_round_schedules_ready_to_run gauge
+schedules_round_schedules_ready_to_run 0
+# HELP range_adds Number of range additions
+# TYPE range_adds counter
+range_adds{store="1"} 0
+# HELP queue_gc_info_transactionspangccommitted Number of GC'able entries corresponding to committed txns
+# TYPE queue_gc_info_transactionspangccommitted counter
+queue_gc_info_transactionspangccommitted{store="1"} 0
+# HELP sql_schema_changer_retry_errors Counter of the number of retriable errors experienced by the schema changer
+# TYPE sql_schema_changer_retry_errors counter
+sql_schema_changer_retry_errors 0
+# HELP sql_savepoint_started_count Number of SQL SAVEPOINT statements started
+# TYPE sql_savepoint_started_count counter
+sql_savepoint_started_count 0
+# HELP sql_optimizer_plan_cache_misses Number of non-prepared statements for which a cached plan was not used
+# TYPE sql_optimizer_plan_cache_misses counter
+sql_optimizer_plan_cache_misses 0
+# HELP queue_raftsnapshot_process_success Number of replicas successfully processed by the Raft repair queue
+# TYPE queue_raftsnapshot_process_success counter
+queue_raftsnapshot_process_success{store="1"} 0
+# HELP distsender_batches Number of batches processed
+# TYPE distsender_batches counter
+distsender_batches 8506
+# HELP distsender_rpc_heartbeattxn_sent Number of HeartbeatTxn requests sent
+# TYPE distsender_rpc_heartbeattxn_sent counter
+distsender_rpc_heartbeattxn_sent 0
+# HELP range_snapshots_generated Number of generated snapshots
+# TYPE range_snapshots_generated counter
+range_snapshots_generated{store="1"} 0
+# HELP sql_distsql_queries_total Number of SQL queries executed
+# TYPE sql_distsql_queries_total counter
+sql_distsql_queries_total 1879
+# HELP sql_disk_distsql_max Disk usage per sql statement for distsql
+# TYPE sql_disk_distsql_max histogram
+sql_disk_distsql_max_bucket{le="+Inf"} 0
+sql_disk_distsql_max_sum 0
+sql_disk_distsql_max_count 0
+# HELP intents_abort_attempts Count of (point or range) non-poisoning intent abort evaluation attempts
+# TYPE intents_abort_attempts counter
+intents_abort_attempts{store="1"} 0
+# HELP txnrecovery_attempts_total Number of transaction recovery attempts executed
+# TYPE txnrecovery_attempts_total counter
+txnrecovery_attempts_total{store="1"} 0
+# HELP sql_savepoint_rollback_started_count_internal Number of `ROLLBACK TO SAVEPOINT` statements started (internal queries)
+# TYPE sql_savepoint_rollback_started_count_internal counter
+sql_savepoint_rollback_started_count_internal 0
+# HELP queue_replicate_process_success Number of replicas successfully processed by the replicate queue
+# TYPE queue_replicate_process_success counter
+queue_replicate_process_success{store="1"} 0
+# HELP raft_entrycache_bytes Aggregate size of all Raft entries in the Raft entry cache
+# TYPE raft_entrycache_bytes gauge
+raft_entrycache_bytes{store="1"} 237552
+# HELP tscache_skl_pages Number of pages in the timestamp cache
+# TYPE tscache_skl_pages gauge
+tscache_skl_pages{store="1"} 2
+# HELP distsender_batches_partial Number of partial batches processed after being divided on range boundaries
+# TYPE distsender_batches_partial counter
+distsender_batches_partial 1193
+# HELP exec_success Number of batch KV requests executed successfully on this node
+# TYPE exec_success counter
+exec_success 9113
+# HELP jobs_changefeed_currently_running Number of changefeed jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_changefeed_currently_running gauge
+jobs_changefeed_currently_running 0
+# HELP sql_txn_begin_count Number of SQL transaction BEGIN statements successfully executed
+# TYPE sql_txn_begin_count counter
+sql_txn_begin_count 0
+# HELP changefeed_checkpoint_hist_nanos Time spent checkpointing changefeed progress
+# TYPE changefeed_checkpoint_hist_nanos histogram
+changefeed_checkpoint_hist_nanos_bucket{le="+Inf"} 0
+changefeed_checkpoint_hist_nanos_sum 0
+changefeed_checkpoint_hist_nanos_count 0
+# HELP sql_mem_sql_txn_max Memory usage per sql transaction for sql
+# TYPE sql_mem_sql_txn_max histogram
+sql_mem_sql_txn_max_bucket{le="+Inf"} 0
+sql_mem_sql_txn_max_sum 0
+sql_mem_sql_txn_max_count 0
+# HELP sql_mem_sql_session_current Current sql session memory usage for sql
+# TYPE sql_mem_sql_session_current gauge
+sql_mem_sql_session_current 0
+# HELP kv_rangefeed_catchup_scan_nanos Time spent in RangeFeed catchup scan
+# TYPE kv_rangefeed_catchup_scan_nanos counter
+kv_rangefeed_catchup_scan_nanos{store="1"} 30000
+# HELP distsender_rpc_err_transactionabortederrtype Number of TransactionAbortedErrType errors received
+# TYPE distsender_rpc_err_transactionabortederrtype counter
+distsender_rpc_err_transactionabortederrtype 0
+# HELP txn_restarts_txnaborted Number of restarts due to an abort by a concurrent transaction (usually due to deadlock)
+# TYPE txn_restarts_txnaborted counter
+txn_restarts_txnaborted 0
+# HELP jobs_auto_create_stats_currently_running Number of auto_create_stats jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_auto_create_stats_currently_running gauge
+jobs_auto_create_stats_currently_running 0
+# HELP jobs_typedesc_schema_change_fail_or_cancel_failed Number of typedesc_schema_change jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_typedesc_schema_change_fail_or_cancel_failed counter
+jobs_typedesc_schema_change_fail_or_cancel_failed 0
+# HELP sql_delete_started_count_internal Number of SQL DELETE statements started (internal queries)
+# TYPE sql_delete_started_count_internal counter
+sql_delete_started_count_internal 96
+# HELP sql_savepoint_count_internal Number of SQL SAVEPOINT statements successfully executed (internal queries)
+# TYPE sql_savepoint_count_internal counter
+sql_savepoint_count_internal 0
+# HELP sql_distsql_service_latency_internal Latency of DistSQL request execution (internal queries)
+# TYPE sql_distsql_service_latency_internal histogram
+sql_distsql_service_latency_internal_bucket{le="+Inf"} 0
+sql_distsql_service_latency_internal_sum 0
+sql_distsql_service_latency_internal_count 0
+# HELP jobs_new_schema_change_fail_or_cancel_retry_error Number of new_schema_change jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_new_schema_change_fail_or_cancel_retry_error counter
+jobs_new_schema_change_fail_or_cancel_retry_error 0
+# HELP sql_update_started_count_internal Number of SQL UPDATE statements started (internal queries)
+# TYPE sql_update_started_count_internal counter
+sql_update_started_count_internal 828
+# HELP valbytes Number of bytes taken up by values
+# TYPE valbytes gauge
+valbytes{store="1"} 6.070183e+06
+# HELP sql_mem_bulk_current Current sql statement memory usage for bulk operations
+# TYPE sql_mem_bulk_current gauge
+sql_mem_bulk_current 0
+# HELP queue_raftsnapshot_pending Number of pending replicas in the Raft repair queue
+# TYPE queue_raftsnapshot_pending gauge
+queue_raftsnapshot_pending{store="1"} 0
+# HELP gossip_connections_incoming Number of active incoming gossip connections
+# TYPE gossip_connections_incoming gauge
+gossip_connections_incoming 0
+# HELP sys_fd_softlimit Process open FD soft limit
+# TYPE sys_fd_softlimit gauge
+sys_fd_softlimit 0
+# HELP sys_host_disk_write_bytes Bytes written to all disks since this process started
+# TYPE sys_host_disk_write_bytes gauge
+sys_host_disk_write_bytes 2.471964672e+09
+# HELP sql_distsql_flows_total Number of distributed SQL flows executed
+# TYPE sql_distsql_flows_total counter
+sql_distsql_flows_total 0
+# HELP rocksdb_block_cache_misses Count of block cache misses
+# TYPE rocksdb_block_cache_misses gauge
+rocksdb_block_cache_misses{store="1"} 0
+# HELP queue_split_process_failure Number of replicas which failed processing in the split queue
+# TYPE queue_split_process_failure counter
+queue_split_process_failure{store="1"} 0
+# HELP queue_gc_info_intentsconsidered Number of 'old' intents
+# TYPE queue_gc_info_intentsconsidered counter
+queue_gc_info_intentsconsidered{store="1"} 0
+# HELP distsender_rpc_put_sent Number of Put requests sent
+# TYPE distsender_rpc_put_sent counter
+distsender_rpc_put_sent 562
+# HELP distsender_rpc_delete_sent Number of Delete requests sent
+# TYPE distsender_rpc_delete_sent counter
+distsender_rpc_delete_sent 0
+# HELP distsender_rpc_err_raftgroupdeletederrtype Number of RaftGroupDeletedErrType errors received
+# TYPE distsender_rpc_err_raftgroupdeletederrtype counter
+distsender_rpc_err_raftgroupdeletederrtype 0
+# HELP txn_restarts_readwithinuncertainty Number of restarts due to reading a new value within the uncertainty interval
+# TYPE txn_restarts_readwithinuncertainty counter
+txn_restarts_readwithinuncertainty 0
+# HELP gossip_connections_refused Number of refused incoming gossip connections
+# TYPE gossip_connections_refused counter
+gossip_connections_refused 0
+# HELP distsender_rpc_err_notleaseholdererrtype Number of NotLeaseHolderErrType errors received
+# TYPE distsender_rpc_err_notleaseholdererrtype counter
+distsender_rpc_err_notleaseholdererrtype 2
+# HELP intentbytes Number of bytes in intent KV pairs
+# TYPE intentbytes gauge
+intentbytes{store="1"} 0
+# HELP sql_temp_object_cleaner_schemas_deletion_error number of errored schema deletions by the temp object cleaner on this node
+# TYPE sql_temp_object_cleaner_schemas_deletion_error counter
+sql_temp_object_cleaner_schemas_deletion_error 0
+# HELP range_merges Number of range merges
+# TYPE range_merges counter
+range_merges{store="1"} 0
+# HELP queue_tsmaintenance_processingnanos Nanoseconds spent processing replicas in the time series maintenance queue
+# TYPE queue_tsmaintenance_processingnanos counter
+queue_tsmaintenance_processingnanos{store="1"} 8.0096e+07
+# HELP queue_replicagc_removereplica Number of replica removals attempted by the replica gc queue
+# TYPE queue_replicagc_removereplica counter
+queue_replicagc_removereplica{store="1"} 0
+# HELP raft_rcvd_transferleader Number of MsgTransferLeader messages received by this store
+# TYPE raft_rcvd_transferleader counter
+raft_rcvd_transferleader{store="1"} 0
+# HELP queue_gc_pending Number of pending replicas in the GC queue
+# TYPE queue_gc_pending gauge
+queue_gc_pending{store="1"} 0
+# HELP raft_entrycache_accesses Number of cache lookups in the Raft entry cache
+# TYPE raft_entrycache_accesses counter
+raft_entrycache_accesses{store="1"} 460
+# HELP gossip_bytes_received Number of received gossip bytes
+# TYPE gossip_bytes_received counter
+gossip_bytes_received 0
+# HELP sys_cpu_combined_percent_normalized Current user+system cpu percentage, normalized 0-1 by number of cores
+# TYPE sys_cpu_combined_percent_normalized gauge
+sys_cpu_combined_percent_normalized 0.005553188640917615
+# HELP txn_restarts_txnpush Number of restarts due to a transaction push failure
+# TYPE txn_restarts_txnpush counter
+txn_restarts_txnpush 0
+# HELP timeseries_write_errors Total errors encountered while attempting to write metrics to disk
+# TYPE timeseries_write_errors counter
+timeseries_write_errors 0
+# HELP distsender_batches_async_sent Number of partial batches sent asynchronously
+# TYPE distsender_batches_async_sent counter
+distsender_batches_async_sent 14
+# HELP sql_ddl_count_internal Number of SQL DDL statements successfully executed (internal queries)
+# TYPE sql_ddl_count_internal counter
+sql_ddl_count_internal 2
+# HELP raft_entrycache_size Number of Raft entries in the Raft entry cache
+# TYPE raft_entrycache_size gauge
+raft_entrycache_size{store="1"} 460
+# HELP kv_tenant_rate_limit_write_requests_admitted Number of write requests admitted by the rate limiter
+# TYPE kv_tenant_rate_limit_write_requests_admitted counter
+kv_tenant_rate_limit_write_requests_admitted{store="1"} 0
+# HELP sql_txns_open_internal Number of currently open SQL transactions (internal queries)
+# TYPE sql_txns_open_internal gauge
+sql_txns_open_internal 0
+# HELP intentcount Count of intent keys
+# TYPE intentcount gauge
+intentcount{store="1"} 0
+# HELP txn_aborts Number of aborted KV transactions
+# TYPE txn_aborts counter
+txn_aborts 0
+# HELP txn_restarts_unknown Number of restarts due to a unknown reasons
+# TYPE txn_restarts_unknown counter
+txn_restarts_unknown 0
+# HELP sql_mem_internal_session_max Memory usage per sql session for internal
+# TYPE sql_mem_internal_session_max histogram
+sql_mem_internal_session_max_bucket{le="4011"} 384
+sql_mem_internal_session_max_bucket{le="4311"} 1307
+sql_mem_internal_session_max_bucket{le="4487"} 1313
+sql_mem_internal_session_max_bucket{le="+Inf"} 1313
+sql_mem_internal_session_max_sum 5.546199e+06
+sql_mem_internal_session_max_count 1313
+# HELP sql_ddl_count Number of SQL DDL statements successfully executed
+# TYPE sql_ddl_count counter
+sql_ddl_count 0
+# HELP replicas_leaseholders Number of lease holders
+# TYPE replicas_leaseholders gauge
+replicas_leaseholders{store="1"} 37
+# HELP rocksdb_memtable_total_size Current size of memtable in bytes
+# TYPE rocksdb_memtable_total_size gauge
+rocksdb_memtable_total_size{store="1"} 6.684672e+07
+# HELP kv_protectedts_reconciliation_errors number of errors encountered during reconciliation runs on this node
+# TYPE kv_protectedts_reconciliation_errors counter
+kv_protectedts_reconciliation_errors 0
+# HELP jobs_new_schema_change_fail_or_cancel_failed Number of new_schema_change jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_new_schema_change_fail_or_cancel_failed counter
+jobs_new_schema_change_fail_or_cancel_failed 0
+# HELP sql_distsql_flows_queued Number of distributed SQL flows currently queued
+# TYPE sql_distsql_flows_queued gauge
+sql_distsql_flows_queued 0
+# HELP sql_failure_count Number of statements resulting in a planning or runtime error
+# TYPE sql_failure_count counter
+sql_failure_count 0
+# HELP schedules_round_jobs_started The number of jobs started
+# TYPE schedules_round_jobs_started gauge
+schedules_round_jobs_started 0
+# HELP jobs_create_stats_fail_or_cancel_failed Number of create_stats jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_create_stats_fail_or_cancel_failed counter
+jobs_create_stats_fail_or_cancel_failed 0
+# HELP jobs_migration_resume_completed Number of migration jobs which successfully resumed to completion
+# TYPE jobs_migration_resume_completed counter
+jobs_migration_resume_completed 0
+# HELP sql_schema_changer_permanent_errors Counter of the number of permanent errors experienced by the schema changer
+# TYPE sql_schema_changer_permanent_errors counter
+sql_schema_changer_permanent_errors 0
+# HELP leases_expiration Number of replica leaseholders using expiration-based leases
+# TYPE leases_expiration gauge
+leases_expiration{store="1"} 2
+# HELP queue_merge_pending Number of pending replicas in the merge queue
+# TYPE queue_merge_pending gauge
+queue_merge_pending{store="1"} 0
+# HELP queue_gc_info_transactionspangcaborted Number of GC'able entries corresponding to aborted txns
+# TYPE queue_gc_info_transactionspangcaborted counter
+queue_gc_info_transactionspangcaborted{store="1"} 0
+# HELP txnwaitqueue_query_waiting Number of transaction status queries waiting for an updated transaction record
+# TYPE txnwaitqueue_query_waiting gauge
+txnwaitqueue_query_waiting{store="1"} 0
+# HELP sys_cgo_totalbytes Total bytes of memory allocated by cgo, but not released
+# TYPE sys_cgo_totalbytes gauge
+sys_cgo_totalbytes 7.3904128e+07
+# HELP distsender_rpc_refresh_sent Number of Refresh requests sent
+# TYPE distsender_rpc_refresh_sent counter
+distsender_rpc_refresh_sent 0
+# HELP timeseries_write_samples Total number of metric samples written to disk
+# TYPE timeseries_write_samples counter
+timeseries_write_samples 175481
+# HELP livecount Count of live keys
+# TYPE livecount gauge
+livecount{store="1"} 1157
+# HELP txnrecovery_successes_pending Number of transaction recovery attempts that left a transaction pending
+# TYPE txnrecovery_successes_pending counter
+txnrecovery_successes_pending{store="1"} 0
+# HELP rebalancing_lease_transfers Number of lease transfers motivated by store-level load imbalances
+# TYPE rebalancing_lease_transfers counter
+rebalancing_lease_transfers{store="1"} 0
+# HELP sql_restart_savepoint_rollback_started_count_internal Number of `ROLLBACK TO SAVEPOINT cockroach_restart` statements started (internal queries)
+# TYPE sql_restart_savepoint_rollback_started_count_internal counter
+sql_restart_savepoint_rollback_started_count_internal 0
+# HELP queue_replicate_purgatory Number of replicas in the replicate queue's purgatory, awaiting allocation options
+# TYPE queue_replicate_purgatory gauge
+queue_replicate_purgatory{store="1"} 11
+# HELP queue_gc_info_resolvesuccess Number of successful intent resolutions
+# TYPE queue_gc_info_resolvesuccess counter
+queue_gc_info_resolvesuccess{store="1"} 0
+# HELP addsstable_applications Number of SSTable ingestions applied (i.e. applied by Replicas)
+# TYPE addsstable_applications counter
+addsstable_applications{store="1"} 0
+# HELP distsender_rpc_querytxn_sent Number of QueryTxn requests sent
+# TYPE distsender_rpc_querytxn_sent counter
+distsender_rpc_querytxn_sent 0
+# HELP txn_commits Number of committed KV transactions (including 1PC)
+# TYPE txn_commits counter
+txn_commits 2488
+# HELP jobs_changefeed_resume_retry_error Number of changefeed jobs which failed with a retriable error
+# TYPE jobs_changefeed_resume_retry_error counter
+jobs_changefeed_resume_retry_error 0
+# HELP jobs_stream_ingestion_fail_or_cancel_retry_error Number of stream_ingestion jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_stream_ingestion_fail_or_cancel_retry_error counter
+jobs_stream_ingestion_fail_or_cancel_retry_error 0
+# HELP sysbytes Number of bytes in system KV pairs
+# TYPE sysbytes gauge
+sysbytes{store="1"} 10056
+# HELP leases_transfers_error Number of failed lease transfers
+# TYPE leases_transfers_error counter
+leases_transfers_error{store="1"} 0
+# HELP raft_rcvd_dropped Number of dropped incoming Raft messages
+# TYPE raft_rcvd_dropped counter
+raft_rcvd_dropped{store="1"} 0
+# HELP queue_merge_process_failure Number of replicas which failed processing in the merge queue
+# TYPE queue_merge_process_failure counter
+queue_merge_process_failure{store="1"} 0
+# HELP txn_restarts Number of restarted KV transactions
+# TYPE txn_restarts histogram
+txn_restarts_bucket{le="+Inf"} 0
+txn_restarts_sum 0
+txn_restarts_count 0
+# HELP txn_restarts_writetooold Number of restarts due to a concurrent writer committing first
+# TYPE txn_restarts_writetooold counter
+txn_restarts_writetooold 0
+# HELP jobs_backup_fail_or_cancel_retry_error Number of backup jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_backup_fail_or_cancel_retry_error counter
+jobs_backup_fail_or_cancel_retry_error 0
+# HELP sql_restart_savepoint_release_count Number of `RELEASE SAVEPOINT cockroach_restart` statements successfully executed
+# TYPE sql_restart_savepoint_release_count counter
+sql_restart_savepoint_release_count 0
+# HELP queue_replicate_process_failure Number of replicas which failed processing in the replicate queue
+# TYPE queue_replicate_process_failure counter
+queue_replicate_process_failure{store="1"} 15
+# HELP sql_txn_commit_count_internal Number of SQL transaction COMMIT statements successfully executed (internal queries)
+# TYPE sql_txn_commit_count_internal counter
+sql_txn_commit_count_internal 0
+# HELP queue_gc_info_abortspangcnum Number of AbortSpan entries fit for removal
+# TYPE queue_gc_info_abortspangcnum counter
+queue_gc_info_abortspangcnum{store="1"} 0
+# HELP rpc_heartbeats_loops_exited Counter of the number of connection heartbeat loops which have exited with an error
+# TYPE rpc_heartbeats_loops_exited counter
+rpc_heartbeats_loops_exited 0
+# HELP distsender_rpc_adminsplit_sent Number of AdminSplit requests sent
+# TYPE distsender_rpc_adminsplit_sent counter
+distsender_rpc_adminsplit_sent 0
+# HELP distsender_rpc_recomputestats_sent Number of RecomputeStats requests sent
+# TYPE distsender_rpc_recomputestats_sent counter
+distsender_rpc_recomputestats_sent 1
+# HELP sql_optimizer_plan_cache_hits Number of non-prepared statements for which a cached plan was used
+# TYPE sql_optimizer_plan_cache_hits counter
+sql_optimizer_plan_cache_hits 0
+# HELP kv_prober_read_failures Number of attempts made to probe KV that failed, whether due to error or timeout
+# TYPE kv_prober_read_failures counter
+kv_prober_read_failures 0
+# HELP jobs_schema_change_resume_retry_error Number of schema_change jobs which failed with a retriable error
+# TYPE jobs_schema_change_resume_retry_error counter
+jobs_schema_change_resume_retry_error 0
+# HELP replicas_leaders_not_leaseholders Number of replicas that are Raft leaders whose range lease is held by another store
+# TYPE replicas_leaders_not_leaseholders gauge
+replicas_leaders_not_leaseholders{store="1"} 0
+# HELP rocksdb_block_cache_usage Bytes used by the block cache
+# TYPE rocksdb_block_cache_usage gauge
+rocksdb_block_cache_usage{store="1"} 0
+# HELP sys_gc_pause_ns Total GC pause
+# TYPE sys_gc_pause_ns gauge
+sys_gc_pause_ns 3.4921795e+07
+# HELP jobs_restore_resume_retry_error Number of restore jobs which failed with a retriable error
+# TYPE jobs_restore_resume_retry_error counter
+jobs_restore_resume_retry_error 0
+# HELP jobs_stream_ingestion_fail_or_cancel_completed Number of stream_ingestion jobs which successfully completed their failure or cancelation process
+# TYPE jobs_stream_ingestion_fail_or_cancel_completed counter
+jobs_stream_ingestion_fail_or_cancel_completed 0
+# HELP jobs_schema_change_fail_or_cancel_retry_error Number of schema_change jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_schema_change_fail_or_cancel_retry_error counter
+jobs_schema_change_fail_or_cancel_retry_error 0
+# HELP sql_failure_count_internal Number of statements resulting in a planning or runtime error (internal queries)
+# TYPE sql_failure_count_internal counter
+sql_failure_count_internal 0
+# HELP queue_replicate_pending Number of pending replicas in the replicate queue
+# TYPE queue_replicate_pending gauge
+queue_replicate_pending{store="1"} 0
+# HELP queue_replicate_addreplica Number of replica additions attempted by the replicate queue
+# TYPE queue_replicate_addreplica counter
+queue_replicate_addreplica{store="1"} 0
+# HELP keycount Count of all keys
+# TYPE keycount gauge
+keycount{store="1"} 1254
+# HELP distsender_rpc_addsstable_sent Number of AddSSTable requests sent
+# TYPE distsender_rpc_addsstable_sent counter
+distsender_rpc_addsstable_sent 0
+# HELP distsender_rpc_err_writeintenterrtype Number of WriteIntentErrType errors received
+# TYPE distsender_rpc_err_writeintenterrtype counter
+distsender_rpc_err_writeintenterrtype 0
+# HELP distsender_rpc_err_errordetailtype_15_ Number of ErrorDetailType(15) errors received
+# TYPE distsender_rpc_err_errordetailtype_15_ counter
+distsender_rpc_err_errordetailtype_15_ 0
+# HELP sql_savepoint_rollback_count Number of `ROLLBACK TO SAVEPOINT` statements successfully executed
+# TYPE sql_savepoint_rollback_count counter
+sql_savepoint_rollback_count 0
+# HELP sys_host_disk_io_time Time spent reading from or writing to all disks since this process started
+# TYPE sys_host_disk_io_time gauge
+sys_host_disk_io_time 0
+# HELP liveness_epochincrements Number of times this node has incremented its liveness epoch
+# TYPE liveness_epochincrements counter
+liveness_epochincrements 0
+# HELP replicas_quiescent Number of quiesced replicas
+# TYPE replicas_quiescent gauge
+replicas_quiescent{store="1"} 37
+# HELP leases_transfers_success Number of successful lease transfers
+# TYPE leases_transfers_success counter
+leases_transfers_success{store="1"} 0
+# HELP sys_go_allocbytes Current bytes of memory allocated by go
+# TYPE sys_go_allocbytes gauge
+sys_go_allocbytes 4.5470512e+07
+# HELP distsender_rpc_get_sent Number of Get requests sent
+# TYPE distsender_rpc_get_sent counter
+distsender_rpc_get_sent 3779
+# HELP replicas_leaders Number of raft leaders
+# TYPE replicas_leaders gauge
+replicas_leaders{store="1"} 37
+# HELP sql_txn_abort_count Number of SQL transaction abort errors
+# TYPE sql_txn_abort_count counter
+sql_txn_abort_count 0
+# HELP sql_exec_latency_internal Latency of SQL statement execution (internal queries)
+# TYPE sql_exec_latency_internal histogram
+sql_exec_latency_internal_bucket{le="114687"} 3
+sql_exec_latency_internal_bucket{le="118783"} 10
+sql_exec_latency_internal_bucket{le="122879"} 17
+sql_exec_latency_internal_bucket{le="126975"} 26
+sql_exec_latency_internal_bucket{le="131071"} 38
+sql_exec_latency_internal_bucket{le="139263"} 61
+sql_exec_latency_internal_bucket{le="147455"} 90
+sql_exec_latency_internal_bucket{le="155647"} 122
+sql_exec_latency_internal_bucket{le="163839"} 157
+sql_exec_latency_internal_bucket{le="172031"} 199
+sql_exec_latency_internal_bucket{le="180223"} 231
+sql_exec_latency_internal_bucket{le="188415"} 260
+sql_exec_latency_internal_bucket{le="196607"} 284
+sql_exec_latency_internal_bucket{le="204799"} 318
+sql_exec_latency_internal_bucket{le="212991"} 355
+sql_exec_latency_internal_bucket{le="221183"} 395
+sql_exec_latency_internal_bucket{le="229375"} 430
+sql_exec_latency_internal_bucket{le="237567"} 459
+sql_exec_latency_internal_bucket{le="245759"} 489
+sql_exec_latency_internal_bucket{le="253951"} 518
+sql_exec_latency_internal_bucket{le="262143"} 541
+sql_exec_latency_internal_bucket{le="278527"} 588
+sql_exec_latency_internal_bucket{le="294911"} 627
+sql_exec_latency_internal_bucket{le="311295"} 675
+sql_exec_latency_internal_bucket{le="327679"} 711
+sql_exec_latency_internal_bucket{le="344063"} 743
+sql_exec_latency_internal_bucket{le="360447"} 798
+sql_exec_latency_internal_bucket{le="376831"} 845
+sql_exec_latency_internal_bucket{le="393215"} 889
+sql_exec_latency_internal_bucket{le="409599"} 944
+sql_exec_latency_internal_bucket{le="425983"} 990
+sql_exec_latency_internal_bucket{le="442367"} 1033
+sql_exec_latency_internal_bucket{le="458751"} 1067
+sql_exec_latency_internal_bucket{le="475135"} 1106
+sql_exec_latency_internal_bucket{le="491519"} 1138
+sql_exec_latency_internal_bucket{le="507903"} 1164
+sql_exec_latency_internal_bucket{le="524287"} 1194
+sql_exec_latency_internal_bucket{le="557055"} 1249
+sql_exec_latency_internal_bucket{le="589823"} 1302
+sql_exec_latency_internal_bucket{le="622591"} 1352
+sql_exec_latency_internal_bucket{le="655359"} 1395
+sql_exec_latency_internal_bucket{le="688127"} 1433
+sql_exec_latency_internal_bucket{le="720895"} 1454
+sql_exec_latency_internal_bucket{le="753663"} 1471
+sql_exec_latency_internal_bucket{le="786431"} 1480
+sql_exec_latency_internal_bucket{le="819199"} 1491
+sql_exec_latency_internal_bucket{le="851967"} 1507
+sql_exec_latency_internal_bucket{le="884735"} 1513
+sql_exec_latency_internal_bucket{le="917503"} 1521
+sql_exec_latency_internal_bucket{le="950271"} 1532
+sql_exec_latency_internal_bucket{le="983039"} 1537
+sql_exec_latency_internal_bucket{le="1.015807e+06"} 1540
+sql_exec_latency_internal_bucket{le="1.048575e+06"} 1548
+sql_exec_latency_internal_bucket{le="1.114111e+06"} 1558
+sql_exec_latency_internal_bucket{le="1.179647e+06"} 1562
+sql_exec_latency_internal_bucket{le="1.245183e+06"} 1566
+sql_exec_latency_internal_bucket{le="1.310719e+06"} 1572
+sql_exec_latency_internal_bucket{le="1.376255e+06"} 1574
+sql_exec_latency_internal_bucket{le="1.441791e+06"} 1575
+sql_exec_latency_internal_bucket{le="1.507327e+06"} 1578
+sql_exec_latency_internal_bucket{le="1.703935e+06"} 1582
+sql_exec_latency_internal_bucket{le="1.769471e+06"} 1585
+sql_exec_latency_internal_bucket{le="1.835007e+06"} 1587
+sql_exec_latency_internal_bucket{le="1.900543e+06"} 1589
+sql_exec_latency_internal_bucket{le="1.966079e+06"} 1591
+sql_exec_latency_internal_bucket{le="2.097151e+06"} 1592
+sql_exec_latency_internal_bucket{le="2.228223e+06"} 1593
+sql_exec_latency_internal_bucket{le="2.359295e+06"} 1595
+sql_exec_latency_internal_bucket{le="2.621439e+06"} 1596
+sql_exec_latency_internal_bucket{le="2.883583e+06"} 1597
+sql_exec_latency_internal_bucket{le="3.276799e+06"} 1598
+sql_exec_latency_internal_bucket{le="9.961471e+06"} 1601
+sql_exec_latency_internal_bucket{le="1.0485759e+07"} 1603
+sql_exec_latency_internal_bucket{le="1.1010047e+07"} 1605
+sql_exec_latency_internal_bucket{le="1.1534335e+07"} 1606
+sql_exec_latency_internal_bucket{le="1.2582911e+07"} 1607
+sql_exec_latency_internal_bucket{le="1.5204351e+07"} 1608
+sql_exec_latency_internal_bucket{le="1.5728639e+07"} 1609
+sql_exec_latency_internal_bucket{le="1.6252927e+07"} 1610
+sql_exec_latency_internal_bucket{le="1.7825791e+07"} 1618
+sql_exec_latency_internal_bucket{le="1.8874367e+07"} 1637
+sql_exec_latency_internal_bucket{le="1.9922943e+07"} 1677
+sql_exec_latency_internal_bucket{le="2.0971519e+07"} 1678
+sql_exec_latency_internal_bucket{le="2.2020095e+07"} 1686
+sql_exec_latency_internal_bucket{le="2.3068671e+07"} 1691
+sql_exec_latency_internal_bucket{le="2.4117247e+07"} 1697
+sql_exec_latency_internal_bucket{le="2.6214399e+07"} 1702
+sql_exec_latency_internal_bucket{le="3.0408703e+07"} 1703
+sql_exec_latency_internal_bucket{le="3.1457279e+07"} 1704
+sql_exec_latency_internal_bucket{le="3.3554431e+07"} 1707
+sql_exec_latency_internal_bucket{le="3.9845887e+07"} 1711
+sql_exec_latency_internal_bucket{le="4.1943039e+07"} 1713
+sql_exec_latency_internal_bucket{le="4.4040191e+07"} 1715
+sql_exec_latency_internal_bucket{le="4.8234495e+07"} 1716
+sql_exec_latency_internal_bucket{le="5.2428799e+07"} 1717
+sql_exec_latency_internal_bucket{le="1.21634815e+08"} 1718
+sql_exec_latency_internal_bucket{le="4.02653183e+08"} 1719
+sql_exec_latency_internal_bucket{le="+Inf"} 1719
+sql_exec_latency_internal_sum 3.835263305e+09
+sql_exec_latency_internal_count 1719
+# HELP raft_rcvd_heartbeatresp Number of (coalesced, if enabled) MsgHeartbeatResp messages received by this store
+# TYPE raft_rcvd_heartbeatresp counter
+raft_rcvd_heartbeatresp{store="1"} 0
+# HELP distsender_rpc_merge_sent Number of Merge requests sent
+# TYPE distsender_rpc_merge_sent counter
+distsender_rpc_merge_sent 175481
+# HELP liveness_heartbeatsuccesses Number of successful node liveness heartbeats from this node
+# TYPE liveness_heartbeatsuccesses counter
+liveness_heartbeatsuccesses 427
+# HELP jobs_restore_fail_or_cancel_failed Number of restore jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_restore_fail_or_cancel_failed counter
+jobs_restore_fail_or_cancel_failed 0
+# HELP sql_mem_sql_txn_current Current sql transaction memory usage for sql
+# TYPE sql_mem_sql_txn_current gauge
+sql_mem_sql_txn_current 0
+# HELP queue_merge_processingnanos Nanoseconds spent processing replicas in the merge queue
+# TYPE queue_merge_processingnanos counter
+queue_merge_processingnanos{store="1"} 0
+# HELP queue_split_purgatory Number of replicas in the split queue's purgatory, waiting to become splittable
+# TYPE queue_split_purgatory gauge
+queue_split_purgatory{store="1"} 0
+# HELP txn_durations KV transaction durations
+# TYPE txn_durations histogram
+txn_durations_bucket{le="69631"} 1
+txn_durations_bucket{le="102399"} 3
+txn_durations_bucket{le="114687"} 6
+txn_durations_bucket{le="118783"} 14
+txn_durations_bucket{le="122879"} 26
+txn_durations_bucket{le="126975"} 36
+txn_durations_bucket{le="131071"} 55
+txn_durations_bucket{le="139263"} 79
+txn_durations_bucket{le="147455"} 102
+txn_durations_bucket{le="155647"} 113
+txn_durations_bucket{le="163839"} 129
+txn_durations_bucket{le="172031"} 143
+txn_durations_bucket{le="180223"} 152
+txn_durations_bucket{le="188415"} 163
+txn_durations_bucket{le="196607"} 169
+txn_durations_bucket{le="204799"} 175
+txn_durations_bucket{le="212991"} 185
+txn_durations_bucket{le="221183"} 201
+txn_durations_bucket{le="229375"} 219
+txn_durations_bucket{le="237567"} 237
+txn_durations_bucket{le="245759"} 259
+txn_durations_bucket{le="253951"} 275
+txn_durations_bucket{le="262143"} 297
+txn_durations_bucket{le="278527"} 323
+txn_durations_bucket{le="294911"} 350
+txn_durations_bucket{le="311295"} 381
+txn_durations_bucket{le="327679"} 407
+txn_durations_bucket{le="344063"} 437
+txn_durations_bucket{le="360447"} 470
+txn_durations_bucket{le="376831"} 497
+txn_durations_bucket{le="393215"} 523
+txn_durations_bucket{le="409599"} 546
+txn_durations_bucket{le="425983"} 575
+txn_durations_bucket{le="442367"} 602
+txn_durations_bucket{le="458751"} 621
+txn_durations_bucket{le="475135"} 632
+txn_durations_bucket{le="491519"} 649
+txn_durations_bucket{le="507903"} 660
+txn_durations_bucket{le="524287"} 667
+txn_durations_bucket{le="557055"} 680
+txn_durations_bucket{le="589823"} 688
+txn_durations_bucket{le="622591"} 699
+txn_durations_bucket{le="655359"} 714
+txn_durations_bucket{le="688127"} 723
+txn_durations_bucket{le="720895"} 732
+txn_durations_bucket{le="753663"} 742
+txn_durations_bucket{le="786431"} 756
+txn_durations_bucket{le="819199"} 783
+txn_durations_bucket{le="851967"} 806
+txn_durations_bucket{le="884735"} 842
+txn_durations_bucket{le="917503"} 873
+txn_durations_bucket{le="950271"} 900
+txn_durations_bucket{le="983039"} 915
+txn_durations_bucket{le="1.015807e+06"} 929
+txn_durations_bucket{le="1.048575e+06"} 940
+txn_durations_bucket{le="1.114111e+06"} 955
+txn_durations_bucket{le="1.179647e+06"} 964
+txn_durations_bucket{le="1.245183e+06"} 979
+txn_durations_bucket{le="1.310719e+06"} 990
+txn_durations_bucket{le="1.376255e+06"} 999
+txn_durations_bucket{le="1.441791e+06"} 1010
+txn_durations_bucket{le="1.507327e+06"} 1018
+txn_durations_bucket{le="1.572863e+06"} 1022
+txn_durations_bucket{le="1.638399e+06"} 1030
+txn_durations_bucket{le="1.703935e+06"} 1034
+txn_durations_bucket{le="1.769471e+06"} 1039
+txn_durations_bucket{le="1.835007e+06"} 1040
+txn_durations_bucket{le="1.900543e+06"} 1041
+txn_durations_bucket{le="1.966079e+06"} 1044
+txn_durations_bucket{le="2.228223e+06"} 1047
+txn_durations_bucket{le="2.359295e+06"} 1049
+txn_durations_bucket{le="2.490367e+06"} 1050
+txn_durations_bucket{le="2.621439e+06"} 1051
+txn_durations_bucket{le="2.752511e+06"} 1054
+txn_durations_bucket{le="2.883583e+06"} 1059
+txn_durations_bucket{le="3.014655e+06"} 1066
+txn_durations_bucket{le="3.145727e+06"} 1072
+txn_durations_bucket{le="3.276799e+06"} 1073
+txn_durations_bucket{le="3.407871e+06"} 1074
+txn_durations_bucket{le="3.538943e+06"} 1076
+txn_durations_bucket{le="3.801087e+06"} 1077
+txn_durations_bucket{le="3.932159e+06"} 1078
+txn_durations_bucket{le="4.194303e+06"} 1079
+txn_durations_bucket{le="4.456447e+06"} 1081
+txn_durations_bucket{le="4.718591e+06"} 1084
+txn_durations_bucket{le="5.242879e+06"} 1087
+txn_durations_bucket{le="6.029311e+06"} 1088
+txn_durations_bucket{le="6.291455e+06"} 1089
+txn_durations_bucket{le="6.553599e+06"} 1090
+txn_durations_bucket{le="6.815743e+06"} 1091
+txn_durations_bucket{le="7.864319e+06"} 1092
+txn_durations_bucket{le="8.126463e+06"} 1094
+txn_durations_bucket{le="9.437183e+06"} 1096
+txn_durations_bucket{le="9.961471e+06"} 1103
+txn_durations_bucket{le="1.0485759e+07"} 1158
+txn_durations_bucket{le="1.1010047e+07"} 1214
+txn_durations_bucket{le="1.1534335e+07"} 1232
+txn_durations_bucket{le="1.2058623e+07"} 1238
+txn_durations_bucket{le="1.2582911e+07"} 1242
+txn_durations_bucket{le="1.3107199e+07"} 1246
+txn_durations_bucket{le="1.3631487e+07"} 1252
+txn_durations_bucket{le="1.4155775e+07"} 1262
+txn_durations_bucket{le="1.4680063e+07"} 1267
+txn_durations_bucket{le="1.5204351e+07"} 1270
+txn_durations_bucket{le="1.5728639e+07"} 1274
+txn_durations_bucket{le="1.6252927e+07"} 1278
+txn_durations_bucket{le="1.6777215e+07"} 1281
+txn_durations_bucket{le="1.7825791e+07"} 1295
+txn_durations_bucket{le="1.8874367e+07"} 1321
+txn_durations_bucket{le="1.9922943e+07"} 1414
+txn_durations_bucket{le="2.0971519e+07"} 1501
+txn_durations_bucket{le="2.2020095e+07"} 1552
+txn_durations_bucket{le="2.3068671e+07"} 1604
+txn_durations_bucket{le="2.4117247e+07"} 1667
+txn_durations_bucket{le="2.5165823e+07"} 1752
+txn_durations_bucket{le="2.6214399e+07"} 1824
+txn_durations_bucket{le="2.7262975e+07"} 1918
+txn_durations_bucket{le="2.8311551e+07"} 1957
+txn_durations_bucket{le="2.9360127e+07"} 1991
+txn_durations_bucket{le="3.0408703e+07"} 2043
+txn_durations_bucket{le="3.1457279e+07"} 2074
+txn_durations_bucket{le="3.2505855e+07"} 2103
+txn_durations_bucket{le="3.3554431e+07"} 2116
+txn_durations_bucket{le="3.5651583e+07"} 2138
+txn_durations_bucket{le="3.7748735e+07"} 2147
+txn_durations_bucket{le="3.9845887e+07"} 2168
+txn_durations_bucket{le="4.1943039e+07"} 2185
+txn_durations_bucket{le="4.4040191e+07"} 2195
+txn_durations_bucket{le="4.6137343e+07"} 2202
+txn_durations_bucket{le="4.8234495e+07"} 2205
+txn_durations_bucket{le="5.0331647e+07"} 2206
+txn_durations_bucket{le="5.2428799e+07"} 2211
+txn_durations_bucket{le="5.4525951e+07"} 2214
+txn_durations_bucket{le="5.6623103e+07"} 2215
+txn_durations_bucket{le="5.8720255e+07"} 2216
+txn_durations_bucket{le="6.2914559e+07"} 2218
+txn_durations_bucket{le="7.1303167e+07"} 2220
+txn_durations_bucket{le="8.8080383e+07"} 2221
+txn_durations_bucket{le="9.6468991e+07"} 2222
+txn_durations_bucket{le="1.04857599e+08"} 2224
+txn_durations_bucket{le="1.21634815e+08"} 2225
+txn_durations_bucket{le="1.34217727e+08"} 2226
+txn_durations_bucket{le="4.02653183e+08"} 2227
+txn_durations_bucket{le="+Inf"} 2227
+txn_durations_sum 2.9330229069e+10
+txn_durations_count 2227
+# HELP sql_mem_distsql_max Memory usage per sql statement for distsql
+# TYPE sql_mem_distsql_max histogram
+sql_mem_distsql_max_bucket{le="4011"} 2853
+sql_mem_distsql_max_bucket{le="4311"} 2855
+sql_mem_distsql_max_bucket{le="+Inf"} 2855
+sql_mem_distsql_max_sum 1.1452005e+07
+sql_mem_distsql_max_count 2855
+# HELP sql_insert_started_count Number of SQL INSERT statements started
+# TYPE sql_insert_started_count counter
+sql_insert_started_count 0
+# HELP ranges Number of ranges
+# TYPE ranges gauge
+ranges{store="1"} 37
+# HELP sql_mem_distsql_current Current sql statement memory usage for distsql
+# TYPE sql_mem_distsql_current gauge
+sql_mem_distsql_current 0
+# HELP sql_savepoint_release_started_count_internal Number of `RELEASE SAVEPOINT` statements started (internal queries)
+# TYPE sql_savepoint_release_started_count_internal counter
+sql_savepoint_release_started_count_internal 0
+# HELP sql_temp_object_cleaner_active_cleaners number of cleaner tasks currently running on this node
+# TYPE sql_temp_object_cleaner_active_cleaners gauge
+sql_temp_object_cleaner_active_cleaners 0
+# HELP queue_split_processingnanos Nanoseconds spent processing replicas in the split queue
+# TYPE queue_split_processingnanos counter
+queue_split_processingnanos{store="1"} 0
+# HELP distsender_rpc_sent Number of RPCs sent
+# TYPE distsender_rpc_sent counter
+distsender_rpc_sent 9115
+# HELP jobs_typedesc_schema_change_resume_retry_error Number of typedesc_schema_change jobs which failed with a retriable error
+# TYPE jobs_typedesc_schema_change_resume_retry_error counter
+jobs_typedesc_schema_change_resume_retry_error 0
+# HELP sql_restart_savepoint_started_count Number of `SAVEPOINT cockroach_restart` statements started
+# TYPE sql_restart_savepoint_started_count counter
+sql_restart_savepoint_started_count 0
+# HELP kv_closed_timestamp_failures_to_close Number of times the min prop tracker failed to close timestamps due to epoch mismatch or pending evaluations
+# TYPE kv_closed_timestamp_failures_to_close gauge
+kv_closed_timestamp_failures_to_close{store="1"} 0
+# HELP jobs_migration_resume_failed Number of migration jobs which failed with a non-retriable error
+# TYPE jobs_migration_resume_failed counter
+jobs_migration_resume_failed 0
+# HELP queue_replicate_processingnanos Nanoseconds spent processing replicas in the replicate queue
+# TYPE queue_replicate_processingnanos counter
+queue_replicate_processingnanos{store="1"} 1.28946e+08
+# HELP distsender_rpc_adminscatter_sent Number of AdminScatter requests sent
+# TYPE distsender_rpc_adminscatter_sent counter
+distsender_rpc_adminscatter_sent 0
+# HELP distsender_rpc_err_intentmissingerrtype Number of IntentMissingErrType errors received
+# TYPE distsender_rpc_err_intentmissingerrtype counter
+distsender_rpc_err_intentmissingerrtype 0
+# HELP clock_offset_stddevnanos Stddev clock offset with other nodes
+# TYPE clock_offset_stddevnanos gauge
+clock_offset_stddevnanos 133000
+# HELP jobs_auto_create_stats_fail_or_cancel_retry_error Number of auto_create_stats jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_auto_create_stats_fail_or_cancel_retry_error counter
+jobs_auto_create_stats_fail_or_cancel_retry_error 0
+# HELP sql_insert_started_count_internal Number of SQL INSERT statements started (internal queries)
+# TYPE sql_insert_started_count_internal counter
+sql_insert_started_count_internal 240
+# HELP intentage Cumulative age of intents
+# TYPE intentage gauge
+intentage{store="1"} 0
+# HELP leases_epoch Number of replica leaseholders using epoch-based leases
+# TYPE leases_epoch gauge
+leases_epoch{store="1"} 35
+# HELP queue_raftlog_pending Number of pending replicas in the Raft log queue
+# TYPE queue_raftlog_pending gauge
+queue_raftlog_pending{store="1"} 0
+# HELP requests_slow_distsender Number of RPCs stuck or retrying for a long time
+# TYPE requests_slow_distsender gauge
+requests_slow_distsender 0
+# HELP distsender_rpc_initput_sent Number of InitPut requests sent
+# TYPE distsender_rpc_initput_sent counter
+distsender_rpc_initput_sent 2
+# HELP exec_latency Latency of batch KV requests executed on this node
+# TYPE exec_latency histogram
+exec_latency_bucket{le="14335"} 1
+exec_latency_bucket{le="15359"} 4
+exec_latency_bucket{le="16383"} 7
+exec_latency_bucket{le="17407"} 9
+exec_latency_bucket{le="18431"} 13
+exec_latency_bucket{le="19455"} 26
+exec_latency_bucket{le="20479"} 34
+exec_latency_bucket{le="21503"} 47
+exec_latency_bucket{le="22527"} 58
+exec_latency_bucket{le="23551"} 70
+exec_latency_bucket{le="24575"} 92
+exec_latency_bucket{le="25599"} 111
+exec_latency_bucket{le="26623"} 145
+exec_latency_bucket{le="27647"} 176
+exec_latency_bucket{le="28671"} 220
+exec_latency_bucket{le="29695"} 267
+exec_latency_bucket{le="30719"} 324
+exec_latency_bucket{le="31743"} 363
+exec_latency_bucket{le="32767"} 424
+exec_latency_bucket{le="34815"} 588
+exec_latency_bucket{le="36863"} 751
+exec_latency_bucket{le="38911"} 908
+exec_latency_bucket{le="40959"} 1055
+exec_latency_bucket{le="43007"} 1241
+exec_latency_bucket{le="45055"} 1380
+exec_latency_bucket{le="47103"} 1521
+exec_latency_bucket{le="49151"} 1694
+exec_latency_bucket{le="51199"} 1825
+exec_latency_bucket{le="53247"} 1953
+exec_latency_bucket{le="55295"} 2073
+exec_latency_bucket{le="57343"} 2182
+exec_latency_bucket{le="59391"} 2278
+exec_latency_bucket{le="61439"} 2362
+exec_latency_bucket{le="63487"} 2440
+exec_latency_bucket{le="65535"} 2525
+exec_latency_bucket{le="69631"} 2659
+exec_latency_bucket{le="73727"} 2759
+exec_latency_bucket{le="77823"} 2854
+exec_latency_bucket{le="81919"} 2918
+exec_latency_bucket{le="86015"} 3011
+exec_latency_bucket{le="90111"} 3105
+exec_latency_bucket{le="94207"} 3177
+exec_latency_bucket{le="98303"} 3259
+exec_latency_bucket{le="102399"} 3334
+exec_latency_bucket{le="106495"} 3405
+exec_latency_bucket{le="110591"} 3469
+exec_latency_bucket{le="114687"} 3545
+exec_latency_bucket{le="118783"} 3606
+exec_latency_bucket{le="122879"} 3684
+exec_latency_bucket{le="126975"} 3764
+exec_latency_bucket{le="131071"} 3872
+exec_latency_bucket{le="139263"} 4035
+exec_latency_bucket{le="147455"} 4203
+exec_latency_bucket{le="155647"} 4406
+exec_latency_bucket{le="163839"} 4564
+exec_latency_bucket{le="172031"} 4724
+exec_latency_bucket{le="180223"} 4829
+exec_latency_bucket{le="188415"} 4954
+exec_latency_bucket{le="196607"} 5045
+exec_latency_bucket{le="204799"} 5125
+exec_latency_bucket{le="212991"} 5223
+exec_latency_bucket{le="221183"} 5309
+exec_latency_bucket{le="229375"} 5374
+exec_latency_bucket{le="237567"} 5432
+exec_latency_bucket{le="245759"} 5480
+exec_latency_bucket{le="253951"} 5526
+exec_latency_bucket{le="262143"} 5572
+exec_latency_bucket{le="278527"} 5632
+exec_latency_bucket{le="294911"} 5672
+exec_latency_bucket{le="311295"} 5701
+exec_latency_bucket{le="327679"} 5734
+exec_latency_bucket{le="344063"} 5753
+exec_latency_bucket{le="360447"} 5776
+exec_latency_bucket{le="376831"} 5788
+exec_latency_bucket{le="393215"} 5804
+exec_latency_bucket{le="409599"} 5814
+exec_latency_bucket{le="425983"} 5826
+exec_latency_bucket{le="442367"} 5831
+exec_latency_bucket{le="458751"} 5846
+exec_latency_bucket{le="475135"} 5851
+exec_latency_bucket{le="491519"} 5855
+exec_latency_bucket{le="507903"} 5856
+exec_latency_bucket{le="524287"} 5861
+exec_latency_bucket{le="557055"} 5874
+exec_latency_bucket{le="589823"} 5879
+exec_latency_bucket{le="622591"} 5881
+exec_latency_bucket{le="655359"} 5884
+exec_latency_bucket{le="688127"} 5886
+exec_latency_bucket{le="720895"} 5888
+exec_latency_bucket{le="753663"} 5895
+exec_latency_bucket{le="786431"} 5897
+exec_latency_bucket{le="819199"} 5898
+exec_latency_bucket{le="851967"} 5899
+exec_latency_bucket{le="884735"} 5900
+exec_latency_bucket{le="1.015807e+06"} 5901
+exec_latency_bucket{le="1.114111e+06"} 5902
+exec_latency_bucket{le="1.310719e+06"} 5904
+exec_latency_bucket{le="1.507327e+06"} 5906
+exec_latency_bucket{le="1.835007e+06"} 5907
+exec_latency_bucket{le="2.228223e+06"} 5908
+exec_latency_bucket{le="2.359295e+06"} 5909
+exec_latency_bucket{le="5.505023e+06"} 5910
+exec_latency_bucket{le="5.767167e+06"} 5911
+exec_latency_bucket{le="6.029311e+06"} 5913
+exec_latency_bucket{le="6.291455e+06"} 5914
+exec_latency_bucket{le="6.553599e+06"} 5916
+exec_latency_bucket{le="7.077887e+06"} 5919
+exec_latency_bucket{le="7.340031e+06"} 5923
+exec_latency_bucket{le="7.602175e+06"} 5926
+exec_latency_bucket{le="7.864319e+06"} 5937
+exec_latency_bucket{le="8.126463e+06"} 5946
+exec_latency_bucket{le="8.388607e+06"} 5959
+exec_latency_bucket{le="8.912895e+06"} 5979
+exec_latency_bucket{le="9.437183e+06"} 6023
+exec_latency_bucket{le="9.961471e+06"} 6137
+exec_latency_bucket{le="1.0485759e+07"} 6486
+exec_latency_bucket{le="1.1010047e+07"} 6664
+exec_latency_bucket{le="1.1534335e+07"} 6743
+exec_latency_bucket{le="1.2058623e+07"} 6798
+exec_latency_bucket{le="1.2582911e+07"} 6848
+exec_latency_bucket{le="1.3107199e+07"} 6946
+exec_latency_bucket{le="1.3631487e+07"} 7051
+exec_latency_bucket{le="1.4155775e+07"} 7128
+exec_latency_bucket{le="1.4680063e+07"} 7232
+exec_latency_bucket{le="1.5204351e+07"} 7322
+exec_latency_bucket{le="1.5728639e+07"} 7423
+exec_latency_bucket{le="1.6252927e+07"} 7473
+exec_latency_bucket{le="1.6777215e+07"} 7521
+exec_latency_bucket{le="1.7825791e+07"} 7636
+exec_latency_bucket{le="1.8874367e+07"} 7852
+exec_latency_bucket{le="1.9922943e+07"} 8093
+exec_latency_bucket{le="2.0971519e+07"} 8247
+exec_latency_bucket{le="2.2020095e+07"} 8335
+exec_latency_bucket{le="2.3068671e+07"} 8470
+exec_latency_bucket{le="2.4117247e+07"} 8573
+exec_latency_bucket{le="2.5165823e+07"} 8694
+exec_latency_bucket{le="2.6214399e+07"} 8777
+exec_latency_bucket{le="2.7262975e+07"} 8830
+exec_latency_bucket{le="2.8311551e+07"} 8869
+exec_latency_bucket{le="2.9360127e+07"} 8905
+exec_latency_bucket{le="3.0408703e+07"} 8937
+exec_latency_bucket{le="3.1457279e+07"} 8966
+exec_latency_bucket{le="3.2505855e+07"} 8989
+exec_latency_bucket{le="3.3554431e+07"} 9002
+exec_latency_bucket{le="3.5651583e+07"} 9023
+exec_latency_bucket{le="3.7748735e+07"} 9045
+exec_latency_bucket{le="3.9845887e+07"} 9066
+exec_latency_bucket{le="4.1943039e+07"} 9079
+exec_latency_bucket{le="4.4040191e+07"} 9091
+exec_latency_bucket{le="4.6137343e+07"} 9099
+exec_latency_bucket{le="4.8234495e+07"} 9100
+exec_latency_bucket{le="5.0331647e+07"} 9101
+exec_latency_bucket{le="5.2428799e+07"} 9105
+exec_latency_bucket{le="5.4525951e+07"} 9106
+exec_latency_bucket{le="6.2914559e+07"} 9112
+exec_latency_bucket{le="6.7108863e+07"} 9113
+exec_latency_bucket{le="7.1303167e+07"} 9114
+exec_latency_bucket{le="7.9691775e+07"} 9115
+exec_latency_bucket{le="+Inf"} 9115
+exec_latency_sum 5.8950223973e+10
+exec_latency_count 9115
+# HELP jobs_stream_ingestion_resume_completed Number of stream_ingestion jobs which successfully resumed to completion
+# TYPE jobs_stream_ingestion_resume_completed counter
+jobs_stream_ingestion_resume_completed 0
+# HELP sql_savepoint_rollback_count_internal Number of `ROLLBACK TO SAVEPOINT` statements successfully executed (internal queries)
+# TYPE sql_savepoint_rollback_count_internal counter
+sql_savepoint_rollback_count_internal 0
+# HELP sql_temp_object_cleaner_schemas_to_delete number of schemas to be deleted by the temp object cleaner on this node
+# TYPE sql_temp_object_cleaner_schemas_to_delete counter
+sql_temp_object_cleaner_schemas_to_delete 0
+# HELP requests_backpressure_split Number of backpressured writes waiting on a Range split
+# TYPE requests_backpressure_split gauge
+requests_backpressure_split{store="1"} 0
+# HELP changefeed_emitted_bytes Bytes emitted by all feeds
+# TYPE changefeed_emitted_bytes counter
+changefeed_emitted_bytes 0
+# HELP sql_restart_savepoint_release_count_internal Number of `RELEASE SAVEPOINT cockroach_restart` statements successfully executed (internal queries)
+# TYPE sql_restart_savepoint_release_count_internal counter
+sql_restart_savepoint_release_count_internal 0
+# HELP queue_gc_info_abortspanscanned Number of transactions present in the AbortSpan scanned from the engine
+# TYPE queue_gc_info_abortspanscanned counter
+queue_gc_info_abortspanscanned{store="1"} 0
+# HELP sql_mem_root_max Memory usage per sql statement for root
+# TYPE sql_mem_root_max histogram
+sql_mem_root_max_bucket{le="+Inf"} 0
+sql_mem_root_max_sum 0
+sql_mem_root_max_count 0
+# HELP addsstable_proposals Number of SSTable ingestions proposed (i.e. sent to Raft by lease holders)
+# TYPE addsstable_proposals counter
+addsstable_proposals{store="1"} 0
+# HELP rpc_heartbeats_nominal Gauge of current connections in the nominal state
+# TYPE rpc_heartbeats_nominal gauge
+rpc_heartbeats_nominal 1
+# HELP sys_host_disk_weightedio_time Weighted time spent reading from or writing to to all disks since this process started
+# TYPE sys_host_disk_weightedio_time gauge
+sys_host_disk_weightedio_time 0
+# HELP distsender_rpc_leaseinfo_sent Number of LeaseInfo requests sent
+# TYPE distsender_rpc_leaseinfo_sent counter
+distsender_rpc_leaseinfo_sent 0
+# HELP distsender_rpc_subsume_sent Number of Subsume requests sent
+# TYPE distsender_rpc_subsume_sent counter
+distsender_rpc_subsume_sent 0
+# HELP rocksdb_encryption_algorithm algorithm in use for encryption-at-rest, see ccl/storageccl/engineccl/enginepbccl/key_registry.proto
+# TYPE rocksdb_encryption_algorithm gauge
+rocksdb_encryption_algorithm{store="1"} 0
+# HELP jobs_backup_fail_or_cancel_failed Number of backup jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_backup_fail_or_cancel_failed counter
+jobs_backup_fail_or_cancel_failed 0
+# HELP syscount Count of system KV pairs
+# TYPE syscount gauge
+syscount{store="1"} 225
+# HELP queue_split_pending Number of pending replicas in the split queue
+# TYPE queue_split_pending gauge
+queue_split_pending{store="1"} 0
+# HELP addsstable_delay_enginebackpressure Amount by which evaluation of AddSSTable requests was delayed by storage-engine backpressure
+# TYPE addsstable_delay_enginebackpressure counter
+addsstable_delay_enginebackpressure{store="1"} 0
+# HELP queue_gc_info_intenttxns Number of associated distinct transactions
+# TYPE queue_gc_info_intenttxns counter
+queue_gc_info_intenttxns{store="1"} 0
+# HELP distsender_rpc_resolveintentrange_sent Number of ResolveIntentRange requests sent
+# TYPE distsender_rpc_resolveintentrange_sent counter
+distsender_rpc_resolveintentrange_sent 0
+# HELP distsender_rpc_checkconsistency_sent Number of CheckConsistency requests sent
+# TYPE distsender_rpc_checkconsistency_sent counter
+distsender_rpc_checkconsistency_sent 0
+# HELP distsender_rpc_err_replicatooolderrtype Number of ReplicaTooOldErrType errors received
+# TYPE distsender_rpc_err_replicatooolderrtype counter
+distsender_rpc_err_replicatooolderrtype 0
+# HELP kv_protectedts_reconciliation_records_removed number of records removed during reconciliation runs on this node
+# TYPE kv_protectedts_reconciliation_records_removed counter
+kv_protectedts_reconciliation_records_removed 0
+# HELP jobs_stream_ingestion_currently_running Number of stream_ingestion jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_stream_ingestion_currently_running gauge
+jobs_stream_ingestion_currently_running 0
+# HELP sql_distsql_vec_openfds Current number of open file descriptors used by vectorized external storage
+# TYPE sql_distsql_vec_openfds gauge
+sql_distsql_vec_openfds 0
+# HELP sql_mem_bulk_max Memory usage per sql statement for bulk operations
+# TYPE sql_mem_bulk_max histogram
+sql_mem_bulk_max_bucket{le="+Inf"} 0
+sql_mem_bulk_max_sum 0
+sql_mem_bulk_max_count 0
+# HELP raft_rcvd_prop Number of MsgProp messages received by this store
+# TYPE raft_rcvd_prop counter
+raft_rcvd_prop{store="1"} 0
+# HELP distsender_rpc_recovertxn_sent Number of RecoverTxn requests sent
+# TYPE distsender_rpc_recovertxn_sent counter
+distsender_rpc_recovertxn_sent 0
+# HELP distsender_rpc_rangestats_sent Number of RangeStats requests sent
+# TYPE distsender_rpc_rangestats_sent counter
+distsender_rpc_rangestats_sent 0
+# HELP jobs_backup_resume_completed Number of backup jobs which successfully resumed to completion
+# TYPE jobs_backup_resume_completed counter
+jobs_backup_resume_completed 0
+# HELP jobs_schema_change_gc_fail_or_cancel_retry_error Number of schema_change_gc jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_schema_change_gc_fail_or_cancel_retry_error counter
+jobs_schema_change_gc_fail_or_cancel_retry_error 0
+# HELP raftlog_behind Number of Raft log entries followers on other stores are behind
+# TYPE raftlog_behind gauge
+raftlog_behind{store="1"} 0
+# HELP queue_consistency_processingnanos Nanoseconds spent processing replicas in the consistency checker queue
+# TYPE queue_consistency_processingnanos counter
+queue_consistency_processingnanos{store="1"} 1.5802e+09
+# HELP queue_gc_info_transactionspangcstaging Number of GC'able entries corresponding to staging txns
+# TYPE queue_gc_info_transactionspangcstaging counter
+queue_gc_info_transactionspangcstaging{store="1"} 0
+# HELP distsender_rpc_import_sent Number of Import requests sent
+# TYPE distsender_rpc_import_sent counter
+distsender_rpc_import_sent 0
+# HELP jobs_auto_create_stats_resume_completed Number of auto_create_stats jobs which successfully resumed to completion
+# TYPE jobs_auto_create_stats_resume_completed counter
+jobs_auto_create_stats_resume_completed 0
+# HELP rocksdb_flushed_bytes Bytes written during flush
+# TYPE rocksdb_flushed_bytes gauge
+rocksdb_flushed_bytes{store="1"} 0
+# HELP raft_rcvd_prevote Number of MsgPreVote messages received by this store
+# TYPE raft_rcvd_prevote counter
+raft_rcvd_prevote{store="1"} 0
+# HELP rebalancing_queriespersecond Number of kv-level requests received per second by the store, averaged over a large time period as used in rebalancing decisions
+# TYPE rebalancing_queriespersecond gauge
+rebalancing_queriespersecond{store="1"} 4.553369739378573
+# HELP gossip_infos_received Number of received gossip Info objects
+# TYPE gossip_infos_received counter
+gossip_infos_received 0
+# HELP distsender_rpc_truncatelog_sent Number of TruncateLog requests sent
+# TYPE distsender_rpc_truncatelog_sent counter
+distsender_rpc_truncatelog_sent 386
+# HELP jobs_create_stats_fail_or_cancel_retry_error Number of create_stats jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_create_stats_fail_or_cancel_retry_error counter
+jobs_create_stats_fail_or_cancel_retry_error 0
+# HELP sql_savepoint_release_count Number of `RELEASE SAVEPOINT` statements successfully executed
+# TYPE sql_savepoint_release_count counter
+sql_savepoint_release_count 0
+# HELP ranges_overreplicated Number of ranges with more live replicas than the replication target
+# TYPE ranges_overreplicated gauge
+ranges_overreplicated{store="1"} 0
+# HELP queue_raftsnapshot_processingnanos Nanoseconds spent processing replicas in the Raft repair queue
+# TYPE queue_raftsnapshot_processingnanos counter
+queue_raftsnapshot_processingnanos{store="1"} 0
+# HELP queue_replicate_rebalancereplica Number of replica rebalancer-initiated additions attempted by the replicate queue
+# TYPE queue_replicate_rebalancereplica counter
+queue_replicate_rebalancereplica{store="1"} 0
+# HELP queue_replicate_voterdemotions Number of voters demoted to non-voters by the replicate queue
+# TYPE queue_replicate_voterdemotions counter
+queue_replicate_voterdemotions{store="1"} 0
+# HELP distsender_rpc_pushtxn_sent Number of PushTxn requests sent
+# TYPE distsender_rpc_pushtxn_sent counter
+distsender_rpc_pushtxn_sent 0
+# HELP jobs_restore_fail_or_cancel_retry_error Number of restore jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_restore_fail_or_cancel_retry_error counter
+jobs_restore_fail_or_cancel_retry_error 0
+# HELP jobs_new_schema_change_resume_completed Number of new_schema_change jobs which successfully resumed to completion
+# TYPE jobs_new_schema_change_resume_completed counter
+jobs_new_schema_change_resume_completed 0
+# HELP sql_distsql_exec_latency Latency of DistSQL statement execution
+# TYPE sql_distsql_exec_latency histogram
+sql_distsql_exec_latency_bucket{le="+Inf"} 0
+sql_distsql_exec_latency_sum 0
+sql_distsql_exec_latency_count 0
+# HELP sys_host_disk_read_time Time spent reading from all disks since this process started
+# TYPE sys_host_disk_read_time gauge
+sys_host_disk_read_time 6.2227269014e+10
+# HELP livebytes Number of bytes of live data (keys plus values)
+# TYPE livebytes gauge
+livebytes{store="1"} 6.104449e+06
+# HELP range_snapshots_applied_initial Number of snapshots applied for initial upreplication
+# TYPE range_snapshots_applied_initial counter
+range_snapshots_applied_initial{store="1"} 0
+# HELP queue_gc_info_transactionspangcpending Number of GC'able entries corresponding to pending txns
+# TYPE queue_gc_info_transactionspangcpending counter
+queue_gc_info_transactionspangcpending{store="1"} 0
+# HELP kv_closed_timestamp_max_behind_nanos Largest latency between realtime and replica max closed timestamp
+# TYPE kv_closed_timestamp_max_behind_nanos gauge
+kv_closed_timestamp_max_behind_nanos{store="1"} 3.054098e+09
+# HELP sys_cpu_user_percent Current user cpu percentage
+# TYPE sys_cpu_user_percent gauge
+sys_cpu_user_percent 0.02111212258078589
+# HELP sql_distsql_contended_queries_count Number of SQL queries that experienced contention
+# TYPE sql_distsql_contended_queries_count counter
+sql_distsql_contended_queries_count 0
+# HELP sql_txn_commit_count Number of SQL transaction COMMIT statements successfully executed
+# TYPE sql_txn_commit_count counter
+sql_txn_commit_count 0
+# HELP sql_select_started_count_internal Number of SQL SELECT statements started (internal queries)
+# TYPE sql_select_started_count_internal counter
+sql_select_started_count_internal 542
+# HELP rocksdb_block_cache_pinned_usage Bytes pinned by the block cache
+# TYPE rocksdb_block_cache_pinned_usage gauge
+rocksdb_block_cache_pinned_usage{store="1"} 0
+# HELP jobs_schema_change_currently_running Number of schema_change jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_schema_change_currently_running gauge
+jobs_schema_change_currently_running 0
+# HELP changefeed_max_behind_nanos Largest commit-to-emit duration of any running feed
+# TYPE changefeed_max_behind_nanos gauge
+changefeed_max_behind_nanos 0
+# HELP sql_savepoint_release_started_count Number of `RELEASE SAVEPOINT` statements started
+# TYPE sql_savepoint_release_started_count counter
+sql_savepoint_release_started_count 0
+# HELP sql_distsql_select_count Number of DistSQL SELECT statements
+# TYPE sql_distsql_select_count counter
+sql_distsql_select_count 0
+# HELP sql_insert_count Number of SQL INSERT statements successfully executed
+# TYPE sql_insert_count counter
+sql_insert_count 0
+# HELP raft_process_handleready_latency Latency histogram for handling a Raft ready
+# TYPE raft_process_handleready_latency histogram
+raft_process_handleready_latency_bucket{store="1",le="2047"} 4
+raft_process_handleready_latency_bucket{store="1",le="27647"} 5
+raft_process_handleready_latency_bucket{store="1",le="5.242879e+06"} 6
+raft_process_handleready_latency_bucket{store="1",le="5.767167e+06"} 9
+raft_process_handleready_latency_bucket{store="1",le="6.029311e+06"} 10
+raft_process_handleready_latency_bucket{store="1",le="6.291455e+06"} 13
+raft_process_handleready_latency_bucket{store="1",le="6.553599e+06"} 14
+raft_process_handleready_latency_bucket{store="1",le="6.815743e+06"} 16
+raft_process_handleready_latency_bucket{store="1",le="7.077887e+06"} 21
+raft_process_handleready_latency_bucket{store="1",le="7.340031e+06"} 29
+raft_process_handleready_latency_bucket{store="1",le="7.602175e+06"} 59
+raft_process_handleready_latency_bucket{store="1",le="7.864319e+06"} 95
+raft_process_handleready_latency_bucket{store="1",le="8.126463e+06"} 148
+raft_process_handleready_latency_bucket{store="1",le="8.388607e+06"} 212
+raft_process_handleready_latency_bucket{store="1",le="8.912895e+06"} 287
+raft_process_handleready_latency_bucket{store="1",le="9.437183e+06"} 395
+raft_process_handleready_latency_bucket{store="1",le="9.961471e+06"} 1296
+raft_process_handleready_latency_bucket{store="1",le="1.0485759e+07"} 2225
+raft_process_handleready_latency_bucket{store="1",le="1.1010047e+07"} 2552
+raft_process_handleready_latency_bucket{store="1",le="1.1534335e+07"} 2699
+raft_process_handleready_latency_bucket{store="1",le="1.2058623e+07"} 2788
+raft_process_handleready_latency_bucket{store="1",le="1.2582911e+07"} 2957
+raft_process_handleready_latency_bucket{store="1",le="1.3107199e+07"} 3219
+raft_process_handleready_latency_bucket{store="1",le="1.3631487e+07"} 3384
+raft_process_handleready_latency_bucket{store="1",le="1.4155775e+07"} 3544
+raft_process_handleready_latency_bucket{store="1",le="1.4680063e+07"} 3696
+raft_process_handleready_latency_bucket{store="1",le="1.5204351e+07"} 3823
+raft_process_handleready_latency_bucket{store="1",le="1.5728639e+07"} 3933
+raft_process_handleready_latency_bucket{store="1",le="1.6252927e+07"} 3987
+raft_process_handleready_latency_bucket{store="1",le="1.6777215e+07"} 4037
+raft_process_handleready_latency_bucket{store="1",le="1.7825791e+07"} 4103
+raft_process_handleready_latency_bucket{store="1",le="1.8874367e+07"} 4166
+raft_process_handleready_latency_bucket{store="1",le="1.9922943e+07"} 4355
+raft_process_handleready_latency_bucket{store="1",le="2.0971519e+07"} 4457
+raft_process_handleready_latency_bucket{store="1",le="2.2020095e+07"} 4501
+raft_process_handleready_latency_bucket{store="1",le="2.3068671e+07"} 4545
+raft_process_handleready_latency_bucket{store="1",le="2.4117247e+07"} 4586
+raft_process_handleready_latency_bucket{store="1",le="2.5165823e+07"} 4602
+raft_process_handleready_latency_bucket{store="1",le="2.6214399e+07"} 4610
+raft_process_handleready_latency_bucket{store="1",le="2.7262975e+07"} 4620
+raft_process_handleready_latency_bucket{store="1",le="2.8311551e+07"} 4623
+raft_process_handleready_latency_bucket{store="1",le="3.0408703e+07"} 4625
+raft_process_handleready_latency_bucket{store="1",le="3.3554431e+07"} 4628
+raft_process_handleready_latency_bucket{store="1",le="3.5651583e+07"} 4629
+raft_process_handleready_latency_bucket{store="1",le="3.7748735e+07"} 4631
+raft_process_handleready_latency_bucket{store="1",le="4.4040191e+07"} 4635
+raft_process_handleready_latency_bucket{store="1",le="5.2428799e+07"} 4636
+raft_process_handleready_latency_bucket{store="1",le="6.5011711e+07"} 4637
+raft_process_handleready_latency_bucket{store="1",le="+Inf"} 4637
+raft_process_handleready_latency_sum{store="1"} 5.8876525027e+10
+raft_process_handleready_latency_count{store="1"} 4637
+# HELP distsender_rpc_migrate_sent Number of Migrate requests sent
+# TYPE distsender_rpc_migrate_sent counter
+distsender_rpc_migrate_sent 0
+# HELP jobs_schema_change_fail_or_cancel_completed Number of schema_change jobs which successfully completed their failure or cancelation process
+# TYPE jobs_schema_change_fail_or_cancel_completed counter
+jobs_schema_change_fail_or_cancel_completed 0
+# HELP jobs_changefeed_fail_or_cancel_completed Number of changefeed jobs which successfully completed their failure or cancelation process
+# TYPE jobs_changefeed_fail_or_cancel_completed counter
+jobs_changefeed_fail_or_cancel_completed 0
+# HELP sql_feature_flag_denial Counter of the number of statements denied by a feature flag
+# TYPE sql_feature_flag_denial counter
+sql_feature_flag_denial 0
+# HELP range_removes Number of range removals
+# TYPE range_removes counter
+range_removes{store="1"} 0
+# HELP gossip_connections_outgoing Number of active outgoing gossip connections
+# TYPE gossip_connections_outgoing gauge
+gossip_connections_outgoing 0
+# HELP changefeed_running Number of currently running changefeeds, including sinkless
+# TYPE changefeed_running gauge
+changefeed_running 0
+# HELP sql_update_count_internal Number of SQL UPDATE statements successfully executed (internal queries)
+# TYPE sql_update_count_internal counter
+sql_update_count_internal 828
+# HELP sql_txn_abort_count_internal Number of SQL transaction abort errors (internal queries)
+# TYPE sql_txn_abort_count_internal counter
+sql_txn_abort_count_internal 0
+# HELP distsender_rpc_queryintent_sent Number of QueryIntent requests sent
+# TYPE distsender_rpc_queryintent_sent counter
+distsender_rpc_queryintent_sent 675
+# HELP distsender_rpc_resolveintent_sent Number of ResolveIntent requests sent
+# TYPE distsender_rpc_resolveintent_sent counter
+distsender_rpc_resolveintent_sent 56
+# HELP distsender_rpc_err_integeroverflowerrtype Number of IntegerOverflowErrType errors received
+# TYPE distsender_rpc_err_integeroverflowerrtype counter
+distsender_rpc_err_integeroverflowerrtype 0
+# HELP intents_poison_attempts Count of (point or range) poisoning intent abort evaluation attempts
+# TYPE intents_poison_attempts counter
+intents_poison_attempts{store="1"} 0
+# HELP jobs_auto_create_stats_fail_or_cancel_completed Number of auto_create_stats jobs which successfully completed their failure or cancelation process
+# TYPE jobs_auto_create_stats_fail_or_cancel_completed counter
+jobs_auto_create_stats_fail_or_cancel_completed 0
+# HELP sql_restart_savepoint_release_started_count_internal Number of `RELEASE SAVEPOINT cockroach_restart` statements started (internal queries)
+# TYPE sql_restart_savepoint_release_started_count_internal counter
+sql_restart_savepoint_release_started_count_internal 0
+# HELP range_raftleadertransfers Number of raft leader transfers
+# TYPE range_raftleadertransfers counter
+range_raftleadertransfers{store="1"} 0
+# HELP raft_rcvd_prevoteresp Number of MsgPreVoteResp messages received by this store
+# TYPE raft_rcvd_prevoteresp counter
+raft_rcvd_prevoteresp{store="1"} 0
+# HELP sys_host_disk_write_time Time spent writing to all disks since this process started
+# TYPE sys_host_disk_write_time gauge
+sys_host_disk_write_time 8.9081907607e+10
+# HELP distsender_rpc_err_mergeinprogresserrtype Number of MergeInProgressErrType errors received
+# TYPE distsender_rpc_err_mergeinprogresserrtype counter
+distsender_rpc_err_mergeinprogresserrtype 0
+# HELP txn_commit_waits_before_commit_trigger Number of KV transactions that had to commit-wait on the server before committing because they had a commit trigger
+# TYPE txn_commit_waits_before_commit_trigger counter
+txn_commit_waits_before_commit_trigger{store="1"} 0
+# HELP raft_commandsapplied Count of Raft commands applied
+# TYPE raft_commandsapplied counter
+raft_commandsapplied{store="1"} 0
+# HELP sys_host_net_send_bytes Bytes sent on all network interfaces since this process started
+# TYPE sys_host_net_send_bytes gauge
+sys_host_net_send_bytes 1.2072035e+07
+# HELP exec_error Number of batch KV requests that failed to execute on this node
+# TYPE exec_error counter
+exec_error 2
+# HELP jobs_create_stats_currently_running Number of create_stats jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_create_stats_currently_running gauge
+jobs_create_stats_currently_running 0
+# HELP sys_rss Current process RSS
+# TYPE sys_rss gauge
+sys_rss 1.97054464e+08
+# HELP distsender_rpc_endtxn_sent Number of EndTxn requests sent
+# TYPE distsender_rpc_endtxn_sent counter
+distsender_rpc_endtxn_sent 1742
+# HELP distsender_rpc_err_leaserejectederrtype Number of LeaseRejectedErrType errors received
+# TYPE distsender_rpc_err_leaserejectederrtype counter
+distsender_rpc_err_leaserejectederrtype 0
+# HELP sql_distsql_flows_queue_wait Duration of time flows spend waiting in the queue
+# TYPE sql_distsql_flows_queue_wait histogram
+sql_distsql_flows_queue_wait_bucket{le="+Inf"} 0
+sql_distsql_flows_queue_wait_sum 0
+sql_distsql_flows_queue_wait_count 0
+# HELP kv_prober_planning_attempts Number of attempts at planning out probes made; in order to probe KV we need to plan out which ranges to probe;
+# TYPE kv_prober_planning_attempts counter
+kv_prober_planning_attempts 0
+# HELP sql_schema_changer_successes Counter of the number of schema changer resumes which succeed
+# TYPE sql_schema_changer_successes counter
+sql_schema_changer_successes 0
+# HELP sql_txn_latency_internal Latency of SQL transactions (internal queries)
+# TYPE sql_txn_latency_internal histogram
+sql_txn_latency_internal_bucket{le="344063"} 1
+sql_txn_latency_internal_bucket{le="360447"} 2
+sql_txn_latency_internal_bucket{le="376831"} 7
+sql_txn_latency_internal_bucket{le="393215"} 11
+sql_txn_latency_internal_bucket{le="409599"} 20
+sql_txn_latency_internal_bucket{le="425983"} 25
+sql_txn_latency_internal_bucket{le="442367"} 28
+sql_txn_latency_internal_bucket{le="458751"} 29
+sql_txn_latency_internal_bucket{le="475135"} 30
+sql_txn_latency_internal_bucket{le="491519"} 33
+sql_txn_latency_internal_bucket{le="507903"} 36
+sql_txn_latency_internal_bucket{le="524287"} 40
+sql_txn_latency_internal_bucket{le="557055"} 44
+sql_txn_latency_internal_bucket{le="589823"} 48
+sql_txn_latency_internal_bucket{le="622591"} 51
+sql_txn_latency_internal_bucket{le="655359"} 54
+sql_txn_latency_internal_bucket{le="688127"} 67
+sql_txn_latency_internal_bucket{le="720895"} 92
+sql_txn_latency_internal_bucket{le="753663"} 123
+sql_txn_latency_internal_bucket{le="786431"} 152
+sql_txn_latency_internal_bucket{le="819199"} 169
+sql_txn_latency_internal_bucket{le="851967"} 188
+sql_txn_latency_internal_bucket{le="884735"} 208
+sql_txn_latency_internal_bucket{le="917503"} 231
+sql_txn_latency_internal_bucket{le="950271"} 248
+sql_txn_latency_internal_bucket{le="983039"} 280
+sql_txn_latency_internal_bucket{le="1.015807e+06"} 311
+sql_txn_latency_internal_bucket{le="1.048575e+06"} 336
+sql_txn_latency_internal_bucket{le="1.114111e+06"} 380
+sql_txn_latency_internal_bucket{le="1.179647e+06"} 412
+sql_txn_latency_internal_bucket{le="1.245183e+06"} 427
+sql_txn_latency_internal_bucket{le="1.310719e+06"} 443
+sql_txn_latency_internal_bucket{le="1.376255e+06"} 455
+sql_txn_latency_internal_bucket{le="1.441791e+06"} 465
+sql_txn_latency_internal_bucket{le="1.507327e+06"} 477
+sql_txn_latency_internal_bucket{le="1.572863e+06"} 487
+sql_txn_latency_internal_bucket{le="1.638399e+06"} 495
+sql_txn_latency_internal_bucket{le="1.703935e+06"} 502
+sql_txn_latency_internal_bucket{le="1.769471e+06"} 507
+sql_txn_latency_internal_bucket{le="1.835007e+06"} 511
+sql_txn_latency_internal_bucket{le="1.900543e+06"} 516
+sql_txn_latency_internal_bucket{le="1.966079e+06"} 518
+sql_txn_latency_internal_bucket{le="2.097151e+06"} 523
+sql_txn_latency_internal_bucket{le="2.228223e+06"} 526
+sql_txn_latency_internal_bucket{le="2.359295e+06"} 528
+sql_txn_latency_internal_bucket{le="2.490367e+06"} 532
+sql_txn_latency_internal_bucket{le="2.752511e+06"} 534
+sql_txn_latency_internal_bucket{le="3.014655e+06"} 536
+sql_txn_latency_internal_bucket{le="3.276799e+06"} 539
+sql_txn_latency_internal_bucket{le="3.538943e+06"} 540
+sql_txn_latency_internal_bucket{le="3.932159e+06"} 541
+sql_txn_latency_internal_bucket{le="4.194303e+06"} 542
+sql_txn_latency_internal_bucket{le="4.980735e+06"} 543
+sql_txn_latency_internal_bucket{le="5.242879e+06"} 544
+sql_txn_latency_internal_bucket{le="6.553599e+06"} 545
+sql_txn_latency_internal_bucket{le="6.815743e+06"} 546
+sql_txn_latency_internal_bucket{le="9.961471e+06"} 547
+sql_txn_latency_internal_bucket{le="1.0485759e+07"} 550
+sql_txn_latency_internal_bucket{le="1.1010047e+07"} 551
+sql_txn_latency_internal_bucket{le="1.1534335e+07"} 552
+sql_txn_latency_internal_bucket{le="1.4680063e+07"} 553
+sql_txn_latency_internal_bucket{le="1.6252927e+07"} 554
+sql_txn_latency_internal_bucket{le="1.6777215e+07"} 556
+sql_txn_latency_internal_bucket{le="1.7825791e+07"} 558
+sql_txn_latency_internal_bucket{le="1.8874367e+07"} 574
+sql_txn_latency_internal_bucket{le="1.9922943e+07"} 614
+sql_txn_latency_internal_bucket{le="2.0971519e+07"} 622
+sql_txn_latency_internal_bucket{le="2.2020095e+07"} 626
+sql_txn_latency_internal_bucket{le="2.3068671e+07"} 633
+sql_txn_latency_internal_bucket{le="2.4117247e+07"} 643
+sql_txn_latency_internal_bucket{le="2.6214399e+07"} 645
+sql_txn_latency_internal_bucket{le="2.7262975e+07"} 648
+sql_txn_latency_internal_bucket{le="2.8311551e+07"} 649
+sql_txn_latency_internal_bucket{le="3.2505855e+07"} 650
+sql_txn_latency_internal_bucket{le="3.5651583e+07"} 653
+sql_txn_latency_internal_bucket{le="4.1943039e+07"} 658
+sql_txn_latency_internal_bucket{le="4.8234495e+07"} 659
+sql_txn_latency_internal_bucket{le="5.0331647e+07"} 661
+sql_txn_latency_internal_bucket{le="5.4525951e+07"} 664
+sql_txn_latency_internal_bucket{le="5.8720255e+07"} 665
+sql_txn_latency_internal_bucket{le="6.0817407e+07"} 666
+sql_txn_latency_internal_bucket{le="1.04857599e+08"} 667
+sql_txn_latency_internal_bucket{le="1.59383551e+08"} 668
+sql_txn_latency_internal_bucket{le="4.02653183e+08"} 669
+sql_txn_latency_internal_bucket{le="+Inf"} 669
+sql_txn_latency_internal_sum 4.139548003e+09
+sql_txn_latency_internal_count 669
+# HELP queue_replicagc_process_failure Number of replicas which failed processing in the replica GC queue
+# TYPE queue_replicagc_process_failure counter
+queue_replicagc_process_failure{store="1"} 0
+# HELP queue_gc_info_resolvetotal Number of attempted intent resolutions
+# TYPE queue_gc_info_resolvetotal counter
+queue_gc_info_resolvetotal{store="1"} 0
+# HELP gossip_bytes_sent Number of sent gossip bytes
+# TYPE gossip_bytes_sent counter
+gossip_bytes_sent 0
+# HELP distsender_rpc_adminmerge_sent Number of AdminMerge requests sent
+# TYPE distsender_rpc_adminmerge_sent counter
+distsender_rpc_adminmerge_sent 0
+# HELP distsender_rpc_err_unsupportedrequesterrtype Number of UnsupportedRequestErrType errors received
+# TYPE distsender_rpc_err_unsupportedrequesterrtype counter
+distsender_rpc_err_unsupportedrequesterrtype 0
+# HELP sql_exec_latency Latency of SQL statement execution
+# TYPE sql_exec_latency histogram
+sql_exec_latency_bucket{le="+Inf"} 0
+sql_exec_latency_sum 0
+sql_exec_latency_count 0
+# HELP schedules_error Number of schedules which did not execute successfully
+# TYPE schedules_error gauge
+schedules_error 0
+# HELP queue_merge_process_success Number of replicas successfully processed by the merge queue
+# TYPE queue_merge_process_success counter
+queue_merge_process_success{store="1"} 0
+# HELP queue_tsmaintenance_process_failure Number of replicas which failed processing in the time series maintenance queue
+# TYPE queue_tsmaintenance_process_failure counter
+queue_tsmaintenance_process_failure{store="1"} 0
+# HELP kv_tenant_rate_limit_write_bytes_admitted Number of write bytes admitted by the rate limiter
+# TYPE kv_tenant_rate_limit_write_bytes_admitted counter
+kv_tenant_rate_limit_write_bytes_admitted{store="1"} 0
+# HELP distsender_rpc_adminunsplit_sent Number of AdminUnsplit requests sent
+# TYPE distsender_rpc_adminunsplit_sent counter
+distsender_rpc_adminunsplit_sent 0
+# HELP jobs_typedesc_schema_change_currently_running Number of typedesc_schema_change jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_typedesc_schema_change_currently_running gauge
+jobs_typedesc_schema_change_currently_running 0
+# HELP sql_savepoint_release_count_internal Number of `RELEASE SAVEPOINT` statements successfully executed (internal queries)
+# TYPE sql_savepoint_release_count_internal counter
+sql_savepoint_release_count_internal 0
+# HELP rocksdb_compactions Number of table compactions
+# TYPE rocksdb_compactions gauge
+rocksdb_compactions{store="1"} 0
+# HELP rocksdb_compacted_bytes_read Bytes read during compaction
+# TYPE rocksdb_compacted_bytes_read gauge
+rocksdb_compacted_bytes_read{store="1"} 0
+# HELP sqlliveness_write_successes Number of update or insert calls successfully performed
+# TYPE sqlliveness_write_successes counter
+sqlliveness_write_successes 382
+# HELP changefeed_flush_hist_nanos Time spent flushing messages across all changefeeds
+# TYPE changefeed_flush_hist_nanos histogram
+changefeed_flush_hist_nanos_bucket{le="+Inf"} 0
+changefeed_flush_hist_nanos_sum 0
+changefeed_flush_hist_nanos_count 0
+# HELP replicas Number of replicas
+# TYPE replicas gauge
+replicas{store="1"} 37
+# HELP capacity_used Used storage capacity
+# TYPE capacity_used gauge
+capacity_used{store="1"} 5.8412795e+07
+# HELP intents_resolve_attempts Count of (point or range) intent commit evaluation attempts
+# TYPE intents_resolve_attempts counter
+intents_resolve_attempts{store="1"} 56
+# HELP raft_rcvd_timeoutnow Number of MsgTimeoutNow messages received by this store
+# TYPE raft_rcvd_timeoutnow counter
+raft_rcvd_timeoutnow{store="1"} 0
+# HELP distsender_rpc_transferlease_sent Number of TransferLease requests sent
+# TYPE distsender_rpc_transferlease_sent counter
+distsender_rpc_transferlease_sent 0
+# HELP sql_conns Number of active sql connections
+# TYPE sql_conns gauge
+sql_conns 0
+# HELP sql_delete_count Number of SQL DELETE statements successfully executed
+# TYPE sql_delete_count counter
+sql_delete_count 0
+# HELP sql_misc_started_count_internal Number of other SQL statements started (internal queries)
+# TYPE sql_misc_started_count_internal counter
+sql_misc_started_count_internal 11
+# HELP queue_replicate_transferlease Number of range lease transfers attempted by the replicate queue
+# TYPE queue_replicate_transferlease counter
+queue_replicate_transferlease{store="1"} 0
+# HELP sys_go_totalbytes Total bytes of memory allocated by go, but not released
+# TYPE sys_go_totalbytes gauge
+sys_go_totalbytes 7.1107592e+07
+# HELP distsender_rpc_err_rangekeymismatcherrtype Number of RangeKeyMismatchErrType errors received
+# TYPE distsender_rpc_err_rangekeymismatcherrtype counter
+distsender_rpc_err_rangekeymismatcherrtype 0
+# HELP sql_mem_sql_session_max Memory usage per sql session for sql
+# TYPE sql_mem_sql_session_max histogram
+sql_mem_sql_session_max_bucket{le="+Inf"} 0
+sql_mem_sql_session_max_sum 0
+sql_mem_sql_session_max_count 0
+# HELP storage_disk_slow Number of instances of disk operations taking longer than 10s
+# TYPE storage_disk_slow gauge
+storage_disk_slow{store="1"} 0
+# HELP sqlliveness_sessions_deleted Number of expired sessions which have been deleted
+# TYPE sqlliveness_sessions_deleted counter
+sqlliveness_sessions_deleted 0
+# HELP sqlliveness_is_alive_cache_misses Number of calls to IsAlive that do not return from the cache
+# TYPE sqlliveness_is_alive_cache_misses counter
+sqlliveness_is_alive_cache_misses 0
+# HELP jobs_changefeed_fail_or_cancel_retry_error Number of changefeed jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_changefeed_fail_or_cancel_retry_error counter
+jobs_changefeed_fail_or_cancel_retry_error 0
+# HELP queue_gc_process_failure Number of replicas which failed processing in the GC queue
+# TYPE queue_gc_process_failure counter
+queue_gc_process_failure{store="1"} 0
+# HELP sql_bytesout Number of sql bytes sent
+# TYPE sql_bytesout counter
+sql_bytesout 0
+# HELP sql_savepoint_count Number of SQL SAVEPOINT statements successfully executed
+# TYPE sql_savepoint_count counter
+sql_savepoint_count 0
+# HELP rocksdb_flushes Number of table flushes
+# TYPE rocksdb_flushes gauge
+rocksdb_flushes{store="1"} 0
+# HELP distsender_rpc_sent_local Number of local RPCs sent
+# TYPE distsender_rpc_sent_local counter
+distsender_rpc_sent_local 9115
+# HELP distsender_rpc_gc_sent Number of GC requests sent
+# TYPE distsender_rpc_gc_sent counter
+distsender_rpc_gc_sent 10
+# HELP jobs_changefeed_resume_failed Number of changefeed jobs which failed with a non-retriable error
+# TYPE jobs_changefeed_resume_failed counter
+jobs_changefeed_resume_failed 0
+# HELP jobs_new_schema_change_resume_retry_error Number of new_schema_change jobs which failed with a retriable error
+# TYPE jobs_new_schema_change_resume_retry_error counter
+jobs_new_schema_change_resume_retry_error 0
+# HELP sys_fd_open Process open file descriptors
+# TYPE sys_fd_open gauge
+sys_fd_open 0
+# HELP jobs_restore_resume_completed Number of restore jobs which successfully resumed to completion
+# TYPE jobs_restore_resume_completed counter
+jobs_restore_resume_completed 0
+# HELP range_splits Number of range splits
+# TYPE range_splits counter
+range_splits{store="1"} 0
+# HELP jobs_changefeed_fail_or_cancel_failed Number of changefeed jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_changefeed_fail_or_cancel_failed counter
+jobs_changefeed_fail_or_cancel_failed 0
+# HELP sql_leases_active The number of outstanding SQL schema leases.
+# TYPE sql_leases_active gauge
+sql_leases_active 8
+# HELP sql_txn_latency Latency of SQL transactions
+# TYPE sql_txn_latency histogram
+sql_txn_latency_bucket{le="+Inf"} 0
+sql_txn_latency_sum 0
+sql_txn_latency_count 0
+# HELP sql_query_count_internal Number of SQL queries executed (internal queries)
+# TYPE sql_query_count_internal counter
+sql_query_count_internal 1719
+# HELP distsender_rpc_err_transactionstatuserrtype Number of TransactionStatusErrType errors received
+# TYPE distsender_rpc_err_transactionstatuserrtype counter
+distsender_rpc_err_transactionstatuserrtype 0
+# HELP jobs_schema_change_resume_failed Number of schema_change jobs which failed with a non-retriable error
+# TYPE jobs_schema_change_resume_failed counter
+jobs_schema_change_resume_failed 0
+# HELP sql_restart_savepoint_rollback_count_internal Number of `ROLLBACK TO SAVEPOINT cockroach_restart` statements successfully executed (internal queries)
+# TYPE sql_restart_savepoint_rollback_count_internal counter
+sql_restart_savepoint_rollback_count_internal 0
+# HELP capacity_reserved Capacity reserved for snapshots
+# TYPE capacity_reserved gauge
+capacity_reserved{store="1"} 0
+# HELP queue_split_process_success Number of replicas successfully processed by the split queue
+# TYPE queue_split_process_success counter
+queue_split_process_success{store="1"} 0
+# HELP distsender_rpc_refreshrange_sent Number of RefreshRange requests sent
+# TYPE distsender_rpc_refreshrange_sent counter
+distsender_rpc_refreshrange_sent 0
+# HELP engine_stalls Number of disk stalls detected on this node
+# TYPE engine_stalls counter
+engine_stalls 0
+# HELP changefeed_processing_nanos Time spent processing KV changes into SQL rows
+# TYPE changefeed_processing_nanos counter
+changefeed_processing_nanos 0
+# HELP raft_rcvd_appresp Number of MsgAppResp messages received by this store
+# TYPE raft_rcvd_appresp counter
+raft_rcvd_appresp{store="1"} 0
+# HELP sys_host_disk_write_count Disk write operations across all disks since this process started
+# TYPE sys_host_disk_write_count gauge
+sys_host_disk_write_count 183622
+# HELP distsender_rpc_clearrange_sent Number of ClearRange requests sent
+# TYPE distsender_rpc_clearrange_sent counter
+distsender_rpc_clearrange_sent 0
+# HELP txn_condensed_intent_spans KV transactions that have exceeded their intent tracking memory budget (kv.transaction.max_intents_bytes). See also txn.condensed_intent_spans_gauge for a gauge of such transactions currently running.
+# TYPE txn_condensed_intent_spans counter
+txn_condensed_intent_spans 0
+# HELP sql_txn_begin_started_count_internal Number of SQL transaction BEGIN statements started (internal queries)
+# TYPE sql_txn_begin_started_count_internal counter
+sql_txn_begin_started_count_internal 0
+# HELP jobs_migration_fail_or_cancel_completed Number of migration jobs which successfully completed their failure or cancelation process
+# TYPE jobs_migration_fail_or_cancel_completed counter
+jobs_migration_fail_or_cancel_completed 0
+# HELP gcbytesage Cumulative age of non-live data
+# TYPE gcbytesage gauge
+gcbytesage{store="1"} 0
+# HELP distsender_rpc_conditionalput_sent Number of ConditionalPut requests sent
+# TYPE distsender_rpc_conditionalput_sent counter
+distsender_rpc_conditionalput_sent 798
+# HELP txn_refresh_auto_retries Number of request retries after successful refreshes
+# TYPE txn_refresh_auto_retries counter
+txn_refresh_auto_retries 0
+# HELP liveness_heartbeatlatency Node liveness heartbeat latency
+# TYPE liveness_heartbeatlatency histogram
+liveness_heartbeatlatency_bucket{le="2.7262975e+07"} 2
+liveness_heartbeatlatency_bucket{le="2.8311551e+07"} 3
+liveness_heartbeatlatency_bucket{le="3.0408703e+07"} 5
+liveness_heartbeatlatency_bucket{le="3.2505855e+07"} 6
+liveness_heartbeatlatency_bucket{le="3.3554431e+07"} 10
+liveness_heartbeatlatency_bucket{le="3.5651583e+07"} 13
+liveness_heartbeatlatency_bucket{le="3.7748735e+07"} 22
+liveness_heartbeatlatency_bucket{le="3.9845887e+07"} 39
+liveness_heartbeatlatency_bucket{le="4.1943039e+07"} 54
+liveness_heartbeatlatency_bucket{le="4.4040191e+07"} 97
+liveness_heartbeatlatency_bucket{le="4.6137343e+07"} 145
+liveness_heartbeatlatency_bucket{le="4.8234495e+07"} 176
+liveness_heartbeatlatency_bucket{le="5.0331647e+07"} 206
+liveness_heartbeatlatency_bucket{le="5.2428799e+07"} 234
+liveness_heartbeatlatency_bucket{le="5.4525951e+07"} 269
+liveness_heartbeatlatency_bucket{le="5.6623103e+07"} 319
+liveness_heartbeatlatency_bucket{le="5.8720255e+07"} 346
+liveness_heartbeatlatency_bucket{le="6.0817407e+07"} 366
+liveness_heartbeatlatency_bucket{le="6.2914559e+07"} 382
+liveness_heartbeatlatency_bucket{le="6.5011711e+07"} 391
+liveness_heartbeatlatency_bucket{le="6.7108863e+07"} 398
+liveness_heartbeatlatency_bucket{le="7.1303167e+07"} 417
+liveness_heartbeatlatency_bucket{le="7.5497471e+07"} 422
+liveness_heartbeatlatency_bucket{le="7.9691775e+07"} 425
+liveness_heartbeatlatency_bucket{le="8.8080383e+07"} 426
+liveness_heartbeatlatency_bucket{le="9.2274687e+07"} 427
+liveness_heartbeatlatency_bucket{le="+Inf"} 427
+liveness_heartbeatlatency_sum 2.2399680085e+10
+liveness_heartbeatlatency_count 427
+# HELP jobs_schema_change_resume_completed Number of schema_change jobs which successfully resumed to completion
+# TYPE jobs_schema_change_resume_completed counter
+jobs_schema_change_resume_completed 0
+# HELP distsender_rpc_reversescan_sent Number of ReverseScan requests sent
+# TYPE distsender_rpc_reversescan_sent counter
+distsender_rpc_reversescan_sent 0
+# HELP distsender_rpc_err_communicationerrtype Number of CommunicationErrType errors received
+# TYPE distsender_rpc_err_communicationerrtype counter
+distsender_rpc_err_communicationerrtype 0
+# HELP liveness_livenodes Number of live nodes in the cluster (will be 0 if this node is not itself live)
+# TYPE liveness_livenodes gauge
+liveness_livenodes 1
+# HELP sql_new_conns Counter of the number of sql connections created
+# TYPE sql_new_conns counter
+sql_new_conns 0
+# HELP rebalancing_range_rebalances Number of range rebalance operations motivated by store-level load imbalances
+# TYPE rebalancing_range_rebalances counter
+rebalancing_range_rebalances{store="1"} 0
+# HELP jobs_schema_change_gc_resume_completed Number of schema_change_gc jobs which successfully resumed to completion
+# TYPE jobs_schema_change_gc_resume_completed counter
+jobs_schema_change_gc_resume_completed 0
+# HELP sql_query_started_count Number of SQL queries started
+# TYPE sql_query_started_count counter
+sql_query_started_count 0
+# HELP sql_restart_savepoint_rollback_started_count Number of `ROLLBACK TO SAVEPOINT cockroach_restart` statements started
+# TYPE sql_restart_savepoint_rollback_started_count counter
+sql_restart_savepoint_rollback_started_count 0
+# HELP sql_txn_rollback_count_internal Number of SQL transaction ROLLBACK statements successfully executed (internal queries)
+# TYPE sql_txn_rollback_count_internal counter
+sql_txn_rollback_count_internal 0
+# HELP queue_replicagc_process_success Number of replicas successfully processed by the replica GC queue
+# TYPE queue_replicagc_process_success counter
+queue_replicagc_process_success{store="1"} 0
+# HELP queue_gc_info_transactionspanscanned Number of entries in transaction spans scanned from the engine
+# TYPE queue_gc_info_transactionspanscanned counter
+queue_gc_info_transactionspanscanned{store="1"} 0
+# HELP sys_cgocalls Total number of cgo calls
+# TYPE sys_cgocalls gauge
+sys_cgocalls 1327
+# HELP kv_prober_planning_failures Number of attempts at planning out probes that failed; in order to probe KV we need to plan out which ranges to probe; if planning fails, then kvprober is not able to send probes to all ranges; consider alerting on this metric as a result
+# TYPE kv_prober_planning_failures counter
+kv_prober_planning_failures 0
+# HELP jobs_import_resume_failed Number of import jobs which failed with a non-retriable error
+# TYPE jobs_import_resume_failed counter
+jobs_import_resume_failed 0
+# HELP jobs_new_schema_change_resume_failed Number of new_schema_change jobs which failed with a non-retriable error
+# TYPE jobs_new_schema_change_resume_failed counter
+jobs_new_schema_change_resume_failed 0
+# HELP sql_select_count_internal Number of SQL SELECT statements successfully executed (internal queries)
+# TYPE sql_select_count_internal counter
+sql_select_count_internal 542
+# HELP sql_distsql_select_count_internal Number of DistSQL SELECT statements (internal queries)
+# TYPE sql_distsql_select_count_internal counter
+sql_distsql_select_count_internal 0
+# HELP queue_consistency_pending Number of pending replicas in the consistency checker queue
+# TYPE queue_consistency_pending gauge
+queue_consistency_pending{store="1"} 0
+# HELP queue_gc_info_pushtxn Number of attempted pushes
+# TYPE queue_gc_info_pushtxn counter
+queue_gc_info_pushtxn{store="1"} 0
+# HELP sys_runnable_goroutines_per_cpu Average number of goroutines that are waiting to run, normalized by number of cores
+# TYPE sys_runnable_goroutines_per_cpu gauge
+sys_runnable_goroutines_per_cpu 0.00020763875742451314
+# HELP sys_host_disk_iopsinprogress IO operations currently in progress on this host
+# TYPE sys_host_disk_iopsinprogress gauge
+sys_host_disk_iopsinprogress 0
+# HELP distsender_rpc_err_errordetailtype_23_ Number of ErrorDetailType(23) errors received
+# TYPE distsender_rpc_err_errordetailtype_23_ counter
+distsender_rpc_err_errordetailtype_23_ 0
+# HELP changefeed_emitted_messages Messages emitted by all feeds
+# TYPE changefeed_emitted_messages counter
+changefeed_emitted_messages 0
+# HELP distsender_errors_inleasetransferbackoffs Number of times backed off due to NotLeaseHolderErrors during lease transfer
+# TYPE distsender_errors_inleasetransferbackoffs counter
+distsender_errors_inleasetransferbackoffs 0
+# HELP sql_service_latency_internal Latency of SQL request execution (internal queries)
+# TYPE sql_service_latency_internal histogram
+sql_service_latency_internal_bucket{le="360447"} 2
+sql_service_latency_internal_bucket{le="409599"} 5
+sql_service_latency_internal_bucket{le="425983"} 6
+sql_service_latency_internal_bucket{le="475135"} 7
+sql_service_latency_internal_bucket{le="491519"} 8
+sql_service_latency_internal_bucket{le="524287"} 11
+sql_service_latency_internal_bucket{le="557055"} 26
+sql_service_latency_internal_bucket{le="589823"} 44
+sql_service_latency_internal_bucket{le="622591"} 70
+sql_service_latency_internal_bucket{le="655359"} 113
+sql_service_latency_internal_bucket{le="688127"} 161
+sql_service_latency_internal_bucket{le="720895"} 189
+sql_service_latency_internal_bucket{le="753663"} 230
+sql_service_latency_internal_bucket{le="786431"} 259
+sql_service_latency_internal_bucket{le="819199"} 279
+sql_service_latency_internal_bucket{le="851967"} 315
+sql_service_latency_internal_bucket{le="884735"} 341
+sql_service_latency_internal_bucket{le="917503"} 372
+sql_service_latency_internal_bucket{le="950271"} 413
+sql_service_latency_internal_bucket{le="983039"} 460
+sql_service_latency_internal_bucket{le="1.015807e+06"} 496
+sql_service_latency_internal_bucket{le="1.048575e+06"} 545
+sql_service_latency_internal_bucket{le="1.114111e+06"} 637
+sql_service_latency_internal_bucket{le="1.179647e+06"} 732
+sql_service_latency_internal_bucket{le="1.245183e+06"} 816
+sql_service_latency_internal_bucket{le="1.310719e+06"} 869
+sql_service_latency_internal_bucket{le="1.376255e+06"} 943
+sql_service_latency_internal_bucket{le="1.441791e+06"} 1024
+sql_service_latency_internal_bucket{le="1.507327e+06"} 1108
+sql_service_latency_internal_bucket{le="1.572863e+06"} 1174
+sql_service_latency_internal_bucket{le="1.638399e+06"} 1240
+sql_service_latency_internal_bucket{le="1.703935e+06"} 1287
+sql_service_latency_internal_bucket{le="1.769471e+06"} 1325
+sql_service_latency_internal_bucket{le="1.835007e+06"} 1357
+sql_service_latency_internal_bucket{le="1.900543e+06"} 1383
+sql_service_latency_internal_bucket{le="1.966079e+06"} 1406
+sql_service_latency_internal_bucket{le="2.031615e+06"} 1431
+sql_service_latency_internal_bucket{le="2.097151e+06"} 1449
+sql_service_latency_internal_bucket{le="2.228223e+06"} 1475
+sql_service_latency_internal_bucket{le="2.359295e+06"} 1496
+sql_service_latency_internal_bucket{le="2.490367e+06"} 1508
+sql_service_latency_internal_bucket{le="2.621439e+06"} 1525
+sql_service_latency_internal_bucket{le="2.752511e+06"} 1534
+sql_service_latency_internal_bucket{le="2.883583e+06"} 1546
+sql_service_latency_internal_bucket{le="3.014655e+06"} 1551
+sql_service_latency_internal_bucket{le="3.145727e+06"} 1557
+sql_service_latency_internal_bucket{le="3.276799e+06"} 1562
+sql_service_latency_internal_bucket{le="3.407871e+06"} 1564
+sql_service_latency_internal_bucket{le="3.538943e+06"} 1567
+sql_service_latency_internal_bucket{le="3.670015e+06"} 1571
+sql_service_latency_internal_bucket{le="3.801087e+06"} 1573
+sql_service_latency_internal_bucket{le="3.932159e+06"} 1575
+sql_service_latency_internal_bucket{le="4.063231e+06"} 1577
+sql_service_latency_internal_bucket{le="4.194303e+06"} 1580
+sql_service_latency_internal_bucket{le="4.456447e+06"} 1582
+sql_service_latency_internal_bucket{le="4.718591e+06"} 1584
+sql_service_latency_internal_bucket{le="4.980735e+06"} 1588
+sql_service_latency_internal_bucket{le="5.242879e+06"} 1591
+sql_service_latency_internal_bucket{le="5.505023e+06"} 1592
+sql_service_latency_internal_bucket{le="5.767167e+06"} 1593
+sql_service_latency_internal_bucket{le="6.553599e+06"} 1594
+sql_service_latency_internal_bucket{le="6.815743e+06"} 1595
+sql_service_latency_internal_bucket{le="7.077887e+06"} 1596
+sql_service_latency_internal_bucket{le="7.602175e+06"} 1597
+sql_service_latency_internal_bucket{le="1.0485759e+07"} 1598
+sql_service_latency_internal_bucket{le="1.1010047e+07"} 1603
+sql_service_latency_internal_bucket{le="1.1534335e+07"} 1604
+sql_service_latency_internal_bucket{le="1.2058623e+07"} 1605
+sql_service_latency_internal_bucket{le="1.5728639e+07"} 1606
+sql_service_latency_internal_bucket{le="1.6777215e+07"} 1607
+sql_service_latency_internal_bucket{le="1.7825791e+07"} 1609
+sql_service_latency_internal_bucket{le="1.8874367e+07"} 1617
+sql_service_latency_internal_bucket{le="1.9922943e+07"} 1627
+sql_service_latency_internal_bucket{le="2.0971519e+07"} 1667
+sql_service_latency_internal_bucket{le="2.2020095e+07"} 1672
+sql_service_latency_internal_bucket{le="2.3068671e+07"} 1682
+sql_service_latency_internal_bucket{le="2.4117247e+07"} 1684
+sql_service_latency_internal_bucket{le="2.5165823e+07"} 1695
+sql_service_latency_internal_bucket{le="2.7262975e+07"} 1698
+sql_service_latency_internal_bucket{le="2.8311551e+07"} 1701
+sql_service_latency_internal_bucket{le="3.2505855e+07"} 1702
+sql_service_latency_internal_bucket{le="3.5651583e+07"} 1705
+sql_service_latency_internal_bucket{le="4.1943039e+07"} 1706
+sql_service_latency_internal_bucket{le="4.8234495e+07"} 1707
+sql_service_latency_internal_bucket{le="5.0331647e+07"} 1708
+sql_service_latency_internal_bucket{le="5.2428799e+07"} 1710
+sql_service_latency_internal_bucket{le="6.2914559e+07"} 1711
+sql_service_latency_internal_bucket{le="7.5497471e+07"} 1712
+sql_service_latency_internal_bucket{le="1.00663295e+08"} 1713
+sql_service_latency_internal_bucket{le="1.04857599e+08"} 1716
+sql_service_latency_internal_bucket{le="1.21634815e+08"} 1717
+sql_service_latency_internal_bucket{le="1.76160767e+08"} 1718
+sql_service_latency_internal_bucket{le="4.02653183e+08"} 1719
+sql_service_latency_internal_bucket{le="+Inf"} 1719
+sql_service_latency_internal_sum 6.052936009e+09
+sql_service_latency_internal_count 1719
+# HELP rocksdb_table_readers_mem_estimate Memory used by index and filter blocks
+# TYPE rocksdb_table_readers_mem_estimate gauge
+rocksdb_table_readers_mem_estimate{store="1"} 0
+# HELP rocksdb_read_amplification Number of disk reads per query
+# TYPE rocksdb_read_amplification gauge
+rocksdb_read_amplification{store="1"} 0
+# HELP sql_txn_begin_count_internal Number of SQL transaction BEGIN statements successfully executed (internal queries)
+# TYPE sql_txn_begin_count_internal counter
+sql_txn_begin_count_internal 0
+# HELP leases_success Number of successful lease requests
+# TYPE leases_success counter
+leases_success{store="1"} 629
+# HELP distsender_rpc_err_conditionfailederrtype Number of ConditionFailedErrType errors received
+# TYPE distsender_rpc_err_conditionfailederrtype counter
+distsender_rpc_err_conditionfailederrtype 0
+# HELP changefeed_flushes Total flushes across all feeds
+# TYPE changefeed_flushes counter
+changefeed_flushes 0
+# HELP sql_distsql_queries_spilled Number of queries that have spilled to disk
+# TYPE sql_distsql_queries_spilled counter
+sql_distsql_queries_spilled 0
+# HELP sql_savepoint_rollback_started_count Number of `ROLLBACK TO SAVEPOINT` statements started
+# TYPE sql_savepoint_rollback_started_count counter
+sql_savepoint_rollback_started_count 0
+# HELP distsender_rpc_err_rangefeedretryerrtype Number of RangeFeedRetryErrType errors received
+# TYPE distsender_rpc_err_rangefeedretryerrtype counter
+distsender_rpc_err_rangefeedretryerrtype 0
+# HELP jobs_migration_fail_or_cancel_failed Number of migration jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_migration_fail_or_cancel_failed counter
+jobs_migration_fail_or_cancel_failed 0
+# HELP sql_service_latency Latency of SQL request execution
+# TYPE sql_service_latency histogram
+sql_service_latency_bucket{le="+Inf"} 0
+sql_service_latency_sum 0
+sql_service_latency_count 0
+# HELP kv_tenant_rate_limit_read_requests_admitted Number of read requests admitted by the rate limiter
+# TYPE kv_tenant_rate_limit_read_requests_admitted counter
+kv_tenant_rate_limit_read_requests_admitted{store="1"} 0
+# HELP sys_host_net_recv_packets Packets received on all network interfaces since this process started
+# TYPE sys_host_net_recv_packets gauge
+sys_host_net_recv_packets 68971
+# HELP distsender_rpc_err_transactionretrywithprotorefresherrtype Number of TransactionRetryWithProtoRefreshErrType errors received
+# TYPE distsender_rpc_err_transactionretrywithprotorefresherrtype counter
+distsender_rpc_err_transactionretrywithprotorefresherrtype 0
+# HELP sql_full_scan_count Number of full table or index scans
+# TYPE sql_full_scan_count counter
+sql_full_scan_count 0
+# HELP sql_restart_savepoint_count_internal Number of `SAVEPOINT cockroach_restart` statements successfully executed (internal queries)
+# TYPE sql_restart_savepoint_count_internal counter
+sql_restart_savepoint_count_internal 0
+# HELP jobs_auto_create_stats_resume_retry_error Number of auto_create_stats jobs which failed with a retriable error
+# TYPE jobs_auto_create_stats_resume_retry_error counter
+jobs_auto_create_stats_resume_retry_error 0
+# HELP sql_misc_count_internal Number of other SQL statements successfully executed (internal queries)
+# TYPE sql_misc_count_internal counter
+sql_misc_count_internal 11
+# HELP rocksdb_bloom_filter_prefix_checked Number of times the bloom filter was checked
+# TYPE rocksdb_bloom_filter_prefix_checked gauge
+rocksdb_bloom_filter_prefix_checked{store="1"} 0
+# HELP rpc_heartbeats_loops_started Counter of the number of connection heartbeat loops which have been started
+# TYPE rpc_heartbeats_loops_started counter
+rpc_heartbeats_loops_started 1
+# HELP distsender_rpc_computechecksum_sent Number of ComputeChecksum requests sent
+# TYPE distsender_rpc_computechecksum_sent counter
+distsender_rpc_computechecksum_sent 37
+# HELP sqlliveness_sessions_deletion_runs Number of calls to delete sessions which have been performed
+# TYPE sqlliveness_sessions_deletion_runs counter
+sqlliveness_sessions_deletion_runs 94
+# HELP jobs_import_currently_running Number of import jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_import_currently_running gauge
+jobs_import_currently_running 0
+# HELP queue_consistency_process_success Number of replicas successfully processed by the consistency checker queue
+# TYPE queue_consistency_process_success counter
+queue_consistency_process_success{store="1"} 37
+# HELP distsender_rpc_adminrelocaterange_sent Number of AdminRelocateRange requests sent
+# TYPE distsender_rpc_adminrelocaterange_sent counter
+distsender_rpc_adminrelocaterange_sent 0
+# HELP distsender_rpc_writebatch_sent Number of WriteBatch requests sent
+# TYPE distsender_rpc_writebatch_sent counter
+distsender_rpc_writebatch_sent 0
+# HELP txn_restarts_serializable Number of restarts due to a forwarded commit timestamp and isolation=SERIALIZABLE
+# TYPE txn_restarts_serializable counter
+txn_restarts_serializable 0
+# HELP sql_bytesin Number of sql bytes received
+# TYPE sql_bytesin counter
+sql_bytesin 0
+# HELP gossip_infos_sent Number of sent gossip Info objects
+# TYPE gossip_infos_sent counter
+gossip_infos_sent 0
+# HELP sys_host_net_recv_bytes Bytes received on all network interfaces since this process started
+# TYPE sys_host_net_recv_bytes gauge
+sys_host_net_recv_bytes 5.795428e+07
+# HELP jobs_create_stats_resume_retry_error Number of create_stats jobs which failed with a retriable error
+# TYPE jobs_create_stats_resume_retry_error counter
+jobs_create_stats_resume_retry_error 0
+# HELP rocksdb_num_sstables Number of rocksdb SSTables
+# TYPE rocksdb_num_sstables gauge
+rocksdb_num_sstables{store="1"} 0
+# HELP sql_ddl_started_count Number of SQL DDL statements started
+# TYPE sql_ddl_started_count counter
+sql_ddl_started_count 0
+# HELP sql_txn_commit_started_count_internal Number of SQL transaction COMMIT statements started (internal queries)
+# TYPE sql_txn_commit_started_count_internal counter
+sql_txn_commit_started_count_internal 0
+# HELP sql_distsql_exec_latency_internal Latency of DistSQL statement execution (internal queries)
+# TYPE sql_distsql_exec_latency_internal histogram
+sql_distsql_exec_latency_internal_bucket{le="+Inf"} 0
+sql_distsql_exec_latency_internal_sum 0
+sql_distsql_exec_latency_internal_count 0
+# HELP txnwaitqueue_query_wait_time Histogram of durations spent in queue by queries
+# TYPE txnwaitqueue_query_wait_time histogram
+txnwaitqueue_query_wait_time_bucket{store="1",le="+Inf"} 0
+txnwaitqueue_query_wait_time_sum{store="1"} 0
+txnwaitqueue_query_wait_time_count{store="1"} 0
+# HELP sys_gc_count Total number of GC runs
+# TYPE sys_gc_count gauge
+sys_gc_count 76
+# HELP distsender_rpc_err_errordetailtype_33_ Number of ErrorDetailType(33) errors received
+# TYPE distsender_rpc_err_errordetailtype_33_ counter
+distsender_rpc_err_errordetailtype_33_ 0
+# HELP liveness_heartbeatfailures Number of failed node liveness heartbeats from this node
+# TYPE liveness_heartbeatfailures counter
+liveness_heartbeatfailures 0
+# HELP jobs_restore_fail_or_cancel_completed Number of restore jobs which successfully completed their failure or cancelation process
+# TYPE jobs_restore_fail_or_cancel_completed counter
+jobs_restore_fail_or_cancel_completed 0
+# HELP changefeed_flush_nanos Total time spent flushing all feeds
+# TYPE changefeed_flush_nanos counter
+changefeed_flush_nanos 0
+# HELP jobs_auto_create_stats_resume_failed Number of auto_create_stats jobs which failed with a non-retriable error
+# TYPE jobs_auto_create_stats_resume_failed counter
+jobs_auto_create_stats_resume_failed 0
+# HELP jobs_stream_ingestion_resume_failed Number of stream_ingestion jobs which failed with a non-retriable error
+# TYPE jobs_stream_ingestion_resume_failed counter
+jobs_stream_ingestion_resume_failed 0
+# HELP sql_full_scan_count_internal Number of full table or index scans (internal queries)
+# TYPE sql_full_scan_count_internal counter
+sql_full_scan_count_internal 157
+# HELP node_id node ID with labels for advertised RPC and HTTP addresses
+# TYPE node_id gauge
+node_id{advertise_addr="localhost:26257",http_addr="localhost:8080",sql_addr="localhost:26257"} 1
+# HELP raft_rcvd_snap Number of MsgSnap messages received by this store
+# TYPE raft_rcvd_snap counter
+raft_rcvd_snap{store="1"} 0
+# HELP raft_rcvd_heartbeat Number of (coalesced, if enabled) MsgHeartbeat messages received by this store
+# TYPE raft_rcvd_heartbeat counter
+raft_rcvd_heartbeat{store="1"} 0
+# HELP addsstable_copies number of SSTable ingestions that required copying files during application
+# TYPE addsstable_copies counter
+addsstable_copies{store="1"} 0
+# HELP distsender_rpc_adminchangereplicas_sent Number of AdminChangeReplicas requests sent
+# TYPE distsender_rpc_adminchangereplicas_sent counter
+distsender_rpc_adminchangereplicas_sent 0
+# HELP sql_temp_object_cleaner_schemas_deletion_success number of successful schema deletions by the temp object cleaner on this node
+# TYPE sql_temp_object_cleaner_schemas_deletion_success counter
+sql_temp_object_cleaner_schemas_deletion_success 0
+# HELP schedules_round_reschedule_wait The number of schedules rescheduled due to WAIT policy
+# TYPE schedules_round_reschedule_wait gauge
+schedules_round_reschedule_wait 0
+# HELP range_snapshots_applied_non_voter Number of snapshots applied by non-voter replicas
+# TYPE range_snapshots_applied_non_voter counter
+range_snapshots_applied_non_voter{store="1"} 0
+# HELP sys_gc_pause_percent Current GC pause percentage
+# TYPE sys_gc_pause_percent gauge
+sys_gc_pause_percent 0
+# HELP distsender_rpc_err_batchtimestampbeforegcerrtype Number of BatchTimestampBeforeGCErrType errors received
+# TYPE distsender_rpc_err_batchtimestampbeforegcerrtype counter
+distsender_rpc_err_batchtimestampbeforegcerrtype 0
+# HELP jobs_schema_change_fail_or_cancel_failed Number of schema_change jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_schema_change_fail_or_cancel_failed counter
+jobs_schema_change_fail_or_cancel_failed 0
+# HELP schedules_round_reschedule_skip The number of schedules rescheduled due to SKIP policy
+# TYPE schedules_round_reschedule_skip gauge
+schedules_round_reschedule_skip 0
+# HELP sql_disk_distsql_spilled_bytes_written Number of bytes written to temporary disk storage as a result of spilling
+# TYPE sql_disk_distsql_spilled_bytes_written counter
+sql_disk_distsql_spilled_bytes_written 0
+# HELP sql_distsql_service_latency Latency of DistSQL request execution
+# TYPE sql_distsql_service_latency histogram
+sql_distsql_service_latency_bucket{le="+Inf"} 0
+sql_distsql_service_latency_sum 0
+sql_distsql_service_latency_count 0
+# HELP sql_optimizer_plan_cache_misses_internal Number of non-prepared statements for which a cached plan was not used (internal queries)
+# TYPE sql_optimizer_plan_cache_misses_internal counter
+sql_optimizer_plan_cache_misses_internal 211
+# HELP keybytes Number of bytes taken up by keys
+# TYPE keybytes gauge
+keybytes{store="1"} 69206
+# HELP distsender_rpc_err_rangenotfounderrtype Number of RangeNotFoundErrType errors received
+# TYPE distsender_rpc_err_rangenotfounderrtype counter
+distsender_rpc_err_rangenotfounderrtype 0
+# HELP liveness_heartbeatsinflight Number of in-flight liveness heartbeats from this node
+# TYPE liveness_heartbeatsinflight gauge
+liveness_heartbeatsinflight 0
+# HELP kv_prober_read_attempts Number of attempts made to probe KV, regardless of outcome
+# TYPE kv_prober_read_attempts counter
+kv_prober_read_attempts 0
+# HELP changefeed_failures Total number of changefeed jobs which have failed
+# TYPE changefeed_failures counter
+changefeed_failures 0
+# HELP rebalancing_writespersecond Number of keys written (i.e. applied by raft) per second to the store, averaged over a large time period as used in rebalancing decisions
+# TYPE rebalancing_writespersecond gauge
+rebalancing_writespersecond{store="1"} 94.1641859289572
+# HELP queue_raftlog_processingnanos Nanoseconds spent processing replicas in the Raft log queue
+# TYPE queue_raftlog_processingnanos counter
+queue_raftlog_processingnanos{store="1"} 7.617496e+09
+# HELP distsender_rpc_revertrange_sent Number of RevertRange requests sent
+# TYPE distsender_rpc_revertrange_sent counter
+distsender_rpc_revertrange_sent 0
+# HELP distsender_rpc_err_errordetailtype_0_ Number of ErrorDetailType(0) errors received
+# TYPE distsender_rpc_err_errordetailtype_0_ counter
+distsender_rpc_err_errordetailtype_0_ 0
+# HELP txn_restarts_asyncwritefailure Number of restarts due to async consensus writes that failed to leave intents
+# TYPE txn_restarts_asyncwritefailure counter
+txn_restarts_asyncwritefailure 0
+# HELP clock_offset_meannanos Mean clock offset with other nodes
+# TYPE clock_offset_meannanos gauge
+clock_offset_meannanos 28000
+# HELP jobs_typedesc_schema_change_resume_completed Number of typedesc_schema_change jobs which successfully resumed to completion
+# TYPE jobs_typedesc_schema_change_resume_completed counter
+jobs_typedesc_schema_change_resume_completed 0
+# HELP jobs_typedesc_schema_change_fail_or_cancel_completed Number of typedesc_schema_change jobs which successfully completed their failure or cancelation process
+# TYPE jobs_typedesc_schema_change_fail_or_cancel_completed counter
+jobs_typedesc_schema_change_fail_or_cancel_completed 0
+# HELP changefeed_table_metadata_nanos Time blocked while verifying table metadata histories
+# TYPE changefeed_table_metadata_nanos counter
+changefeed_table_metadata_nanos 0
+# HELP sql_mem_root_current Current sql statement memory usage for root
+# TYPE sql_mem_root_current gauge
+sql_mem_root_current 122880
+# HELP ranges_unavailable Number of ranges with fewer live replicas than needed for quorum
+# TYPE ranges_unavailable gauge
+ranges_unavailable{store="1"} 0
+# HELP kv_tenant_rate_limit_current_blocked Number of requests currently blocked by the rate limiter
+# TYPE kv_tenant_rate_limit_current_blocked gauge
+kv_tenant_rate_limit_current_blocked{store="1"} 0
+# HELP distsender_rangelookups Number of range lookups
+# TYPE distsender_rangelookups counter
+distsender_rangelookups 14
+# HELP distsender_rpc_adminverifyprotectedtimestamp_sent Number of AdminVerifyProtectedTimestamp requests sent
+# TYPE distsender_rpc_adminverifyprotectedtimestamp_sent counter
+distsender_rpc_adminverifyprotectedtimestamp_sent 0
+# HELP txn_restarts_writetoooldmulti Number of restarts due to multiple concurrent writers committing first
+# TYPE txn_restarts_writetoooldmulti counter
+txn_restarts_writetoooldmulti 0
+# HELP sql_insert_count_internal Number of SQL INSERT statements successfully executed (internal queries)
+# TYPE sql_insert_count_internal counter
+sql_insert_count_internal 240
+# HELP txnrecovery_successes_committed Number of transaction recovery attempts that committed a transaction
+# TYPE txnrecovery_successes_committed counter
+txnrecovery_successes_committed{store="1"} 0
+# HELP sql_disk_distsql_spilled_bytes_read Number of bytes read from temporary disk storage as a result of spilling
+# TYPE sql_disk_distsql_spilled_bytes_read counter
+sql_disk_distsql_spilled_bytes_read 0
+# HELP sql_restart_savepoint_count Number of `SAVEPOINT cockroach_restart` statements successfully executed
+# TYPE sql_restart_savepoint_count counter
+sql_restart_savepoint_count 0
+# HELP leases_error Number of failed lease requests
+# TYPE leases_error counter
+leases_error{store="1"} 0
+# HELP queue_gc_processingnanos Nanoseconds spent processing replicas in the GC queue
+# TYPE queue_gc_processingnanos counter
+queue_gc_processingnanos{store="1"} 0
+# HELP schedules_malformed Number of malformed schedules
+# TYPE schedules_malformed gauge
+schedules_malformed 0
+# HELP raft_ticks Number of Raft ticks queued
+# TYPE raft_ticks counter
+raft_ticks{store="1"} 9589
+# HELP distsender_rpc_err_internalerrtype Number of InternalErrType errors received
+# TYPE distsender_rpc_err_internalerrtype counter
+distsender_rpc_err_internalerrtype 0
+# HELP sql_optimizer_fallback_count_internal Number of statements which the cost-based optimizer was unable to plan (internal queries)
+# TYPE sql_optimizer_fallback_count_internal counter
+sql_optimizer_fallback_count_internal 0
+# HELP storage_disk_stalled Number of instances of disk operations taking longer than 30s
+# TYPE storage_disk_stalled gauge
+storage_disk_stalled{store="1"} 0
+# HELP range_snapshots_applied_voter Number of snapshots applied by voter replicas
+# TYPE range_snapshots_applied_voter counter
+range_snapshots_applied_voter{store="1"} 0
+# HELP rocksdb_estimated_pending_compaction Estimated pending compaction bytes
+# TYPE rocksdb_estimated_pending_compaction gauge
+rocksdb_estimated_pending_compaction{store="1"} 0
+# HELP distsender_rpc_sent_nextreplicaerror Number of RPCs sent due to per-replica errors
+# TYPE distsender_rpc_sent_nextreplicaerror counter
+distsender_rpc_sent_nextreplicaerror 2
+# HELP jobs_backup_fail_or_cancel_completed Number of backup jobs which successfully completed their failure or cancelation process
+# TYPE jobs_backup_fail_or_cancel_completed counter
+jobs_backup_fail_or_cancel_completed 0
+# HELP sql_select_started_count Number of SQL SELECT statements started
+# TYPE sql_select_started_count counter
+sql_select_started_count 0
+# HELP rocksdb_bloom_filter_prefix_useful Number of times the bloom filter helped avoid iterator creation
+# TYPE rocksdb_bloom_filter_prefix_useful gauge
+rocksdb_bloom_filter_prefix_useful{store="1"} 0
+# HELP sql_txn_rollback_count Number of SQL transaction ROLLBACK statements successfully executed
+# TYPE sql_txn_rollback_count counter
+sql_txn_rollback_count 0
+# HELP queue_replicagc_pending Number of pending replicas in the replica GC queue
+# TYPE queue_replicagc_pending gauge
+queue_replicagc_pending{store="1"} 0
+# HELP tscache_skl_rotations Number of page rotations in the timestamp cache
+# TYPE tscache_skl_rotations counter
+tscache_skl_rotations{store="1"} 2
+# HELP queue_replicate_removelearnerreplica Number of learner replica removals attempted by the replicate queue (typically due to internal race conditions)
+# TYPE queue_replicate_removelearnerreplica counter
+queue_replicate_removelearnerreplica{store="1"} 0
+# HELP sys_goroutines Current number of goroutines
+# TYPE sys_goroutines gauge
+sys_goroutines 214
+# HELP distsender_rpc_err_errordetailtype_24_ Number of ErrorDetailType(24) errors received
+# TYPE distsender_rpc_err_errordetailtype_24_ counter
+distsender_rpc_err_errordetailtype_24_ 0
+# HELP sqlliveness_write_failures Number of update or insert calls which have failed
+# TYPE sqlliveness_write_failures counter
+sqlliveness_write_failures 0
+# HELP sql_txn_begin_started_count Number of SQL transaction BEGIN statements started
+# TYPE sql_txn_begin_started_count counter
+sql_txn_begin_started_count 0
+# HELP sql_optimizer_plan_cache_hits_internal Number of non-prepared statements for which a cached plan was used (internal queries)
+# TYPE sql_optimizer_plan_cache_hits_internal counter
+sql_optimizer_plan_cache_hits_internal 1495
+# HELP raft_enqueued_pending Number of pending outgoing messages in the Raft Transport queue
+# TYPE raft_enqueued_pending gauge
+raft_enqueued_pending{store="1"} 0
+# HELP queue_replicate_removereplica Number of replica removals attempted by the replicate queue (typically in response to a rebalancer-initiated addition)
+# TYPE queue_replicate_removereplica counter
+queue_replicate_removereplica{store="1"} 0
+# HELP sys_host_disk_read_count Disk read operations across all disks since this process started
+# TYPE sys_host_disk_read_count gauge
+sys_host_disk_read_count 146113
+# HELP jobs_schema_change_gc_currently_running Number of schema_change_gc jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_schema_change_gc_currently_running gauge
+jobs_schema_change_gc_currently_running 0
+# HELP jobs_stream_ingestion_fail_or_cancel_failed Number of stream_ingestion jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_stream_ingestion_fail_or_cancel_failed counter
+jobs_stream_ingestion_fail_or_cancel_failed 0
+# HELP sql_query_count Number of SQL queries executed
+# TYPE sql_query_count counter
+sql_query_count 0
+# HELP rpc_heartbeats_initializing Gauge of current connections in the initializing state
+# TYPE rpc_heartbeats_initializing gauge
+rpc_heartbeats_initializing 0
+# HELP distsender_rpc_err_ambiguousresulterrtype Number of AmbiguousResultErrType errors received
+# TYPE distsender_rpc_err_ambiguousresulterrtype counter
+distsender_rpc_err_ambiguousresulterrtype 0
+# HELP sql_distsql_flows_active Number of distributed SQL flows currently active
+# TYPE sql_distsql_flows_active gauge
+sql_distsql_flows_active 0
+# HELP requests_slow_latch Number of requests that have been stuck for a long time acquiring latches
+# TYPE requests_slow_latch gauge
+requests_slow_latch{store="1"} 0
+# HELP txn_commit_waits Number of KV transactions that had to commit-wait on commit in order to ensure linearizability. This generally happens to transactions writing to global ranges.
+# TYPE txn_commit_waits counter
+txn_commit_waits 0
+# HELP jobs_typedesc_schema_change_fail_or_cancel_retry_error Number of typedesc_schema_change jobs which failed with a retriable error on their failure or cancelation process
+# TYPE jobs_typedesc_schema_change_fail_or_cancel_retry_error counter
+jobs_typedesc_schema_change_fail_or_cancel_retry_error 0
+# HELP sql_select_count Number of SQL SELECT statements successfully executed
+# TYPE sql_select_count counter
+sql_select_count 0
+# HELP raft_scheduler_latency Nanoseconds spent waiting for a range to be processed by the Raft scheduler
+# TYPE raft_scheduler_latency histogram
+raft_scheduler_latency_bucket{store="1",le="2047"} 5
+raft_scheduler_latency_bucket{store="1",le="3071"} 56
+raft_scheduler_latency_bucket{store="1",le="4095"} 214
+raft_scheduler_latency_bucket{store="1",le="5119"} 416
+raft_scheduler_latency_bucket{store="1",le="6143"} 695
+raft_scheduler_latency_bucket{store="1",le="7167"} 963
+raft_scheduler_latency_bucket{store="1",le="8191"} 1260
+raft_scheduler_latency_bucket{store="1",le="9215"} 1640
+raft_scheduler_latency_bucket{store="1",le="10239"} 2068
+raft_scheduler_latency_bucket{store="1",le="11263"} 2517
+raft_scheduler_latency_bucket{store="1",le="12287"} 2842
+raft_scheduler_latency_bucket{store="1",le="13311"} 3091
+raft_scheduler_latency_bucket{store="1",le="14335"} 3278
+raft_scheduler_latency_bucket{store="1",le="15359"} 3434
+raft_scheduler_latency_bucket{store="1",le="16383"} 3542
+raft_scheduler_latency_bucket{store="1",le="17407"} 3614
+raft_scheduler_latency_bucket{store="1",le="18431"} 3701
+raft_scheduler_latency_bucket{store="1",le="19455"} 3777
+raft_scheduler_latency_bucket{store="1",le="20479"} 3862
+raft_scheduler_latency_bucket{store="1",le="21503"} 3925
+raft_scheduler_latency_bucket{store="1",le="22527"} 4000
+raft_scheduler_latency_bucket{store="1",le="23551"} 4058
+raft_scheduler_latency_bucket{store="1",le="24575"} 4124
+raft_scheduler_latency_bucket{store="1",le="25599"} 4188
+raft_scheduler_latency_bucket{store="1",le="26623"} 4238
+raft_scheduler_latency_bucket{store="1",le="27647"} 4285
+raft_scheduler_latency_bucket{store="1",le="28671"} 4335
+raft_scheduler_latency_bucket{store="1",le="29695"} 4393
+raft_scheduler_latency_bucket{store="1",le="30719"} 4425
+raft_scheduler_latency_bucket{store="1",le="31743"} 4463
+raft_scheduler_latency_bucket{store="1",le="32767"} 4495
+raft_scheduler_latency_bucket{store="1",le="34815"} 4555
+raft_scheduler_latency_bucket{store="1",le="36863"} 4604
+raft_scheduler_latency_bucket{store="1",le="38911"} 4642
+raft_scheduler_latency_bucket{store="1",le="40959"} 4693
+raft_scheduler_latency_bucket{store="1",le="43007"} 4746
+raft_scheduler_latency_bucket{store="1",le="45055"} 4765
+raft_scheduler_latency_bucket{store="1",le="47103"} 4812
+raft_scheduler_latency_bucket{store="1",le="49151"} 4850
+raft_scheduler_latency_bucket{store="1",le="51199"} 4899
+raft_scheduler_latency_bucket{store="1",le="53247"} 4967
+raft_scheduler_latency_bucket{store="1",le="55295"} 4990
+raft_scheduler_latency_bucket{store="1",le="57343"} 5006
+raft_scheduler_latency_bucket{store="1",le="59391"} 5019
+raft_scheduler_latency_bucket{store="1",le="61439"} 5031
+raft_scheduler_latency_bucket{store="1",le="63487"} 5041
+raft_scheduler_latency_bucket{store="1",le="65535"} 5050
+raft_scheduler_latency_bucket{store="1",le="69631"} 5108
+raft_scheduler_latency_bucket{store="1",le="73727"} 5143
+raft_scheduler_latency_bucket{store="1",le="77823"} 5155
+raft_scheduler_latency_bucket{store="1",le="81919"} 5163
+raft_scheduler_latency_bucket{store="1",le="86015"} 5170
+raft_scheduler_latency_bucket{store="1",le="90111"} 5173
+raft_scheduler_latency_bucket{store="1",le="94207"} 5176
+raft_scheduler_latency_bucket{store="1",le="98303"} 5180
+raft_scheduler_latency_bucket{store="1",le="106495"} 5182
+raft_scheduler_latency_bucket{store="1",le="110591"} 5183
+raft_scheduler_latency_bucket{store="1",le="114687"} 5184
+raft_scheduler_latency_bucket{store="1",le="118783"} 5185
+raft_scheduler_latency_bucket{store="1",le="122879"} 5186
+raft_scheduler_latency_bucket{store="1",le="131071"} 5187
+raft_scheduler_latency_bucket{store="1",le="139263"} 5188
+raft_scheduler_latency_bucket{store="1",le="155647"} 5190
+raft_scheduler_latency_bucket{store="1",le="180223"} 5192
+raft_scheduler_latency_bucket{store="1",le="188415"} 5193
+raft_scheduler_latency_bucket{store="1",le="245759"} 5195
+raft_scheduler_latency_bucket{store="1",le="262143"} 5196
+raft_scheduler_latency_bucket{store="1",le="344063"} 5198
+raft_scheduler_latency_bucket{store="1",le="360447"} 5199
+raft_scheduler_latency_bucket{store="1",le="409599"} 5201
+raft_scheduler_latency_bucket{store="1",le="442367"} 5202
+raft_scheduler_latency_bucket{store="1",le="475135"} 5203
+raft_scheduler_latency_bucket{store="1",le="589823"} 5204
+raft_scheduler_latency_bucket{store="1",le="622591"} 5205
+raft_scheduler_latency_bucket{store="1",le="655359"} 5206
+raft_scheduler_latency_bucket{store="1",le="688127"} 5207
+raft_scheduler_latency_bucket{store="1",le="753663"} 5208
+raft_scheduler_latency_bucket{store="1",le="1.114111e+06"} 5209
+raft_scheduler_latency_bucket{store="1",le="1.310719e+06"} 5210
+raft_scheduler_latency_bucket{store="1",le="1.441791e+06"} 5211
+raft_scheduler_latency_bucket{store="1",le="1.507327e+06"} 5212
+raft_scheduler_latency_bucket{store="1",le="1.572863e+06"} 5213
+raft_scheduler_latency_bucket{store="1",le="1.900543e+06"} 5214
+raft_scheduler_latency_bucket{store="1",le="1.966079e+06"} 5215
+raft_scheduler_latency_bucket{store="1",le="2.228223e+06"} 5216
+raft_scheduler_latency_bucket{store="1",le="2.359295e+06"} 5217
+raft_scheduler_latency_bucket{store="1",le="2.490367e+06"} 5220
+raft_scheduler_latency_bucket{store="1",le="2.752511e+06"} 5224
+raft_scheduler_latency_bucket{store="1",le="2.883583e+06"} 5226
+raft_scheduler_latency_bucket{store="1",le="3.014655e+06"} 5228
+raft_scheduler_latency_bucket{store="1",le="3.145727e+06"} 5230
+raft_scheduler_latency_bucket{store="1",le="3.276799e+06"} 5231
+raft_scheduler_latency_bucket{store="1",le="3.801087e+06"} 5232
+raft_scheduler_latency_bucket{store="1",le="4.063231e+06"} 5233
+raft_scheduler_latency_bucket{store="1",le="4.194303e+06"} 5234
+raft_scheduler_latency_bucket{store="1",le="4.456447e+06"} 5237
+raft_scheduler_latency_bucket{store="1",le="4.718591e+06"} 5240
+raft_scheduler_latency_bucket{store="1",le="4.980735e+06"} 5241
+raft_scheduler_latency_bucket{store="1",le="5.242879e+06"} 5243
+raft_scheduler_latency_bucket{store="1",le="5.505023e+06"} 5244
+raft_scheduler_latency_bucket{store="1",le="5.767167e+06"} 5249
+raft_scheduler_latency_bucket{store="1",le="6.029311e+06"} 5253
+raft_scheduler_latency_bucket{store="1",le="6.291455e+06"} 5257
+raft_scheduler_latency_bucket{store="1",le="6.553599e+06"} 5258
+raft_scheduler_latency_bucket{store="1",le="6.815743e+06"} 5263
+raft_scheduler_latency_bucket{store="1",le="7.077887e+06"} 5267
+raft_scheduler_latency_bucket{store="1",le="7.340031e+06"} 5281
+raft_scheduler_latency_bucket{store="1",le="7.602175e+06"} 5298
+raft_scheduler_latency_bucket{store="1",le="7.864319e+06"} 5331
+raft_scheduler_latency_bucket{store="1",le="8.126463e+06"} 5369
+raft_scheduler_latency_bucket{store="1",le="8.388607e+06"} 5407
+raft_scheduler_latency_bucket{store="1",le="8.912895e+06"} 5469
+raft_scheduler_latency_bucket{store="1",le="9.437183e+06"} 5563
+raft_scheduler_latency_bucket{store="1",le="9.961471e+06"} 5708
+raft_scheduler_latency_bucket{store="1",le="1.0485759e+07"} 5780
+raft_scheduler_latency_bucket{store="1",le="1.1010047e+07"} 5825
+raft_scheduler_latency_bucket{store="1",le="1.1534335e+07"} 5855
+raft_scheduler_latency_bucket{store="1",le="1.2058623e+07"} 5884
+raft_scheduler_latency_bucket{store="1",le="1.2582911e+07"} 5950
+raft_scheduler_latency_bucket{store="1",le="1.3107199e+07"} 6031
+raft_scheduler_latency_bucket{store="1",le="1.3631487e+07"} 6059
+raft_scheduler_latency_bucket{store="1",le="1.4155775e+07"} 6101
+raft_scheduler_latency_bucket{store="1",le="1.4680063e+07"} 6139
+raft_scheduler_latency_bucket{store="1",le="1.5204351e+07"} 6211
+raft_scheduler_latency_bucket{store="1",le="1.5728639e+07"} 6237
+raft_scheduler_latency_bucket{store="1",le="1.6252927e+07"} 6249
+raft_scheduler_latency_bucket{store="1",le="1.6777215e+07"} 6261
+raft_scheduler_latency_bucket{store="1",le="1.7825791e+07"} 6283
+raft_scheduler_latency_bucket{store="1",le="1.8874367e+07"} 6310
+raft_scheduler_latency_bucket{store="1",le="1.9922943e+07"} 6347
+raft_scheduler_latency_bucket{store="1",le="2.0971519e+07"} 6363
+raft_scheduler_latency_bucket{store="1",le="2.2020095e+07"} 6373
+raft_scheduler_latency_bucket{store="1",le="2.3068671e+07"} 6381
+raft_scheduler_latency_bucket{store="1",le="2.4117247e+07"} 6394
+raft_scheduler_latency_bucket{store="1",le="2.5165823e+07"} 6398
+raft_scheduler_latency_bucket{store="1",le="2.6214399e+07"} 6400
+raft_scheduler_latency_bucket{store="1",le="2.7262975e+07"} 6402
+raft_scheduler_latency_bucket{store="1",le="3.3554431e+07"} 6403
+raft_scheduler_latency_bucket{store="1",le="3.7748735e+07"} 6404
+raft_scheduler_latency_bucket{store="1",le="+Inf"} 6404
+raft_scheduler_latency_sum{store="1"} 1.4612056828e+10
+raft_scheduler_latency_count{store="1"} 6404
+# HELP distsender_rpc_err_invalidleaseerrtype Number of InvalidLeaseErrType errors received
+# TYPE distsender_rpc_err_invalidleaseerrtype counter
+distsender_rpc_err_invalidleaseerrtype 0
+# HELP jobs_backup_resume_retry_error Number of backup jobs which failed with a retriable error
+# TYPE jobs_backup_resume_retry_error counter
+jobs_backup_resume_retry_error 0
+# HELP capacity_available Available storage capacity
+# TYPE capacity_available gauge
+capacity_available{store="1"} 1.84142155776e+11
+# HELP distsender_rpc_increment_sent Number of Increment requests sent
+# TYPE distsender_rpc_increment_sent counter
+distsender_rpc_increment_sent 2
+# HELP round_trip_latency Distribution of round-trip latencies with other nodes
+# TYPE round_trip_latency histogram
+round_trip_latency_bucket{le="245759"} 2
+round_trip_latency_bucket{le="253951"} 4
+round_trip_latency_bucket{le="262143"} 9
+round_trip_latency_bucket{le="278527"} 20
+round_trip_latency_bucket{le="294911"} 49
+round_trip_latency_bucket{le="311295"} 72
+round_trip_latency_bucket{le="327679"} 97
+round_trip_latency_bucket{le="344063"} 118
+round_trip_latency_bucket{le="360447"} 152
+round_trip_latency_bucket{le="376831"} 178
+round_trip_latency_bucket{le="393215"} 213
+round_trip_latency_bucket{le="409599"} 245
+round_trip_latency_bucket{le="425983"} 271
+round_trip_latency_bucket{le="442367"} 305
+round_trip_latency_bucket{le="458751"} 346
+round_trip_latency_bucket{le="475135"} 384
+round_trip_latency_bucket{le="491519"} 413
+round_trip_latency_bucket{le="507903"} 444
+round_trip_latency_bucket{le="524287"} 474
+round_trip_latency_bucket{le="557055"} 520
+round_trip_latency_bucket{le="589823"} 546
+round_trip_latency_bucket{le="622591"} 563
+round_trip_latency_bucket{le="655359"} 575
+round_trip_latency_bucket{le="688127"} 588
+round_trip_latency_bucket{le="720895"} 596
+round_trip_latency_bucket{le="753663"} 602
+round_trip_latency_bucket{le="786431"} 607
+round_trip_latency_bucket{le="819199"} 608
+round_trip_latency_bucket{le="851967"} 613
+round_trip_latency_bucket{le="884735"} 615
+round_trip_latency_bucket{le="917503"} 616
+round_trip_latency_bucket{le="950271"} 620
+round_trip_latency_bucket{le="1.015807e+06"} 621
+round_trip_latency_bucket{le="1.048575e+06"} 622
+round_trip_latency_bucket{le="1.114111e+06"} 623
+round_trip_latency_bucket{le="1.179647e+06"} 625
+round_trip_latency_bucket{le="1.245183e+06"} 627
+round_trip_latency_bucket{le="1.310719e+06"} 630
+round_trip_latency_bucket{le="1.572863e+06"} 631
+round_trip_latency_bucket{le="1.638399e+06"} 632
+round_trip_latency_bucket{le="1.769471e+06"} 633
+round_trip_latency_bucket{le="2.359295e+06"} 634
+round_trip_latency_bucket{le="2.490367e+06"} 636
+round_trip_latency_bucket{le="2.752511e+06"} 637
+round_trip_latency_bucket{le="3.014655e+06"} 638
+round_trip_latency_bucket{le="4.456447e+06"} 639
+round_trip_latency_bucket{le="+Inf"} 639
+round_trip_latency_sum 3.22780545e+08
+round_trip_latency_count 639
+# HELP raft_rcvd_voteresp Number of MsgVoteResp messages received by this store
+# TYPE raft_rcvd_voteresp counter
+raft_rcvd_voteresp{store="1"} 0
+# HELP jobs_import_fail_or_cancel_completed Number of import jobs which successfully completed their failure or cancelation process
+# TYPE jobs_import_fail_or_cancel_completed counter
+jobs_import_fail_or_cancel_completed 0
+# HELP sql_delete_count_internal Number of SQL DELETE statements successfully executed (internal queries)
+# TYPE sql_delete_count_internal counter
+sql_delete_count_internal 96
+# HELP queue_raftlog_process_failure Number of replicas which failed processing in the Raft log queue
+# TYPE queue_raftlog_process_failure counter
+queue_raftlog_process_failure{store="1"} 0
+# HELP txnwaitqueue_pusher_slow The total number of cases where a pusher waited more than the excessive wait threshold
+# TYPE txnwaitqueue_pusher_slow gauge
+txnwaitqueue_pusher_slow{store="1"} 0
+# HELP raft_rcvd_app Number of MsgApp messages received by this store
+# TYPE raft_rcvd_app counter
+raft_rcvd_app{store="1"} 0
+# HELP distsender_rpc_err_errordetailtype_29_ Number of ErrorDetailType(29) errors received
+# TYPE distsender_rpc_err_errordetailtype_29_ counter
+distsender_rpc_err_errordetailtype_29_ 0
+# HELP jobs_stream_ingestion_resume_retry_error Number of stream_ingestion jobs which failed with a retriable error
+# TYPE jobs_stream_ingestion_resume_retry_error counter
+jobs_stream_ingestion_resume_retry_error 0
+# HELP sql_mem_internal_txn_max Memory usage per sql transaction for internal
+# TYPE sql_mem_internal_txn_max histogram
+sql_mem_internal_txn_max_bucket{le="4011"} 2404
+sql_mem_internal_txn_max_bucket{le="4311"} 3278
+sql_mem_internal_txn_max_bucket{le="+Inf"} 3278
+sql_mem_internal_txn_max_sum 1.3410258e+07
+sql_mem_internal_txn_max_count 3278
+# HELP sql_restart_savepoint_rollback_count Number of `ROLLBACK TO SAVEPOINT cockroach_restart` statements successfully executed
+# TYPE sql_restart_savepoint_rollback_count counter
+sql_restart_savepoint_rollback_count 0
+# HELP queue_replicate_removedeadreplica Number of dead replica removals attempted by the replicate queue (typically in response to a node outage)
+# TYPE queue_replicate_removedeadreplica counter
+queue_replicate_removedeadreplica{store="1"} 0
+# HELP sys_host_disk_read_bytes Bytes read from all disks since this process started
+# TYPE sys_host_disk_read_bytes gauge
+sys_host_disk_read_bytes 4.797079552e+09
+# HELP distsender_rpc_err_transactionretryerrtype Number of TransactionRetryErrType errors received
+# TYPE distsender_rpc_err_transactionretryerrtype counter
+distsender_rpc_err_transactionretryerrtype 0
+# HELP distsender_rpc_err_txnalreadyencounterederrtype Number of TxnAlreadyEncounteredErrType errors received
+# TYPE distsender_rpc_err_txnalreadyencounterederrtype counter
+distsender_rpc_err_txnalreadyencounterederrtype 0
+# HELP txn_parallelcommits Number of KV transaction parallel commit attempts
+# TYPE txn_parallelcommits counter
+txn_parallelcommits 584
+# HELP sql_query_started_count_internal Number of SQL queries started (internal queries)
+# TYPE sql_query_started_count_internal counter
+sql_query_started_count_internal 1719
+# HELP follower_reads_success_count Number of reads successfully processed by any replica
+# TYPE follower_reads_success_count counter
+follower_reads_success_count{store="1"} 0
+# HELP raftlog_truncated Number of Raft log entries truncated
+# TYPE raftlog_truncated counter
+raftlog_truncated{store="1"} 5176
+# HELP queue_gc_info_numkeysaffected Number of keys with GC'able data
+# TYPE queue_gc_info_numkeysaffected counter
+queue_gc_info_numkeysaffected{store="1"} 0
+# HELP rpc_heartbeats_failed Gauge of current connections in the failed state
+# TYPE rpc_heartbeats_failed gauge
+rpc_heartbeats_failed 0
+# HELP distsender_errors_notleaseholder Number of NotLeaseHolderErrors encountered
+# TYPE distsender_errors_notleaseholder counter
+distsender_errors_notleaseholder 2
+# HELP distsender_rpc_err_readwithinuncertaintyintervalerrtype Number of ReadWithinUncertaintyIntervalErrType errors received
+# TYPE distsender_rpc_err_readwithinuncertaintyintervalerrtype counter
+distsender_rpc_err_readwithinuncertaintyintervalerrtype 0
+# HELP sql_txn_rollback_started_count Number of SQL transaction ROLLBACK statements started
+# TYPE sql_txn_rollback_started_count counter
+sql_txn_rollback_started_count 0
+# HELP rocksdb_ingested_bytes Bytes ingested
+# TYPE rocksdb_ingested_bytes gauge
+rocksdb_ingested_bytes{store="1"} 0
+# HELP raft_process_applycommitted_latency Latency histogram for applying all committed Raft commands in a Raft ready
+# TYPE raft_process_applycommitted_latency histogram
+raft_process_applycommitted_latency_bucket{store="1",le="18431"} 1
+raft_process_applycommitted_latency_bucket{store="1",le="19455"} 2
+raft_process_applycommitted_latency_bucket{store="1",le="20479"} 3
+raft_process_applycommitted_latency_bucket{store="1",le="21503"} 5
+raft_process_applycommitted_latency_bucket{store="1",le="22527"} 7
+raft_process_applycommitted_latency_bucket{store="1",le="23551"} 8
+raft_process_applycommitted_latency_bucket{store="1",le="24575"} 12
+raft_process_applycommitted_latency_bucket{store="1",le="25599"} 16
+raft_process_applycommitted_latency_bucket{store="1",le="26623"} 27
+raft_process_applycommitted_latency_bucket{store="1",le="27647"} 32
+raft_process_applycommitted_latency_bucket{store="1",le="28671"} 39
+raft_process_applycommitted_latency_bucket{store="1",le="29695"} 45
+raft_process_applycommitted_latency_bucket{store="1",le="30719"} 52
+raft_process_applycommitted_latency_bucket{store="1",le="31743"} 65
+raft_process_applycommitted_latency_bucket{store="1",le="32767"} 72
+raft_process_applycommitted_latency_bucket{store="1",le="34815"} 86
+raft_process_applycommitted_latency_bucket{store="1",le="36863"} 103
+raft_process_applycommitted_latency_bucket{store="1",le="38911"} 127
+raft_process_applycommitted_latency_bucket{store="1",le="40959"} 161
+raft_process_applycommitted_latency_bucket{store="1",le="43007"} 242
+raft_process_applycommitted_latency_bucket{store="1",le="45055"} 303
+raft_process_applycommitted_latency_bucket{store="1",le="47103"} 371
+raft_process_applycommitted_latency_bucket{store="1",le="49151"} 422
+raft_process_applycommitted_latency_bucket{store="1",le="51199"} 480
+raft_process_applycommitted_latency_bucket{store="1",le="53247"} 560
+raft_process_applycommitted_latency_bucket{store="1",le="55295"} 636
+raft_process_applycommitted_latency_bucket{store="1",le="57343"} 714
+raft_process_applycommitted_latency_bucket{store="1",le="59391"} 801
+raft_process_applycommitted_latency_bucket{store="1",le="61439"} 877
+raft_process_applycommitted_latency_bucket{store="1",le="63487"} 955
+raft_process_applycommitted_latency_bucket{store="1",le="65535"} 1045
+raft_process_applycommitted_latency_bucket{store="1",le="69631"} 1222
+raft_process_applycommitted_latency_bucket{store="1",le="73727"} 1406
+raft_process_applycommitted_latency_bucket{store="1",le="77823"} 1580
+raft_process_applycommitted_latency_bucket{store="1",le="81919"} 1774
+raft_process_applycommitted_latency_bucket{store="1",le="86015"} 1962
+raft_process_applycommitted_latency_bucket{store="1",le="90111"} 2109
+raft_process_applycommitted_latency_bucket{store="1",le="94207"} 2248
+raft_process_applycommitted_latency_bucket{store="1",le="98303"} 2371
+raft_process_applycommitted_latency_bucket{store="1",le="102399"} 2485
+raft_process_applycommitted_latency_bucket{store="1",le="106495"} 2585
+raft_process_applycommitted_latency_bucket{store="1",le="110591"} 2681
+raft_process_applycommitted_latency_bucket{store="1",le="114687"} 2748
+raft_process_applycommitted_latency_bucket{store="1",le="118783"} 2823
+raft_process_applycommitted_latency_bucket{store="1",le="122879"} 2894
+raft_process_applycommitted_latency_bucket{store="1",le="126975"} 2945
+raft_process_applycommitted_latency_bucket{store="1",le="131071"} 3017
+raft_process_applycommitted_latency_bucket{store="1",le="139263"} 3114
+raft_process_applycommitted_latency_bucket{store="1",le="147455"} 3197
+raft_process_applycommitted_latency_bucket{store="1",le="155647"} 3271
+raft_process_applycommitted_latency_bucket{store="1",le="163839"} 3342
+raft_process_applycommitted_latency_bucket{store="1",le="172031"} 3406
+raft_process_applycommitted_latency_bucket{store="1",le="180223"} 3465
+raft_process_applycommitted_latency_bucket{store="1",le="188415"} 3537
+raft_process_applycommitted_latency_bucket{store="1",le="196607"} 3610
+raft_process_applycommitted_latency_bucket{store="1",le="204799"} 3685
+raft_process_applycommitted_latency_bucket{store="1",le="212991"} 3754
+raft_process_applycommitted_latency_bucket{store="1",le="221183"} 3829
+raft_process_applycommitted_latency_bucket{store="1",le="229375"} 3896
+raft_process_applycommitted_latency_bucket{store="1",le="237567"} 3948
+raft_process_applycommitted_latency_bucket{store="1",le="245759"} 4000
+raft_process_applycommitted_latency_bucket{store="1",le="253951"} 4040
+raft_process_applycommitted_latency_bucket{store="1",le="262143"} 4083
+raft_process_applycommitted_latency_bucket{store="1",le="278527"} 4134
+raft_process_applycommitted_latency_bucket{store="1",le="294911"} 4184
+raft_process_applycommitted_latency_bucket{store="1",le="311295"} 4223
+raft_process_applycommitted_latency_bucket{store="1",le="327679"} 4266
+raft_process_applycommitted_latency_bucket{store="1",le="344063"} 4297
+raft_process_applycommitted_latency_bucket{store="1",le="360447"} 4317
+raft_process_applycommitted_latency_bucket{store="1",le="376831"} 4332
+raft_process_applycommitted_latency_bucket{store="1",le="393215"} 4346
+raft_process_applycommitted_latency_bucket{store="1",le="409599"} 4359
+raft_process_applycommitted_latency_bucket{store="1",le="425983"} 4369
+raft_process_applycommitted_latency_bucket{store="1",le="442367"} 4377
+raft_process_applycommitted_latency_bucket{store="1",le="458751"} 4379
+raft_process_applycommitted_latency_bucket{store="1",le="475135"} 4385
+raft_process_applycommitted_latency_bucket{store="1",le="491519"} 4387
+raft_process_applycommitted_latency_bucket{store="1",le="507903"} 4391
+raft_process_applycommitted_latency_bucket{store="1",le="524287"} 4393
+raft_process_applycommitted_latency_bucket{store="1",le="557055"} 4396
+raft_process_applycommitted_latency_bucket{store="1",le="589823"} 4401
+raft_process_applycommitted_latency_bucket{store="1",le="622591"} 4405
+raft_process_applycommitted_latency_bucket{store="1",le="655359"} 4409
+raft_process_applycommitted_latency_bucket{store="1",le="688127"} 4412
+raft_process_applycommitted_latency_bucket{store="1",le="720895"} 4415
+raft_process_applycommitted_latency_bucket{store="1",le="753663"} 4416
+raft_process_applycommitted_latency_bucket{store="1",le="786431"} 4418
+raft_process_applycommitted_latency_bucket{store="1",le="819199"} 4420
+raft_process_applycommitted_latency_bucket{store="1",le="851967"} 4422
+raft_process_applycommitted_latency_bucket{store="1",le="884735"} 4424
+raft_process_applycommitted_latency_bucket{store="1",le="983039"} 4425
+raft_process_applycommitted_latency_bucket{store="1",le="1.114111e+06"} 4426
+raft_process_applycommitted_latency_bucket{store="1",le="1.179647e+06"} 4427
+raft_process_applycommitted_latency_bucket{store="1",le="1.245183e+06"} 4430
+raft_process_applycommitted_latency_bucket{store="1",le="1.310719e+06"} 4434
+raft_process_applycommitted_latency_bucket{store="1",le="1.376255e+06"} 4441
+raft_process_applycommitted_latency_bucket{store="1",le="1.441791e+06"} 4445
+raft_process_applycommitted_latency_bucket{store="1",le="1.507327e+06"} 4450
+raft_process_applycommitted_latency_bucket{store="1",le="1.572863e+06"} 4451
+raft_process_applycommitted_latency_bucket{store="1",le="1.638399e+06"} 4455
+raft_process_applycommitted_latency_bucket{store="1",le="1.703935e+06"} 4457
+raft_process_applycommitted_latency_bucket{store="1",le="1.769471e+06"} 4461
+raft_process_applycommitted_latency_bucket{store="1",le="1.835007e+06"} 4465
+raft_process_applycommitted_latency_bucket{store="1",le="1.900543e+06"} 4467
+raft_process_applycommitted_latency_bucket{store="1",le="1.966079e+06"} 4473
+raft_process_applycommitted_latency_bucket{store="1",le="2.031615e+06"} 4478
+raft_process_applycommitted_latency_bucket{store="1",le="2.097151e+06"} 4483
+raft_process_applycommitted_latency_bucket{store="1",le="2.228223e+06"} 4495
+raft_process_applycommitted_latency_bucket{store="1",le="2.359295e+06"} 4511
+raft_process_applycommitted_latency_bucket{store="1",le="2.490367e+06"} 4534
+raft_process_applycommitted_latency_bucket{store="1",le="2.621439e+06"} 4552
+raft_process_applycommitted_latency_bucket{store="1",le="2.752511e+06"} 4566
+raft_process_applycommitted_latency_bucket{store="1",le="2.883583e+06"} 4576
+raft_process_applycommitted_latency_bucket{store="1",le="3.014655e+06"} 4583
+raft_process_applycommitted_latency_bucket{store="1",le="3.145727e+06"} 4588
+raft_process_applycommitted_latency_bucket{store="1",le="3.276799e+06"} 4595
+raft_process_applycommitted_latency_bucket{store="1",le="3.407871e+06"} 4597
+raft_process_applycommitted_latency_bucket{store="1",le="3.538943e+06"} 4601
+raft_process_applycommitted_latency_bucket{store="1",le="3.670015e+06"} 4604
+raft_process_applycommitted_latency_bucket{store="1",le="3.801087e+06"} 4606
+raft_process_applycommitted_latency_bucket{store="1",le="3.932159e+06"} 4610
+raft_process_applycommitted_latency_bucket{store="1",le="4.063231e+06"} 4611
+raft_process_applycommitted_latency_bucket{store="1",le="4.194303e+06"} 4612
+raft_process_applycommitted_latency_bucket{store="1",le="4.456447e+06"} 4617
+raft_process_applycommitted_latency_bucket{store="1",le="4.718591e+06"} 4619
+raft_process_applycommitted_latency_bucket{store="1",le="6.029311e+06"} 4620
+raft_process_applycommitted_latency_bucket{store="1",le="6.291455e+06"} 4621
+raft_process_applycommitted_latency_bucket{store="1",le="6.553599e+06"} 4622
+raft_process_applycommitted_latency_bucket{store="1",le="2.0971519e+07"} 4625
+raft_process_applycommitted_latency_bucket{store="1",le="2.2020095e+07"} 4626
+raft_process_applycommitted_latency_bucket{store="1",le="2.3068671e+07"} 4627
+raft_process_applycommitted_latency_bucket{store="1",le="2.4117247e+07"} 4628
+raft_process_applycommitted_latency_bucket{store="1",le="2.5165823e+07"} 4630
+raft_process_applycommitted_latency_bucket{store="1",le="3.2505855e+07"} 4631
+raft_process_applycommitted_latency_bucket{store="1",le="3.7748735e+07"} 4632
+raft_process_applycommitted_latency_bucket{store="1",le="+Inf"} 4632
+raft_process_applycommitted_latency_sum{store="1"} 1.332057576e+09
+raft_process_applycommitted_latency_count{store="1"} 4632
+# HELP queue_tsmaintenance_process_success Number of replicas successfully processed by the time series maintenance queue
+# TYPE queue_tsmaintenance_process_success counter
+queue_tsmaintenance_process_success{store="1"} 3
+# HELP distsender_rpc_scan_sent Number of Scan requests sent
+# TYPE distsender_rpc_scan_sent counter
+distsender_rpc_scan_sent 2770
+# HELP txn_refresh_fail Number of failed transaction refreshes
+# TYPE txn_refresh_fail counter
+txn_refresh_fail 0
+# HELP sql_hydrated_table_cache_hits counter on the number of cache hits
+# TYPE sql_hydrated_table_cache_hits counter
+sql_hydrated_table_cache_hits 0
+# HELP sql_savepoint_started_count_internal Number of SQL SAVEPOINT statements started (internal queries)
+# TYPE sql_savepoint_started_count_internal counter
+sql_savepoint_started_count_internal 0
+# HELP sql_misc_count Number of other SQL statements successfully executed
+# TYPE sql_misc_count counter
+sql_misc_count 0
+# HELP txnwaitqueue_pusher_wait_time Histogram of durations spent in queue by pushers
+# TYPE txnwaitqueue_pusher_wait_time histogram
+txnwaitqueue_pusher_wait_time_bucket{store="1",le="+Inf"} 0
+txnwaitqueue_pusher_wait_time_sum{store="1"} 0
+txnwaitqueue_pusher_wait_time_count{store="1"} 0
+# HELP intentresolver_async_throttled Number of intent resolution attempts not run asynchronously due to throttling
+# TYPE intentresolver_async_throttled counter
+intentresolver_async_throttled{store="1"} 0
+# HELP kv_protectedts_reconciliation_num_runs number of successful reconciliation runs on this node
+# TYPE kv_protectedts_reconciliation_num_runs counter
+kv_protectedts_reconciliation_num_runs 7
+# HELP jobs_typedesc_schema_change_resume_failed Number of typedesc_schema_change jobs which failed with a non-retriable error
+# TYPE jobs_typedesc_schema_change_resume_failed counter
+jobs_typedesc_schema_change_resume_failed 0
+# HELP jobs_new_schema_change_currently_running Number of new_schema_change jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_new_schema_change_currently_running gauge
+jobs_new_schema_change_currently_running 0
+# HELP sql_misc_started_count Number of other SQL statements started
+# TYPE sql_misc_started_count counter
+sql_misc_started_count 0
+# HELP changefeed_buffer_entries_in Total entries entering the buffer between raft and changefeed sinks
+# TYPE changefeed_buffer_entries_in counter
+changefeed_buffer_entries_in 0
+# HELP changefeed_buffer_entries_out Total entries leaving the buffer between raft and changefeed sinks
+# TYPE changefeed_buffer_entries_out counter
+changefeed_buffer_entries_out 0
+# HELP sql_txns_open Number of currently open SQL transactions
+# TYPE sql_txns_open gauge
+sql_txns_open 0
+# HELP queue_gc_process_success Number of replicas successfully processed by the GC queue
+# TYPE queue_gc_process_success counter
+queue_gc_process_success{store="1"} 0
+# HELP build_timestamp Build information
+# TYPE build_timestamp gauge
+build_timestamp{tag="v21.1.0-alpha.3-3051-g43bd72d8ff-dirty",go_version="go1.16.3"} 0
+# HELP distsender_rpc_admintransferlease_sent Number of AdminTransferLease requests sent
+# TYPE distsender_rpc_admintransferlease_sent counter
+distsender_rpc_admintransferlease_sent 0
+# HELP distsender_rpc_err_oprequirestxnerrtype Number of OpRequiresTxnErrType errors received
+# TYPE distsender_rpc_err_oprequirestxnerrtype counter
+distsender_rpc_err_oprequirestxnerrtype 0
+# HELP jobs_import_resume_completed Number of import jobs which successfully resumed to completion
+# TYPE jobs_import_resume_completed counter
+jobs_import_resume_completed 0
+# HELP queue_replicagc_processingnanos Nanoseconds spent processing replicas in the replica GC queue
+# TYPE queue_replicagc_processingnanos counter
+queue_replicagc_processingnanos{store="1"} 0
+# HELP txnwaitqueue_deadlocks_total Number of deadlocks detected by the txn wait queue
+# TYPE txnwaitqueue_deadlocks_total counter
+txnwaitqueue_deadlocks_total{store="1"} 0
+# HELP timeseries_write_bytes Total size in bytes of metric samples written to disk
+# TYPE timeseries_write_bytes counter
+timeseries_write_bytes 1.7611153e+07
+# HELP kv_protectedts_reconciliation_records_processed number of records processed without error during reconciliation on this node
+# TYPE kv_protectedts_reconciliation_records_processed counter
+kv_protectedts_reconciliation_records_processed 0
+# HELP jobs_schema_change_gc_resume_failed Number of schema_change_gc jobs which failed with a non-retriable error
+# TYPE jobs_schema_change_gc_resume_failed counter
+jobs_schema_change_gc_resume_failed 0
+# HELP ranges_underreplicated Number of ranges with fewer live replicas than the replication target
+# TYPE ranges_underreplicated gauge
+ranges_underreplicated{store="1"} 0
+# HELP distsender_batches_async_throttled Number of partial batches not sent asynchronously due to throttling
+# TYPE distsender_batches_async_throttled counter
+distsender_batches_async_throttled 0
+# HELP addsstable_delay_total Amount by which evaluation of AddSSTable requests was delayed
+# TYPE addsstable_delay_total counter
+addsstable_delay_total{store="1"} 0
+# HELP jobs_schema_change_gc_fail_or_cancel_failed Number of schema_change_gc jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_schema_change_gc_fail_or_cancel_failed counter
+jobs_schema_change_gc_fail_or_cancel_failed 0
+# HELP abortspanbytes Number of bytes in the abort span
+# TYPE abortspanbytes gauge
+abortspanbytes{store="1"} 0
+# HELP raft_process_logcommit_latency Latency histogram for committing Raft log entries
+# TYPE raft_process_logcommit_latency histogram
+raft_process_logcommit_latency_bucket{store="1",le="4.980735e+06"} 1
+raft_process_logcommit_latency_bucket{store="1",le="5.505023e+06"} 3
+raft_process_logcommit_latency_bucket{store="1",le="5.767167e+06"} 4
+raft_process_logcommit_latency_bucket{store="1",le="6.029311e+06"} 8
+raft_process_logcommit_latency_bucket{store="1",le="6.553599e+06"} 9
+raft_process_logcommit_latency_bucket{store="1",le="6.815743e+06"} 14
+raft_process_logcommit_latency_bucket{store="1",le="7.077887e+06"} 21
+raft_process_logcommit_latency_bucket{store="1",le="7.340031e+06"} 36
+raft_process_logcommit_latency_bucket{store="1",le="7.602175e+06"} 78
+raft_process_logcommit_latency_bucket{store="1",le="7.864319e+06"} 131
+raft_process_logcommit_latency_bucket{store="1",le="8.126463e+06"} 199
+raft_process_logcommit_latency_bucket{store="1",le="8.388607e+06"} 250
+raft_process_logcommit_latency_bucket{store="1",le="8.912895e+06"} 318
+raft_process_logcommit_latency_bucket{store="1",le="9.437183e+06"} 523
+raft_process_logcommit_latency_bucket{store="1",le="9.961471e+06"} 1842
+raft_process_logcommit_latency_bucket{store="1",le="1.0485759e+07"} 2513
+raft_process_logcommit_latency_bucket{store="1",le="1.1010047e+07"} 2728
+raft_process_logcommit_latency_bucket{store="1",le="1.1534335e+07"} 2826
+raft_process_logcommit_latency_bucket{store="1",le="1.2058623e+07"} 2946
+raft_process_logcommit_latency_bucket{store="1",le="1.2582911e+07"} 3177
+raft_process_logcommit_latency_bucket{store="1",le="1.3107199e+07"} 3383
+raft_process_logcommit_latency_bucket{store="1",le="1.3631487e+07"} 3530
+raft_process_logcommit_latency_bucket{store="1",le="1.4155775e+07"} 3687
+raft_process_logcommit_latency_bucket{store="1",le="1.4680063e+07"} 3787
+raft_process_logcommit_latency_bucket{store="1",le="1.5204351e+07"} 3928
+raft_process_logcommit_latency_bucket{store="1",le="1.5728639e+07"} 3993
+raft_process_logcommit_latency_bucket{store="1",le="1.6252927e+07"} 4028
+raft_process_logcommit_latency_bucket{store="1",le="1.6777215e+07"} 4071
+raft_process_logcommit_latency_bucket{store="1",le="1.7825791e+07"} 4128
+raft_process_logcommit_latency_bucket{store="1",le="1.8874367e+07"} 4199
+raft_process_logcommit_latency_bucket{store="1",le="1.9922943e+07"} 4394
+raft_process_logcommit_latency_bucket{store="1",le="2.0971519e+07"} 4465
+raft_process_logcommit_latency_bucket{store="1",le="2.2020095e+07"} 4513
+raft_process_logcommit_latency_bucket{store="1",le="2.3068671e+07"} 4562
+raft_process_logcommit_latency_bucket{store="1",le="2.4117247e+07"} 4597
+raft_process_logcommit_latency_bucket{store="1",le="2.5165823e+07"} 4608
+raft_process_logcommit_latency_bucket{store="1",le="2.6214399e+07"} 4618
+raft_process_logcommit_latency_bucket{store="1",le="2.7262975e+07"} 4625
+raft_process_logcommit_latency_bucket{store="1",le="2.8311551e+07"} 4628
+raft_process_logcommit_latency_bucket{store="1",le="3.0408703e+07"} 4630
+raft_process_logcommit_latency_bucket{store="1",le="3.3554431e+07"} 4631
+raft_process_logcommit_latency_bucket{store="1",le="3.7748735e+07"} 4632
+raft_process_logcommit_latency_bucket{store="1",le="+Inf"} 4632
+raft_process_logcommit_latency_sum{store="1"} 5.7088929256e+10
+raft_process_logcommit_latency_count{store="1"} 4632
+# HELP queue_gc_info_abortspanconsidered Number of AbortSpan entries old enough to be considered for removal
+# TYPE queue_gc_info_abortspanconsidered counter
+queue_gc_info_abortspanconsidered{store="1"} 0
+# HELP sys_uptime Process uptime
+# TYPE sys_uptime gauge
+sys_uptime 1910
+# HELP distsender_rpc_err_errordetailtype_30_ Number of ErrorDetailType(30) errors received
+# TYPE distsender_rpc_err_errordetailtype_30_ counter
+distsender_rpc_err_errordetailtype_30_ 0
+# HELP jobs_restore_currently_running Number of restore jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_restore_currently_running gauge
+jobs_restore_currently_running 0
+# HELP jobs_schema_change_gc_resume_retry_error Number of schema_change_gc jobs which failed with a retriable error
+# TYPE jobs_schema_change_gc_resume_retry_error counter
+jobs_schema_change_gc_resume_retry_error 0
+# HELP sql_schema_changer_running Gauge of currently running schema changes
+# TYPE sql_schema_changer_running gauge
+sql_schema_changer_running 0
+# HELP valcount Count of all values
+# TYPE valcount gauge
+valcount{store="1"} 2259
+# HELP raft_process_commandcommit_latency Latency histogram for committing Raft commands
+# TYPE raft_process_commandcommit_latency histogram
+raft_process_commandcommit_latency_bucket{store="1",le="7167"} 1
+raft_process_commandcommit_latency_bucket{store="1",le="8191"} 2
+raft_process_commandcommit_latency_bucket{store="1",le="9215"} 5
+raft_process_commandcommit_latency_bucket{store="1",le="10239"} 19
+raft_process_commandcommit_latency_bucket{store="1",le="11263"} 34
+raft_process_commandcommit_latency_bucket{store="1",le="12287"} 44
+raft_process_commandcommit_latency_bucket{store="1",le="13311"} 50
+raft_process_commandcommit_latency_bucket{store="1",le="14335"} 64
+raft_process_commandcommit_latency_bucket{store="1",le="15359"} 81
+raft_process_commandcommit_latency_bucket{store="1",le="16383"} 94
+raft_process_commandcommit_latency_bucket{store="1",le="17407"} 111
+raft_process_commandcommit_latency_bucket{store="1",le="18431"} 134
+raft_process_commandcommit_latency_bucket{store="1",le="19455"} 156
+raft_process_commandcommit_latency_bucket{store="1",le="20479"} 176
+raft_process_commandcommit_latency_bucket{store="1",le="21503"} 194
+raft_process_commandcommit_latency_bucket{store="1",le="22527"} 223
+raft_process_commandcommit_latency_bucket{store="1",le="23551"} 254
+raft_process_commandcommit_latency_bucket{store="1",le="24575"} 280
+raft_process_commandcommit_latency_bucket{store="1",le="25599"} 308
+raft_process_commandcommit_latency_bucket{store="1",le="26623"} 345
+raft_process_commandcommit_latency_bucket{store="1",le="27647"} 375
+raft_process_commandcommit_latency_bucket{store="1",le="28671"} 404
+raft_process_commandcommit_latency_bucket{store="1",le="29695"} 445
+raft_process_commandcommit_latency_bucket{store="1",le="30719"} 510
+raft_process_commandcommit_latency_bucket{store="1",le="31743"} 566
+raft_process_commandcommit_latency_bucket{store="1",le="32767"} 620
+raft_process_commandcommit_latency_bucket{store="1",le="34815"} 765
+raft_process_commandcommit_latency_bucket{store="1",le="36863"} 893
+raft_process_commandcommit_latency_bucket{store="1",le="38911"} 1061
+raft_process_commandcommit_latency_bucket{store="1",le="40959"} 1238
+raft_process_commandcommit_latency_bucket{store="1",le="43007"} 1483
+raft_process_commandcommit_latency_bucket{store="1",le="45055"} 1655
+raft_process_commandcommit_latency_bucket{store="1",le="47103"} 1819
+raft_process_commandcommit_latency_bucket{store="1",le="49151"} 1978
+raft_process_commandcommit_latency_bucket{store="1",le="51199"} 2106
+raft_process_commandcommit_latency_bucket{store="1",le="53247"} 2278
+raft_process_commandcommit_latency_bucket{store="1",le="55295"} 2410
+raft_process_commandcommit_latency_bucket{store="1",le="57343"} 2534
+raft_process_commandcommit_latency_bucket{store="1",le="59391"} 2674
+raft_process_commandcommit_latency_bucket{store="1",le="61439"} 2790
+raft_process_commandcommit_latency_bucket{store="1",le="63487"} 2886
+raft_process_commandcommit_latency_bucket{store="1",le="65535"} 2997
+raft_process_commandcommit_latency_bucket{store="1",le="69631"} 3172
+raft_process_commandcommit_latency_bucket{store="1",le="73727"} 3309
+raft_process_commandcommit_latency_bucket{store="1",le="77823"} 3412
+raft_process_commandcommit_latency_bucket{store="1",le="81919"} 3530
+raft_process_commandcommit_latency_bucket{store="1",le="86015"} 3643
+raft_process_commandcommit_latency_bucket{store="1",le="90111"} 3736
+raft_process_commandcommit_latency_bucket{store="1",le="94207"} 3815
+raft_process_commandcommit_latency_bucket{store="1",le="98303"} 3900
+raft_process_commandcommit_latency_bucket{store="1",le="102399"} 3959
+raft_process_commandcommit_latency_bucket{store="1",le="106495"} 4024
+raft_process_commandcommit_latency_bucket{store="1",le="110591"} 4071
+raft_process_commandcommit_latency_bucket{store="1",le="114687"} 4131
+raft_process_commandcommit_latency_bucket{store="1",le="118783"} 4169
+raft_process_commandcommit_latency_bucket{store="1",le="122879"} 4205
+raft_process_commandcommit_latency_bucket{store="1",le="126975"} 4231
+raft_process_commandcommit_latency_bucket{store="1",le="131071"} 4263
+raft_process_commandcommit_latency_bucket{store="1",le="139263"} 4308
+raft_process_commandcommit_latency_bucket{store="1",le="147455"} 4348
+raft_process_commandcommit_latency_bucket{store="1",le="155647"} 4380
+raft_process_commandcommit_latency_bucket{store="1",le="163839"} 4413
+raft_process_commandcommit_latency_bucket{store="1",le="172031"} 4437
+raft_process_commandcommit_latency_bucket{store="1",le="180223"} 4453
+raft_process_commandcommit_latency_bucket{store="1",le="188415"} 4471
+raft_process_commandcommit_latency_bucket{store="1",le="196607"} 4485
+raft_process_commandcommit_latency_bucket{store="1",le="204799"} 4491
+raft_process_commandcommit_latency_bucket{store="1",le="212991"} 4500
+raft_process_commandcommit_latency_bucket{store="1",le="221183"} 4510
+raft_process_commandcommit_latency_bucket{store="1",le="229375"} 4515
+raft_process_commandcommit_latency_bucket{store="1",le="237567"} 4520
+raft_process_commandcommit_latency_bucket{store="1",le="245759"} 4524
+raft_process_commandcommit_latency_bucket{store="1",le="253951"} 4527
+raft_process_commandcommit_latency_bucket{store="1",le="262143"} 4529
+raft_process_commandcommit_latency_bucket{store="1",le="278527"} 4538
+raft_process_commandcommit_latency_bucket{store="1",le="294911"} 4543
+raft_process_commandcommit_latency_bucket{store="1",le="311295"} 4549
+raft_process_commandcommit_latency_bucket{store="1",le="327679"} 4554
+raft_process_commandcommit_latency_bucket{store="1",le="344063"} 4557
+raft_process_commandcommit_latency_bucket{store="1",le="360447"} 4558
+raft_process_commandcommit_latency_bucket{store="1",le="376831"} 4559
+raft_process_commandcommit_latency_bucket{store="1",le="425983"} 4560
+raft_process_commandcommit_latency_bucket{store="1",le="458751"} 4561
+raft_process_commandcommit_latency_bucket{store="1",le="491519"} 4562
+raft_process_commandcommit_latency_bucket{store="1",le="507903"} 4563
+raft_process_commandcommit_latency_bucket{store="1",le="524287"} 4565
+raft_process_commandcommit_latency_bucket{store="1",le="557055"} 4566
+raft_process_commandcommit_latency_bucket{store="1",le="589823"} 4568
+raft_process_commandcommit_latency_bucket{store="1",le="655359"} 4569
+raft_process_commandcommit_latency_bucket{store="1",le="720895"} 4571
+raft_process_commandcommit_latency_bucket{store="1",le="753663"} 4572
+raft_process_commandcommit_latency_bucket{store="1",le="786431"} 4573
+raft_process_commandcommit_latency_bucket{store="1",le="950271"} 4574
+raft_process_commandcommit_latency_bucket{store="1",le="983039"} 4575
+raft_process_commandcommit_latency_bucket{store="1",le="1.015807e+06"} 4576
+raft_process_commandcommit_latency_bucket{store="1",le="1.048575e+06"} 4579
+raft_process_commandcommit_latency_bucket{store="1",le="1.114111e+06"} 4583
+raft_process_commandcommit_latency_bucket{store="1",le="1.179647e+06"} 4587
+raft_process_commandcommit_latency_bucket{store="1",le="1.245183e+06"} 4591
+raft_process_commandcommit_latency_bucket{store="1",le="1.310719e+06"} 4592
+raft_process_commandcommit_latency_bucket{store="1",le="1.376255e+06"} 4595
+raft_process_commandcommit_latency_bucket{store="1",le="1.441791e+06"} 4599
+raft_process_commandcommit_latency_bucket{store="1",le="1.507327e+06"} 4605
+raft_process_commandcommit_latency_bucket{store="1",le="1.572863e+06"} 4608
+raft_process_commandcommit_latency_bucket{store="1",le="1.638399e+06"} 4613
+raft_process_commandcommit_latency_bucket{store="1",le="1.703935e+06"} 4617
+raft_process_commandcommit_latency_bucket{store="1",le="1.769471e+06"} 4620
+raft_process_commandcommit_latency_bucket{store="1",le="1.835007e+06"} 4630
+raft_process_commandcommit_latency_bucket{store="1",le="1.900543e+06"} 4634
+raft_process_commandcommit_latency_bucket{store="1",le="1.966079e+06"} 4638
+raft_process_commandcommit_latency_bucket{store="1",le="2.031615e+06"} 4648
+raft_process_commandcommit_latency_bucket{store="1",le="2.097151e+06"} 4656
+raft_process_commandcommit_latency_bucket{store="1",le="2.228223e+06"} 4679
+raft_process_commandcommit_latency_bucket{store="1",le="2.359295e+06"} 4696
+raft_process_commandcommit_latency_bucket{store="1",le="2.490367e+06"} 4712
+raft_process_commandcommit_latency_bucket{store="1",le="2.621439e+06"} 4722
+raft_process_commandcommit_latency_bucket{store="1",le="2.752511e+06"} 4730
+raft_process_commandcommit_latency_bucket{store="1",le="2.883583e+06"} 4737
+raft_process_commandcommit_latency_bucket{store="1",le="3.014655e+06"} 4739
+raft_process_commandcommit_latency_bucket{store="1",le="3.145727e+06"} 4745
+raft_process_commandcommit_latency_bucket{store="1",le="3.276799e+06"} 4750
+raft_process_commandcommit_latency_bucket{store="1",le="3.538943e+06"} 4751
+raft_process_commandcommit_latency_bucket{store="1",le="3.670015e+06"} 4753
+raft_process_commandcommit_latency_bucket{store="1",le="3.801087e+06"} 4755
+raft_process_commandcommit_latency_bucket{store="1",le="3.932159e+06"} 4757
+raft_process_commandcommit_latency_bucket{store="1",le="4.063231e+06"} 4758
+raft_process_commandcommit_latency_bucket{store="1",le="4.194303e+06"} 4760
+raft_process_commandcommit_latency_bucket{store="1",le="5.505023e+06"} 4761
+raft_process_commandcommit_latency_bucket{store="1",le="5.767167e+06"} 4763
+raft_process_commandcommit_latency_bucket{store="1",le="2.0971519e+07"} 4766
+raft_process_commandcommit_latency_bucket{store="1",le="2.2020095e+07"} 4767
+raft_process_commandcommit_latency_bucket{store="1",le="2.3068671e+07"} 4768
+raft_process_commandcommit_latency_bucket{store="1",le="2.4117247e+07"} 4769
+raft_process_commandcommit_latency_bucket{store="1",le="2.5165823e+07"} 4771
+raft_process_commandcommit_latency_bucket{store="1",le="3.2505855e+07"} 4772
+raft_process_commandcommit_latency_bucket{store="1",le="3.7748735e+07"} 4773
+raft_process_commandcommit_latency_bucket{store="1",le="+Inf"} 4773
+raft_process_commandcommit_latency_sum{store="1"} 9.96110683e+08
+raft_process_commandcommit_latency_count{store="1"} 4773
+# HELP txnrecovery_successes_aborted Number of transaction recovery attempts that aborted a transaction
+# TYPE txnrecovery_successes_aborted counter
+txnrecovery_successes_aborted{store="1"} 0
+# HELP jobs_backup_currently_running Number of backup jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_backup_currently_running gauge
+jobs_backup_currently_running 0
+# HELP jobs_restore_resume_failed Number of restore jobs which failed with a non-retriable error
+# TYPE jobs_restore_resume_failed counter
+jobs_restore_resume_failed 0
+# HELP jobs_import_fail_or_cancel_failed Number of import jobs which failed with a non-retriable error on their failure or cancelation process
+# TYPE jobs_import_fail_or_cancel_failed counter
+jobs_import_fail_or_cancel_failed 0
+# HELP sql_mem_internal_txn_current Current sql transaction memory usage for internal
+# TYPE sql_mem_internal_txn_current gauge
+sql_mem_internal_txn_current 0
+# HELP distsender_rpc_err_transactionpusherrtype Number of TransactionPushErrType errors received
+# TYPE distsender_rpc_err_transactionpusherrtype counter
+distsender_rpc_err_transactionpusherrtype 0
+# HELP sqlliveness_is_alive_cache_hits Number of calls to IsAlive that return from the cache
+# TYPE sqlliveness_is_alive_cache_hits counter
+sqlliveness_is_alive_cache_hits 0
+# HELP jobs_migration_currently_running Number of migration jobs currently running in Resume or OnFailOrCancel state
+# TYPE jobs_migration_currently_running gauge
+jobs_migration_currently_running 0
+# HELP raft_process_workingnanos Nanoseconds spent in store.processRaft() working
+# TYPE raft_process_workingnanos counter
+raft_process_workingnanos{store="1"} 5.7534143e+10
+seconds_until_enterprise_license_expiry 0
