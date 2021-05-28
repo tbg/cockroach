@@ -11,6 +11,7 @@
 package log
 
 import (
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -271,9 +272,19 @@ func formatLogEntryInternalV2(entry logEntry, cp ttycolor.Profile) *buffer {
 	if entry.tags != nil {
 		buf.WriteByte('[')
 		buf.WriteString(renderTagsAsString(entry.tags, entry.payload.redactable))
+		if entry.traceID != 0 {
+			buf.WriteString(",trace=")
+			buf.WriteString(strconv.FormatUint(entry.traceID, 16))
+		}
 		buf.WriteByte(']')
 	} else {
-		buf.WriteString("[-]")
+		if entry.traceID != 0 {
+			buf.WriteString("[trace=")
+			buf.WriteString(strconv.FormatUint(entry.traceID, 16))
+			buf.WriteRune(']')
+		} else {
+			buf.WriteString("[-]")
+		}
 	}
 	buf.Write(cp[ttycolor.Reset])
 	buf.WriteByte(' ')

@@ -118,6 +118,7 @@ type idPayload struct {
 	tenantID string
 	// ditto for the SQL instance ID.
 	sqlInstanceID int32
+	traceID       uint64
 }
 
 func init() {
