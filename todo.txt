@@ -1,0 +1,4 @@
+newMonitor
+perfArtifactsDir
+withWorkerAction
+waitForFullReplication
