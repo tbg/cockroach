@@ -35,20 +35,15 @@ type Fataler interface {
 type StepperSupportType byte
 
 const (
-	Unsupported           StepperSupportType = iota // does not support this version
-	OnlyFinalized                                   // supports cluster only if all nodes at main version & cluster version finalized
-	CanMixWithPredecessor                           // supports cluster as long as one node is at main version
+	// UpgradeFinalized indicates that the cluster is fully upgraded and all migrations have completed.
+	UpgradeFinalized StepperSupportType = iota
+	// UpgradeUnfinalized indicates that all nodes in the cluster are running the updated binary, but
+	// that the migrations may not all have run yet. It's possible that a transition to UpgradeRolling
+	// will take place (i.e. binaries may be rolled back to the older version).
+	UpgradeUnfinalized
+	// UpgradeRolling indicates that there may be nodes running the old binary in the cluster.
+	UpgradeRolling
 )
-
-type Generator struct {
-	m map[ActionFactory]struct{}
-	w map[ActionFactory]float64
-}
-
-func (r *Generator) Register(s ActionFactory, w float64) {
-	r.m[s] = struct{}{}
-	r.w[s] = w
-}
 
 type RandStepIter interface {
 	Next(r *rand.Rand) (ActionFactory, Action, bool)

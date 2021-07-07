@@ -12,11 +12,9 @@ package crdbnemesis
 
 import (
 	"context"
-	"math/rand"
 	"time"
 
 	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/registry"
-	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"go.uber.org/atomic"
 )
 
@@ -56,24 +54,4 @@ func (s *simpleActionImpl) Cooperative() bool {
 
 func (s *simpleActionImpl) Run(ctx context.Context, t Fataler, c Cluster) {
 	s.RunFn(ctx, t, c, &s.SimpleAction.Progress, &s.SimpleAction.ProgressWithin)
-}
-
-// SimpleActionFactory is a reusable implementation of ActionFactory that returns
-// a single action from GetActions.
-type SimpleActionFactory struct {
-	Supporter Supporter
-	New       func(r *rand.Rand) SimpleAction
-}
-
-var _ ActionFactory = (*SimpleActionFactory)(nil)
-
-// SupportsBinaryVersion implements ActionFactory.
-func (f *SimpleActionFactory) SupportsBinaryVersion(v roachpb.Version) StepperSupportType {
-	return f.Supporter.SupportsBinaryVersion(v)
-}
-
-// GetActions implements ActionFactory.
-func (f *SimpleActionFactory) GetActions(r *rand.Rand) []Action {
-	a := f.New(r)
-	return []Action{a.I()}
 }
