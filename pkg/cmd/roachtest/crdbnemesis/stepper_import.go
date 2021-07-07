@@ -13,11 +13,11 @@ func (opts exampleStepperOptions) Chaos() bool {
 	return opts.numTables > 1
 }
 
-func (es *ExampleStepper) RandOptions(*rand.Rand) Instance {
+func (es *ExampleStepper) RandOptions(*rand.Rand) Action {
 	return nil
 }
 
-func (es *ExampleStepper) Run(ctx context.Context, fataler Fataler, instance Instance, c Cluster) {
+func (es *ExampleStepper) Run(ctx context.Context, fataler Fataler, instance Action, c Cluster) {
 	panic("implement me")
 }
 

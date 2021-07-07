@@ -16,21 +16,15 @@ import (
 	"time"
 
 	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/cluster"
-	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/registry"
-	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/util/randutil"
 )
 
-type Instance interface {
-	Progress() (interface{}, time.Duration)
-	Chaos() bool
-}
-
-// Cluster is a handle to a running CockroachDB cluster
-// that ActionFactory can run against.
+// Cluster is a handle to a running CockroachDB cluster that ActionFactory can
+// run against.
 //
-// TODO(tbg): this should take a better interface; most of the things on Cluster
-// are not safely usable by individual `Instance`s.
+// TODO(tbg): this should take a better/narrower interface; most of the things
+// on Cluster are not safely usable by individual `Action`s. Should start
+// opinionated and build up from there rather than inviting "broken" Actions.
 type Cluster = cluster.Cluster
 
 type Fataler interface {
@@ -46,84 +40,18 @@ const (
 	CanMixWithPredecessor                           // supports cluster as long as one node is at main version
 )
 
-type ActionFactory interface {
-	Supporter
-	Name() string
-	RandOptions(r *rand.Rand) Instance
-	Run(context.Context, Fataler, Instance, Cluster)
-	Owner() registry.Owner
-}
-
-type SimpleInstance struct {
-	CurrentProgress float64
-	ProgressWindow  time.Duration
-	HasChaos        bool
-}
-
-func (s *SimpleInstance) Progress() (interface{}, time.Duration) {
-	return s.Progress, s.ProgressWindow
-}
-
-func (s *SimpleInstance) Chaos() bool {
-	return s.HasChaos
-}
-
-type Supporter interface {
-	// SupportsBinaryVersion determines whether an operation supports
-	// a cluster running at the given binary version.
-	//
-	// TODO: need to check if we want version.Version here. In general
-	// should clean up the versions across roachtest; it's a mess.
-	SupportsBinaryVersion(roachpb.Version) StepperSupportType
-}
-
 type Generator struct {
-	m map[string]ActionFactory
-	w map[string]float64
+	m map[ActionFactory]struct{}
+	w map[ActionFactory]float64
 }
 
 func (r *Generator) Register(s ActionFactory, w float64) {
-	name := s.Name()
-	r.m[name] = s
-	r.w[name] = w
-}
-
-// AtLeastSupporter is a supporter that requires a binary version of at least 'AtLeast'.
-// If SupportsMixed is true, also supports a cluster in which a supported version is
-// running mixed with an older version.
-type AtLeastSupporter struct {
-	AtLeast       roachpb.Version
-	SupportsMixed bool
-}
-
-func (s AtLeastSupporter) SupportsBinaryVersion(v roachpb.Version) StepperSupportType {
-	if v.Less(s.AtLeast) {
-		// Introduced at 20.1, but we're testing only v19.X or below.
-		return Unsupported
-	}
-	// Introduced at 20.1, and we're testing at least that version.
-	if s.SupportsMixed {
-		// Supports a mixed 20.1/19.2 cluster.
-		return CanMixWithPredecessor
-	}
-	// Need cluster version to be at least 20.1.
-	return OnlyFinalized
-}
-
-// AtLeastV21Dot2MixedSupporter is a struct that can be embedded into ActionFactory implementations
-// to implement an AtLeastSupporter{AtLeast: v21.2, SupportsMixed: true}. This should be the
-// default choice for Steppers introduced prior to the v21.2 release.
-type AtLeastV21Dot2MixedSupporter struct{}
-
-func (*AtLeastV21Dot2MixedSupporter) SupportsBinaryVersion(v roachpb.Version) StepperSupportType {
-	return AtLeastSupporter{
-		AtLeast:       roachpb.Version{Major: 21, Minor: 2},
-		SupportsMixed: true,
-	}.SupportsBinaryVersion(v)
+	r.m[s] = struct{}{}
+	r.w[s] = w
 }
 
 type RandStepIter interface {
-	Next(r *rand.Rand) (ActionFactory, Instance, bool)
+	Next(r *rand.Rand) (ActionFactory, Action, bool)
 }
 
 func Run(ctx context.Context, t Fataler, c Cluster, it RandStepIter) {
