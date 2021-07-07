@@ -13,17 +13,23 @@ package crdbnemesis
 import "math/rand"
 
 // An ActionFactory is a generator for Action. It is handed a random number
-// generator which it can use to (deterministically) determine at least one (but
-// possibly multiple) Actions to return, which are to be executed concurrently.
-// If multiple actions are returned, they must all be cooperative and
-// independent, as not all of them may ultimately be invoked.
+// generator which it can use to (deterministically) determine (typically) at
+// least one (but possibly multiple) Actions to return, which are to be executed
+// concurrently. If multiple actions are returned, they must all be cooperative
+// and independent, as not all of them may ultimately be invoked. All returned
+// Actions must conform to the supplied ActionConstraint. If no Action is
+// returned, this signals that the ActionConstraint does not permit any of the
+// actions the ActionFactory is able to produce; it should prefer to return an
+// Action if it can comfortably do so (i.e. there is no need to emit a noop
+// action to avoid the empty slice).
 //
-// For example, a simple implementation might return a single KV workload with a
-// randomized read:write ratio. Another implementation might randomly pull from
-// a variety of sub-factories and return up to N (cooperative) actions. The
-// intention is that complex actions are built up from simple building blocks
-// (via SimpleAction) provided by different contributors, resulting in a wide
-// variety of workloads the clusters under crdbnemesis will encounter.
+// A simple Example of an ActionFactory is one that returns a single KV workload
+// with a randomized read:write ratio. Another implementation might randomly
+// pull from a variety of sub-factories and return up to N (cooperative)
+// actions. The intention is that complex actions are built up from simple
+// building blocks (via SimpleAction) provided by different contributors,
+// resulting in a wide variety of workloads the clusters under crdbnemesis will
+// encounter.
 //
 // TODO(tbg): does it make sense to return multiple Actions? The original idea
 // was that it was better to let the factory (rather than something in the
@@ -38,6 +44,5 @@ import "math/rand"
 // provide an ActionFactory that returns the right combination as an []Action.
 // So I'm inclined to think that this is good.
 type ActionFactory interface {
-	Supporter
-	GetActions(r *rand.Rand) []Action
+	GetActions(*rand.Rand, ActionConstraint) []Action
 }

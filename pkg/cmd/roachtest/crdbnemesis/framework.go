@@ -11,12 +11,11 @@
 package crdbnemesis
 
 import (
-	"context"
 	"math/rand"
 	"time"
 
 	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/cluster"
-	"github.com/cockroachdb/cockroach/pkg/util/randutil"
+	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/tests"
 )
 
 // Cluster is a handle to a running CockroachDB cluster that ActionFactory can
@@ -27,78 +26,40 @@ import (
 // opinionated and build up from there rather than inviting "broken" Actions.
 type Cluster = cluster.Cluster
 
+// Fataler is a slim test.Test.
+//
+// TODO(tbg): use test.Test or a suitably slimmed down version of it.
 type Fataler interface {
 	Fatal(string, ...interface{})
 	SkipNow()
 }
 
-type StepperSupportType byte
-
-const (
-	// UpgradeFinalized indicates that the cluster is fully upgraded and all migrations have completed.
-	UpgradeFinalized StepperSupportType = iota
-	// UpgradeUnfinalized indicates that all nodes in the cluster are running the updated binary, but
-	// that the migrations may not all have run yet. It's possible that a transition to UpgradeRolling
-	// will take place (i.e. binaries may be rolled back to the older version).
-	UpgradeUnfinalized
-	// UpgradeRolling indicates that there may be nodes running the old binary in the cluster.
-	UpgradeRolling
-)
-
-type RandStepIter interface {
-	Next(r *rand.Rand) (ActionFactory, Action, bool)
-}
-
-func Run(ctx context.Context, t Fataler, c Cluster, it RandStepIter) {
-	// NB: the seed deterministically determines the
-	// history (when the code is kept fixed).
-	//
-	// TODO(tbg): the purism here is nice but in practice one wants to
-	// run the same history on different SHAs so better to print it out
-	// too.
-	r, seed := randutil.NewPseudoRand()
-	_ = seed
-
-	for {
-		s, opts, ok := it.Next(r)
-		if !ok {
-			break
-		}
-		m := c.NewMonitor(ctx)
-		if !opts.Chaos() {
-			m.Go(func(ctx context.Context) error {
-				// TODO: Monitor cluster's health.
-				return nil
-			})
-		}
-		m.Go(func(ctx context.Context) error {
-			// TODO: the Fataler here needs long-term thought. For long-running generic
-			// resilience tests, we'll want to preserve state when a step fails to facilitate debugging, and then let
-			// someone decide whether the test is truly broken now (and the cluster needs
-			// to be torn down); if it can continue we should be able to continue it.
-			// This means that the `t` here needs to be recoverable at this point.
-			// We could completely switch to error propagation here but the `t.Fatal`-style
-			// workflow keeps tests focused on their logic which is helpful. It also produces
-			// better messages that originate from where the problem was detected, rather than
-			// some higher level that ultimately reports them.
-			// In the short term, this seems fine. We have other problems to solve before
-			// these tests can actually be long-running, such as the orchestration via long-lived
-			// ssh sessions which will possibly prove brittle.
-			s.Run(ctx, t, opts, c)
-			return nil
-		})
-		m.Wait()
-		// TODO: monitor cluster health (in particular, return to a healthy
-		// state if the last step had `opts.Chaos()` set).
-	}
-}
-
-func RunMixedVersionTest(t Fataler, c *Cluster, maxSteps int, maxTime time.Duration) {
+func RunMixedVersionTest(
+	seed int64, t Fataler, c *Cluster, f ActionFactory, minDurationPerSegment time.Duration,
+) {
 	// - From the current version, go to the N predecessor versions and store in a slice.
 	// - Start cluster in the first version.
-	// - Go through iterator supporting current version.
-	// - Get iterator for the next version & supporting the current version too.
-	// - Run through that iterator while interleaving an unfinalized upgrade that gets rolled back and rolled forward again,
-	//   e.g.: <steps>, roll n1 and n2, <steps>, rollback n1 and n2, <steps>, roll all nodes, <steps>, finalize upgrade
-	// - go to third step above.
+	// - constraint: v<first version>, in finalized state
+	// - execute actions from ActionFactory until minDurationPerSegment has passed, then wait until done
+	// - constraint: v<second version>, rolling state
+	// - execute actions from ActionFactory interleaved with rolling nodes into and out of the second version, do this
+	//   for minDurationPerSegment again
+	// - constraint: v<second version>, unfinalized state
+	// - initiate the cluster version upgrade and in parallel execute actions from ActionFactory, once upgrade is complete
+	//   let pending actions finish
+	// - constraint: v<second version>, finalized state
+	// - execute actions for minDurationPerSegment
+	// - repeat for third, fourth, etc version.
+	// - We may be really lenient about failing actions in the predecessor versions, as the point of going through them
+	//   is to set up interesting state once we reach the "current" version, not to pick up all the possible flakes that
+	//   we will barely be able to fix. This (and the desire to ultimately make this kind of generated test very long-running)
+	//   means that we need to pass "nested" fatalers to the actions that we can "terminate" before they fail the whole
+	//   suite.
+	r := rand.New(rand.NewSource(seed))
+	_ = r
+	_ = c
+	constraint := ActionConstraint{}
+	_ = constraint
+	_ = tests.PredecessorVersion
+	_ = f.GetActions
 }
