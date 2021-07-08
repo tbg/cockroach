@@ -28,6 +28,8 @@ type UpgradeStatusConstraint struct {
 // support it.
 type ActionConstraint struct {
 	Upgrade UpgradeStatusConstraint
+	// TODO(tbg): duration hint where applicable (for example, `--duration` flag for `workload`).
+	// TODO(tbg): Cooperative vs anything-goes.
 }
 
 // UpgradeStatus is an enum indicating what stage of a cluster upgrade an
