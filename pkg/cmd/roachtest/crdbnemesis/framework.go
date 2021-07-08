@@ -15,19 +15,30 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/cluster"
 	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/tests"
 )
+
+// Idea here is go move away from `c.Run` and friends, instead
+// setting up a systemd unit and polling its status (i.e. no
+// more relying on long-running SSH connections, more like a
+// roachprod monitor with retries).
+
+type RemoteProcess interface {
+	Wait(context.Context) error
+	Stop(context.Context) error
+}
 
 // Cluster is a handle to a running CockroachDB cluster that ActionFactory can
 // run against.
 type Cluster = interface {
-	// StartWorkload .
+	// DeployWorkload spawns `./cockroach workload` with the given parameters
+	// on a workload node designated by the test harness.
 	//
-	// TODO(tbg): need to get away from long-running ssh sessions here. Things should
-	// be deployed via systemctl and status checked similar to `roachprod monitor`.
-	// Note that we're not asking for a node here, the test harness decides where
-	// the workload node is. Need to figure out how multi-region fits in here, though.
-	StartWorkload(ctx context.Context, t Fataler, args ...interface{})
+	// TODO(tbg): multi-region will need to indicate where the workload should
+	// be located geographically.
+	DeployWorkload(ctx context.Context, args ...interface{}) RemoteProcess
+	NewMonitor(context.Context) cluster.Monitor
 }
 
 // Fataler is a slim test.Test.
@@ -38,13 +49,23 @@ type Fataler interface {
 	SkipNow()
 }
 
+/*
+  NB: `f` below could be something like this:
+
+	f := &RoundRobinActionFactory{}
+	for _, subF := range actions.All() {
+		f.Add(subF, 1.0)
+	}
+*/
+
 func RunMixedVersionTest(
 	seed int64, t Fataler, c *Cluster, f ActionFactory, minDurationPerStage time.Duration,
 ) {
-	// - From the current version, go to the N predecessor versions and store in a slice.
+
+	// - Load the starting version and final version (need to add these to the input)
 	// - Start cluster in the first version.
 	// - constraint: v<first version>, in finalized state
-	// - execute actions from ActionFactory until minDurationPerStage has passed, then wait until done
+	// - execute actions from ActionFactory (with some clamp on action concurrency) until minDurationPerStage has passed, then wait until done
 	// - constraint: v<second version>, rolling state
 	// - execute actions from ActionFactory interleaved with rolling nodes into and out of the second version, do this
 	//   for minDurationPerStage again
