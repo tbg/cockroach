@@ -30,7 +30,7 @@ var workloadKVActionFactory = crdbnemesis.SimpleActionFactory{
 			Name:        "workload_kv",
 			Owner:       registry.OwnerKV,
 			Cooperative: true,
-			RunFn: func(ctx context.Context, t crdbnemesis.Fataler, c crdbnemesis.Cluster, status *atomic.String, duration *atomic.Duration) {
+			RunFn: func(ctx context.Context, t crdbnemesis.Fataler, c crdbnemesis.Cluster, _ *atomic.String, _ *atomic.Duration) {
 				// TODO(tbg): this won't work very well since if this runs concurrently with a chaos event,
 				// this monitor will tear down very early. Maybe it's better to pass in a top-level monitor
 				// that consequently becomes aware of ~various things?

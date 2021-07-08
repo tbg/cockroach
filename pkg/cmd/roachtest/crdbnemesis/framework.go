@@ -37,6 +37,9 @@ type Cluster = interface {
 	//
 	// TODO(tbg): multi-region will need to indicate where the workload should
 	// be located geographically.
+	//
+	// TODO(tbg): this is the wrong place to bikeshed this, should make this
+	// kind of change on roachtest as a whole.
 	DeployWorkload(ctx context.Context, args ...interface{}) RemoteProcess
 	NewMonitor(context.Context) cluster.Monitor
 }
